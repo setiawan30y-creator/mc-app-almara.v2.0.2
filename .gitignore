@@ -1,8 +1,9 @@
 *.log
 .DS_Store
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
+!.env.production.example
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -18,7 +19,13 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/logs
 /vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
+*.sqlite
+*.sqlite3
+*.db
+2.env
+cara dapat key api gemini gratis.txt
