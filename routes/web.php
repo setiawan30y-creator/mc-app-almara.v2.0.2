@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ErpPaymentController;
 use App\Http\Middleware\DevelopmentBypassAuth;
 use App\Models\Datastore;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +38,11 @@ Route::get('/login', function () {
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth', 'single.session'])->name('logout');
 Route::get('/auth/me', [AuthController::class, 'me'])->middleware(['auth', 'single.session']);
+
+// ERP Phase 1: atomic payment posting creates the payment and matching ledger movement.
+Route::post('/erp/transactions/{transactionId}/payments', [ErpPaymentController::class, 'store'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.transactions.payments.store');
 
 Route::get('/papan-kurs', function () {
     $profileData = null;
