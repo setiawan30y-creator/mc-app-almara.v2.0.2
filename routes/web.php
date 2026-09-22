@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ErpCashClosingController;
 use App\Http\Controllers\ErpPaymentController;
 use App\Http\Middleware\DevelopmentBypassAuth;
 use App\Models\Datastore;
@@ -43,6 +44,20 @@ Route::get('/auth/me', [AuthController::class, 'me'])->middleware(['auth', 'sing
 Route::post('/erp/transactions/{transactionId}/payments', [ErpPaymentController::class, 'store'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.transactions.payments.store');
+
+// ERP Cash Control: Gantungan + Closing Rp + Reconciliation.
+Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.closing.index');
+Route::post('/erp/closing', [ErpCashClosingController::class, 'store'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.closing.store');
+Route::post('/erp/gantungan', [ErpCashClosingController::class, 'gantunganStore'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.gantungan.store');
+Route::post('/erp/gantungan/{gantungan}/return', [ErpCashClosingController::class, 'gantunganReturn'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.gantungan.return');
 
 Route::get('/papan-kurs', function () {
     $profileData = null;
