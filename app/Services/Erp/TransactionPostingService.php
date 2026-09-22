@@ -38,10 +38,29 @@ class TransactionPostingService
 
             $currency = strtoupper(trim((string) $transaction->valuta));
             $quantity = (float) $transaction->nominal;
+            $expectedPayment = (float) $transaction->total;
 
-            if ($currency === '' || $quantity <= 0) {
+            if ($currency === '' || $quantity <= 0 || $expectedPayment <= 0) {
                 throw ValidationException::withMessages([
-                    'transaction' => 'Transaction currency and nominal must be valid before posting.',
+                    'transaction' => 'Transaction currency, nominal and total must be valid before posting.',
+                ]);
+            }
+
+            $paymentTotal = collect($payments)->sum(fn ($payment) => (float) ($payment['amount'] ?? 0));
+            if (abs($paymentTotal - $expectedPayment) > 0.005) {
+                throw ValidationException::withMessages([
+                    'payments' => 'Payment total must exactly match the transaction total.',
+                ]);
+            }
+
+            $paymentCurrencies = collect($payments)
+                ->map(fn ($payment) => strtoupper(trim((string) ($payment['currency_code'] ?? 'IDR'))))
+                ->unique()
+                ->values();
+
+            if ($paymentCurrencies->count() !== 1) {
+                throw ValidationException::withMessages([
+                    'payments' => 'All payments for one transaction must use the same settlement currency.',
                 ]);
             }
 
