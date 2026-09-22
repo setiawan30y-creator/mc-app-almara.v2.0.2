@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Middleware\DevelopmentBypassAuth;
 use App\Models\Datastore;
 use Illuminate\Support\Facades\Route;
 
@@ -27,7 +28,7 @@ Route::get('/', function () {
     }
 
     return view('dashboard');
-});
+})->middleware(DevelopmentBypassAuth::class);
 
 Route::get('/login', function () {
     return redirect('/');
