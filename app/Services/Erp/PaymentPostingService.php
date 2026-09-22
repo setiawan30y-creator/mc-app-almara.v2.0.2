@@ -2,97 +2,195 @@
 
 namespace App\Services\Erp;
 
+use App\Models\ErpBankAccount;
 use App\Models\ErpBankMovement;
+use App\Models\ErpCashAccount;
 use App\Models\ErpCashMovement;
 use App\Models\ErpPayment;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class PaymentPostingService
 {
     /**
-     * Post one or more payments for a transaction and create the matching
-     * cash/bank ledger movements atomically.
+     * Post one or more payments for a Money Changer transaction.
      *
-     * Each payment must contain:
-     * method: cash|bank
-     * amount: positive numeric amount
-     * currency_code: currency of the settlement amount
-     * cash_account_id for cash, bank_account_id for bank
+     * The operation is atomic and idempotent. A payment retry using the same
+     * idempotency_key will return the existing posted payment instead of
+     * creating another financial movement.
+     *
+     * Each payment may contain:
+     * - method: cash|bank
+     * - amount: positive numeric amount
+     * - currency_code: settlement currency
+     * - cash_account_id for cash
+     * - bank_account_id for bank
+     * - idempotency_key: stable client/request key (recommended)
+     * - reference / bank_reference / description
      */
-    public function post(int $transactionId, array $payments, ?int $userId = null): array
+    public function post(string $transactionRef, array $payments, ?int $userId = null): array
     {
         if ($payments === []) {
-            throw ValidationException::withMessages(['payments' => 'At least one payment is required.']);
+            throw ValidationException::withMessages([
+                'payments' => 'At least one payment is required.',
+            ]);
         }
 
-        return DB::transaction(function () use ($transactionId, $payments, $userId) {
+        return DB::transaction(function () use ($transactionRef, $payments, $userId) {
+            /** @var Transaction|null $transaction */
+            $transaction = Transaction::query()
+                ->where('itemId', $transactionRef)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$transaction) {
+                throw ValidationException::withMessages([
+                    'transaction' => 'Transaction was not found.',
+                ]);
+            }
+
             $posted = [];
 
-            foreach ($payments as $index => $data) {
-                $method = strtolower((string) ($data['method'] ?? ''));
-                $amount = (float) ($data['amount'] ?? 0);
-                $currency = strtoupper((string) ($data['currency_code'] ?? 'IDR'));
+            foreach (array_values($payments) as $index => $data) {
+                $method = strtolower(trim((string) ($data['method'] ?? '')));
+                $currency = strtoupper(trim((string) ($data['currency_code'] ?? 'IDR')));
+                $amount = $data['amount'] ?? null;
 
                 if (!in_array($method, ['cash', 'bank'], true)) {
-                    throw ValidationException::withMessages(["payments.$index.method" => 'Payment method must be cash or bank.']);
+                    throw ValidationException::withMessages([
+                        "payments.$index.method" => 'Payment method must be cash or bank.',
+                    ]);
                 }
 
-                if ($amount <= 0) {
-                    throw ValidationException::withMessages(["payments.$index.amount" => 'Payment amount must be greater than zero.']);
+                if (!is_numeric($amount) || (float) $amount <= 0) {
+                    throw ValidationException::withMessages([
+                        "payments.$index.amount" => 'Payment amount must be greater than zero.',
+                    ]);
+                }
+
+                if ($currency === '') {
+                    throw ValidationException::withMessages([
+                        "payments.$index.currency_code" => 'Payment currency is required.',
+                    ]);
                 }
 
                 $cashId = $method === 'cash' ? ($data['cash_account_id'] ?? null) : null;
                 $bankId = $method === 'bank' ? ($data['bank_account_id'] ?? null) : null;
 
                 if ($method === 'cash' && !$cashId) {
-                    throw ValidationException::withMessages(["payments.$index.cash_account_id" => 'Cash account is required.']);
+                    throw ValidationException::withMessages([
+                        "payments.$index.cash_account_id" => 'Cash account is required.',
+                    ]);
                 }
 
                 if ($method === 'bank' && !$bankId) {
-                    throw ValidationException::withMessages(["payments.$index.bank_account_id" => 'Bank account is required.']);
+                    throw ValidationException::withMessages([
+                        "payments.$index.bank_account_id" => 'Bank account is required.',
+                    ]);
+                }
+
+                $account = $method === 'cash'
+                    ? ErpCashAccount::query()->whereKey($cashId)->lockForUpdate()->first()
+                    : ErpBankAccount::query()->whereKey($bankId)->lockForUpdate()->first();
+
+                if (!$account) {
+                    throw ValidationException::withMessages([
+                        "payments.$index.account" => ucfirst($method).' account was not found.',
+                    ]);
+                }
+
+                if (!$account->is_active) {
+                    throw ValidationException::withMessages([
+                        "payments.$index.account" => ucfirst($method).' account is inactive.',
+                    ]);
+                }
+
+                if (strtoupper((string) $account->currency_code) !== $currency) {
+                    throw ValidationException::withMessages([
+                        "payments.$index.currency_code" => "Payment currency must match the {$method} account currency.",
+                    ]);
+                }
+
+                // Direction is derived from the transaction, never trusted from the browser.
+                $direction = $this->directionForTransaction((string) $transaction->tipe);
+
+                $idempotencyKey = trim((string) ($data['idempotency_key'] ?? ''));
+                if ($idempotencyKey === '') {
+                    $idempotencyKey = hash('sha256', implode('|', [
+                        $transactionRef,
+                        $index,
+                        $method,
+                        $cashId ?? '',
+                        $bankId ?? '',
+                        $currency,
+                        (string) $amount,
+                        (string) ($data['reference'] ?? ''),
+                    ]));
+                }
+
+                if (strlen($idempotencyKey) > 100) {
+                    throw ValidationException::withMessages([
+                        "payments.$index.idempotency_key" => 'Idempotency key may not exceed 100 characters.',
+                    ]);
+                }
+
+                $existing = ErpPayment::query()
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing) {
+                    if ($existing->transaction_ref !== $transactionRef) {
+                        throw ValidationException::withMessages([
+                            "payments.$index.idempotency_key" => 'Idempotency key is already used by another transaction.',
+                        ]);
+                    }
+
+                    $posted[] = $existing->fresh();
+                    continue;
                 }
 
                 $payment = ErpPayment::create([
                     'payment_no' => $this->number('PAY'),
-                    'transaction_id' => $transactionId,
+                    'transaction_ref' => $transactionRef,
                     'method' => $method,
+                    'direction' => $direction,
                     'currency_code' => $currency,
                     'amount' => $amount,
                     'cash_account_id' => $cashId,
                     'bank_account_id' => $bankId,
                     'reference' => $data['reference'] ?? null,
+                    'idempotency_key' => $idempotencyKey,
                     'status' => 'posted',
                     'paid_at' => now(),
                     'created_by' => $userId,
                 ]);
 
+                $movementData = [
+                    'movement_no' => $this->number($method === 'cash' ? 'CSH' : 'BNK'),
+                    'direction' => $direction,
+                    'amount' => $amount,
+                    'currency_code' => $currency,
+                    'reference_type' => 'payment',
+                    'reference_id' => $payment->id,
+                    'idempotency_key' => $idempotencyKey,
+                    'description' => $data['description'] ?? 'Transaction payment',
+                    'posted_at' => now(),
+                    'created_by' => $userId,
+                ];
+
                 if ($method === 'cash') {
                     ErpCashMovement::create([
                         'cash_account_id' => $cashId,
-                        'movement_no' => $this->number('CSH'),
-                        'direction' => $data['direction'] ?? 'in',
-                        'amount' => $amount,
-                        'currency_code' => $currency,
-                        'reference_type' => 'payment',
-                        'reference_id' => $payment->id,
-                        'description' => $data['description'] ?? 'Transaction payment',
-                        'posted_at' => now(),
-                        'created_by' => $userId,
+                        ...$movementData,
                     ]);
                 } else {
                     ErpBankMovement::create([
                         'bank_account_id' => $bankId,
-                        'movement_no' => $this->number('BNK'),
-                        'direction' => $data['direction'] ?? 'in',
-                        'amount' => $amount,
-                        'currency_code' => $currency,
-                        'reference_type' => 'payment',
-                        'reference_id' => $payment->id,
                         'bank_reference' => $data['bank_reference'] ?? null,
-                        'description' => $data['description'] ?? 'Transaction payment',
-                        'posted_at' => now(),
-                        'created_by' => $userId,
+                        ...$movementData,
                     ]);
                 }
 
@@ -100,7 +198,18 @@ class PaymentPostingService
             }
 
             return $posted;
-        });
+        }, 3);
+    }
+
+    private function directionForTransaction(string $type): string
+    {
+        return match (strtolower(trim($type))) {
+            'beli', 'buy', 'purchase' => 'out',
+            'jual', 'sell', 'sale' => 'in',
+            default => throw ValidationException::withMessages([
+                'transaction' => 'Transaction type is not supported for automatic payment posting.',
+            ]),
+        };
     }
 
     private function number(string $prefix): string
