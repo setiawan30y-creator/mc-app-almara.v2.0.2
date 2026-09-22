@@ -10,8 +10,20 @@ class ErpPayment extends Model
     protected $table = 'erp_payments';
 
     protected $fillable = [
-        'payment_no', 'transaction_id', 'method', 'currency_code', 'amount',
-        'cash_account_id', 'bank_account_id', 'reference', 'status', 'paid_at', 'created_by',
+        'payment_no',
+        'transaction_id',
+        'transaction_ref',
+        'method',
+        'direction',
+        'currency_code',
+        'amount',
+        'cash_account_id',
+        'bank_account_id',
+        'reference',
+        'idempotency_key',
+        'status',
+        'paid_at',
+        'created_by',
     ];
 
     protected $casts = [
@@ -27,5 +39,10 @@ class ErpPayment extends Model
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(ErpBankAccount::class, 'bank_account_id');
+    }
+
+    public function transaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'transaction_ref', 'itemId');
     }
 }
