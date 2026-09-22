@@ -10,25 +10,30 @@ class DevelopmentBypassAuth
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Never allow this mechanism outside a local development environment.
         $enabled = app()->environment('local')
-            && filter_var(env('DEV_BYPASS_AUTH', false), FILTER_VALIDATE_BOOLEAN);
+            && (bool) config('app.dev_bypass_auth', false);
 
         if (!$enabled) {
             return $next($request);
         }
 
-        $request->attributes->set('dev_user', [
+        $devUser = [
             'username' => 'admin',
             'full_name' => 'Administrator',
             'role' => 'owner',
-        ]);
+        ];
+
+        $request->attributes->set('dev_user', $devUser);
 
         $response = $next($request);
 
-        // Dashboard authenticates its initial UI state from localStorage.
-        // In local development only, seed a virtual owner identity so the
-        // developer can inspect the application without a database login.
-        if ($response->headers->get('Content-Type') && str_contains($response->headers->get('Content-Type'), 'text/html')) {
+        // The dashboard currently initializes its UI authentication from
+        // localStorage. Seed the same shape before its scripts execute.
+        if (
+            $response->headers->get('Content-Type')
+            && str_contains($response->headers->get('Content-Type'), 'text/html')
+        ) {
             $content = $response->getContent();
             $bootstrap = <<<'HTML'
 <script>
