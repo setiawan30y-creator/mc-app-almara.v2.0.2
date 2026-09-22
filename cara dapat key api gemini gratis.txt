@@ -1,0 +1,25 @@
+cara dapat key api gemini gratis
+Bisa sekali! Google menyediakan Kunci API Gemini secara gratis melalui platform Google AI Studio yang sangat cocok untuk penggunaan operasional harian.
+
+Berikut adalah informasi detail mengenai penggunaan API Key Gemini gratisan untuk aplikasi Anda:
+
+1. Batasan Kuota Gratis (Free Tier Quota)
+Untuk model Gemini 1.5 Flash / Gemini 2.5 Flash (yang digunakan di aplikasi ini), kuota gratis yang diberikan Google adalah:
+
+15 Permintaan per Menit (RPM): Sangat cukup karena kasir tidak akan melakukan chat/deteksi foto lebih dari 15 kali dalam 1 menit.
+1.500 Permintaan per Hari (RPD): Lebih dari cukup untuk melayani nasabah sepanjang hari kerja.
+1 Juta Token per Menit (TPM): Batas ukuran teks obrolan yang sangat besar.
+Singkatnya, penggunaan gratisan ini sudah sangat mumpuni untuk kebutuhan kasir KUPVA sehari-hari.
+
+2. Cara Mendapatkan Gemini API Key Gratis
+Buka situs Google AI Studio di: https://aistudio.google.com/ (buka lewat browser komputer Anda).
+Masuk (Login) menggunakan akun Google/Gmail biasa milik Anda.
+Klik tombol "Get API Key" di bagian kiri atas halaman.
+Klik tombol "Create API Key" -> Pilih project atau klik "Create API Key in new project".
+Kunci API berupa kode teks panjang akan muncul (misalnya: AIzaSy...). Klik Copy untuk menyalin kunci tersebut.
+3. Cara Memasukkan ke Aplikasi MC Almara
+Buka aplikasi Anda, lalu masuk ke menu Pengaturan (Settings) di sidebar kiri bagian bawah.
+Klik tab Asisten AI.
+Tempelkan (Paste) Kunci API yang sudah Anda salin tadi ke kolom Gemini API Key.
+Klik Simpan Pengaturan.
+Setelah disimpan, Asisten AI Anda akan secara otomatis beralih dari Mode Simulasi menjadi Mode AI Aktif. AI sekarang sudah bisa mendeteksi pecahan gambar uang asli yang Anda unggah secara cerdas, memeriksa ciri-ciri keaslian uang kertas, dan menganalisis pasar keuangan secara real-time.

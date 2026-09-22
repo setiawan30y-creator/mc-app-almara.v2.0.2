@@ -1,0 +1,70 @@
+[90m= [39m<<<[32mEOS[39m
+  [32mAPP_NAME="MC Almara"[39m
+  [32mAPP_ENV=local[39m
+  [32mAPP_KEY=base64:sdOTf0yKaSb37sFqcbPi+TlCHcOSmInjozK32mgQSiQ=[39m
+  [32mAPP_DEBUG=true[39m
+  [32mAPP_URL=https://www.mc-almara.my.id[39m
+  [32mAPP_TIMEZONE=Asia/Jakarta[39m
+  
+  [32m# Goole Vision[39m
+  [32mGOOGLE_VISION_API_KEY=AIzaSyD2n0fqQU4VetxwAjbXDMvdWiMuD48W4hw[39m
+  [32mAPP_LOCALE=en[39m
+  [32mAPP_FALLBACK_LOCALE=en[39m
+  [32mAPP_FAKER_LOCALE=en_US[39m
+  
+  [32mAPP_MAINTENANCE_DRIVER=file[39m
+  [32m# APP_MAINTENANCE_STORE=database[39m
+  
+  [32m# PHP_CLI_SERVER_WORKERS=4[39m
+  
+  [32mBCRYPT_ROUNDS=12[39m
+  
+  [32mLOG_CHANNEL=stack[39m
+  [32mLOG_STACK=single[39m
+  [32mLOG_DEPRECATIONS_CHANNEL=null[39m
+  [32mLOG_LEVEL=debug[39m
+  
+  [32mDB_CONNECTION=mysql[39m
+  [32mDB_HOST=127.0.0.1[39m
+  [32mDB_PORT=3306[39m
+  [32mDB_DATABASE=DB_mc_almara_v2[39m
+  [32mDB_USERNAME=mcalmara[39m
+  [32mDB_PASSWORD=Siganjakartee[39m\$[32m1[39m\$
+  
+  [32mSESSION_DRIVER=cookie[39m
+  [32mSESSION_LIFETIME=525600[39m
+  [32mSESSION_ENCRYPT=false[39m
+  [32mSESSION_PATH=/[39m
+  [32mSESSION_DOMAIN=null[39m
+  
+  [32mBROADCAST_CONNECTION=log[39m
+  [32mFILESYSTEM_DISK=local[39m
+  [32mQUEUE_CONNECTION=sync[39m
+  
+  [32mCACHE_STORE=file[39m
+  [32m# CACHE_PREFIX=[39m
+  
+  [32mMEMCACHED_HOST=127.0.0.1[39m
+  
+  [32mREDIS_CLIENT=phpredis[39m
+  [32mREDIS_HOST=127.0.0.1[39m
+  [32mREDIS_PASSWORD=null[39m
+  [32mREDIS_PORT=6379[39m
+  
+  [32mMAIL_MAILER=log[39m
+  [32mMAIL_SCHEME=null[39m
+  [32mMAIL_HOST=127.0.0.1[39m
+  [32mMAIL_PORT=2525[39m
+  [32mMAIL_USERNAME=null[39m
+  [32mMAIL_PASSWORD=null[39m
+  [32mMAIL_FROM_ADDRESS="hello@example.com"[39m
+  [32mMAIL_FROM_NAME="[39m\$[32m{APP_NAME}"[39m
+  
+  [32mAWS_ACCESS_KEY_ID=[39m
+  [32mAWS_SECRET_ACCESS_KEY=[39m
+  [32mAWS_DEFAULT_REGION=us-east-1[39m
+  [32mAWS_BUCKET=[39m
+  [32mAWS_USE_PATH_STYLE_ENDPOINT=false[39m
+  
+  [32mVITE_APP_NAME="[39m\$[32m{APP_NAME}"[39m
+  [32mEOS[39m
