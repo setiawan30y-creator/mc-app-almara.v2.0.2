@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Datastore;
+use App\Models\ErpBankAccount;
+use App\Models\ErpCashAccount;
+use App\Models\ErpPayment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DatastoreController extends Controller
 {
@@ -22,7 +26,50 @@ class DatastoreController extends Controller
                 $data[$item->store_key] = $raw;
             }
         }
+
+        // ERP is the source of truth for financial balances. These compatibility
+        // keys are intentionally exposed through the existing datastore bridge so
+        // the legacy dashboard can consume ERP balances without maintaining a
+        // second cash/bank calculation in JavaScript.
+        $data['mc_cash'] = $this->erpAccountBalance(
+            ErpCashAccount::query()->where('currency_code', 'IDR')->where('is_active', true)->get()
+        );
+
+        $data['mc_bank_bca'] = $this->erpBankBalanceLike('BCA');
+        $data['mc_bank_mandiri'] = $this->erpBankBalanceLike('MANDIRI');
+
+        // ERP payment totals are provided for the next dashboard layer and for
+        // reconciliation/debugging. They do not replace transaction history.
+        $data['mc_erp_payment_totals'] = [
+            'in' => (float) ErpPayment::query()->where('status', 'posted')->where('direction', 'in')->sum('amount'),
+            'out' => (float) ErpPayment::query()->where('status', 'posted')->where('direction', 'out')->sum('amount'),
+            'count' => (int) ErpPayment::query()->where('status', 'posted')->count(),
+        ];
+
         return response()->json(['status' => 'success', 'data' => $data]);
+    }
+
+    private function erpAccountBalance($accounts): float
+    {
+        return (float) $accounts->sum(function ($account) {
+            $in = (float) $account->movements()->where('direction', 'in')->sum('amount');
+            $out = (float) $account->movements()->where('direction', 'out')->sum('amount');
+            return (float) $account->opening_balance + $in - $out;
+        });
+    }
+
+    private function erpBankBalanceLike(string $bankName): float
+    {
+        return $this->erpAccountBalance(
+            ErpBankAccount::query()
+                ->where('currency_code', 'IDR')
+                ->where('is_active', true)
+                ->where(function ($query) use ($bankName) {
+                    $query->where('bank_name', 'like', '%'.$bankName.'%')
+                        ->orWhere('code', 'like', '%'.$bankName.'%');
+                })
+                ->get()
+        );
     }
 
     public function store(Request $request)
@@ -46,7 +93,7 @@ class DatastoreController extends Controller
                 ['json_data' => $jsonData]
             );
             return response()->json([
-                'status' => 'success', 
+                'status' => 'success',
                 'message' => "Datastore {$validated['store_key']} tersimpan (Laravel)!"
             ]);
         } catch (\Exception $e) {
