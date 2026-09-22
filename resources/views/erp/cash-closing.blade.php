@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Closing Rp & Gantungan - MC Almara</title>
     <style>
-        :root{--paper:#fff;--ink:#20262d;--muted:#69727d;--line:#d9dee4;--line2:#edf0f2;--head:#eef1f4;--ok:#166534;--warn:#9a6700;--bad:#b42318}
+        :root{--paper:#fff;--ink:#20262d;--muted:#69727d;--line:#d9dee4;--line2:#edf0f2;--head:#eef1f4;--nav:#26313a;--ok:#166534;--warn:#9a6700;--bad:#b42318}
         *{box-sizing:border-box}
+        html{scroll-behavior:smooth}
         body{margin:0;background:#e9ecef;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.35}
         .wrap{max-width:1380px;margin:18px auto;padding:0 14px}
         .paper{background:var(--paper);border:1px solid #cfd5db;box-shadow:0 1px 4px #0000000d}
@@ -14,6 +15,11 @@
         .top h1{font-size:20px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.2px}
         .top .sub{font-size:11px;color:var(--muted);margin-top:3px}
         .top a{color:var(--ink);text-decoration:none;border:1px solid var(--line);padding:6px 9px;background:#fafbfc}
+        .erp-nav{display:flex;align-items:stretch;gap:0;background:var(--nav);border-bottom:1px solid #182027;overflow-x:auto;white-space:nowrap}
+        .erp-nav a{display:inline-flex;align-items:center;padding:8px 11px;color:#e9edf0;text-decoration:none;font-size:11px;font-weight:750;border-right:1px solid #3c4750}
+        .erp-nav a:hover{background:#35424c}
+        .erp-nav a.active{background:#fff;color:var(--ink);box-shadow:inset 0 -3px 0 #20262d}
+        .erp-nav .brand{padding:8px 12px;font-size:10px;font-weight:900;letter-spacing:.7px;background:#1c252c;color:#fff;border-right:1px solid #46515a}
         .toolbar{display:flex;align-items:end;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafbfc}
         .row{display:flex;gap:7px;flex-wrap:wrap;align-items:end}
         label{display:grid;gap:3px;font-size:11px;font-weight:700;color:#4c5661}
@@ -55,7 +61,7 @@
         .actions button{padding:4px 7px;min-height:27px;font-size:11px}
         .empty{text-align:center!important;color:var(--muted);padding:14px!important}
         @media(max-width:950px){.summary{grid-template-columns:repeat(3,1fr)}.recon{grid-template-columns:1fr}.recon-form{border-left:0;border-top:1px solid var(--line)}.compact-form .grid{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:600px){.wrap{margin:0;padding:0}.summary{grid-template-columns:1fr 1fr}.metric:nth-child(odd){border-right:1px solid var(--line)}.metric{border-bottom:1px solid var(--line)}.top{align-items:flex-start}.top a{font-size:11px}.toolbar{align-items:stretch}.compact-form .grid{grid-template-columns:1fr}.recon-form{padding:10px}}
+        @media(max-width:600px){.wrap{margin:0;padding:0}.summary{grid-template-columns:1fr 1fr}.metric:nth-child(odd){border-right:1px solid var(--line)}.metric{border-bottom:1px solid var(--line)}.top{align-items:flex-start}.top a{font-size:11px}.toolbar{align-items:stretch}.compact-form .grid{grid-template-columns:1fr}.recon-form{padding:10px}.erp-nav a{padding:8px 9px}.erp-nav .brand{padding:8px 10px}}
     </style>
 </head>
 <body>
@@ -65,6 +71,16 @@
         <div><h1>Closing Rp</h1><div class="sub">Buku Kas • Rekonsiliasi Cash Fisik + Gantungan Outstanding</div></div>
         <a href="/">← Dashboard</a>
     </header>
+
+    <nav class="erp-nav" aria-label="ERP Navigation">
+        <span class="brand">MC ALMARA ERP</span>
+        <a href="/">Dashboard</a>
+        <a href="/erp/closing" class="active">Closing Rp</a>
+        <a href="#reconciliation">Rekonsiliasi</a>
+        <a href="#gantungan">Gantungan</a>
+        <a href="#closing-history">Riwayat Closing</a>
+        <a href="/papan-kurs">Papan Kurs</a>
+    </nav>
 
     @if(session('success'))<div class="flash">{{ session('success') }}</div>@endif
     @if(session('warning'))<div class="flash warn">{{ session('warning') }}</div>@endif
@@ -87,32 +103,34 @@
         <div class="metric"><div class="label">Gantungan Outstanding</div><div class="value">Rp {{ number_format($summary['hanging_amount'],0,',','.') }}</div></div>
     </div>
 
-    <div class="ledger-title">Rekonsiliasi Closing</div>
-    <div class="recon">
-        <div>
-            <table class="recon-table">
-                <tbody>
-                    <tr><td>Expected Cash / Saldo Sistem</td><td>Rp {{ number_format($summary['expected_cash'],0,',','.') }}</td></tr>
-                    <tr><td>Outstanding Gantungan</td><td>Rp {{ number_format($summary['hanging_amount'],0,',','.') }}</td></tr>
-                    <tr class="total"><td>Accounted Cash = Physical + Gantungan</td><td>Diisi saat closing</td></tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="recon-form">
-            <form method="POST" action="/erp/closing">
-                @csrf
-                <input type="hidden" name="closing_date" value="{{ $date }}">
-                <div class="fields">
-                    <label>PHYSICAL CASH (Rp)<input required min="0" step="0.01" type="number" name="physical_cash" placeholder="0"></label>
-                    <label>CATATAN<textarea name="notes" rows="2" placeholder="Catatan closing / selisih"></textarea></label>
-                    <button type="submit">Reconcile & Closing</button>
-                </div>
-                <div class="hint">Closing difinalisasi otomatis bila selisih = Rp0. Gantungan outstanding ikut diperhitungkan dalam rekonsiliasi.</div>
-            </form>
+    <div class="section" id="reconciliation">
+        <div class="ledger-title">Rekonsiliasi Closing</div>
+        <div class="recon">
+            <div>
+                <table class="recon-table">
+                    <tbody>
+                        <tr><td>Expected Cash / Saldo Sistem</td><td>Rp {{ number_format($summary['expected_cash'],0,',','.') }}</td></tr>
+                        <tr><td>Outstanding Gantungan</td><td>Rp {{ number_format($summary['hanging_amount'],0,',','.') }}</td></tr>
+                        <tr class="total"><td>Accounted Cash = Physical + Gantungan</td><td>Diisi saat closing</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="recon-form">
+                <form method="POST" action="/erp/closing">
+                    @csrf
+                    <input type="hidden" name="closing_date" value="{{ $date }}">
+                    <div class="fields">
+                        <label>PHYSICAL CASH (Rp)<input required min="0" step="0.01" type="number" name="physical_cash" placeholder="0"></label>
+                        <label>CATATAN<textarea name="notes" rows="2" placeholder="Catatan closing / selisih"></textarea></label>
+                        <button type="submit">Reconcile & Closing</button>
+                    </div>
+                    <div class="hint">Closing difinalisasi otomatis bila selisih = Rp0. Gantungan outstanding ikut diperhitungkan dalam rekonsiliasi.</div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="gantungan">
         <div class="ledger-title">Gantungan Outstanding</div>
         <div class="compact-form">
             <form method="POST" action="/erp/gantungan">
@@ -136,7 +154,7 @@
         </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="closing-history">
         <div class="ledger-title">Riwayat Closing</div>
         <div class="table-wrap">
         <table class="table"><thead><tr><th>No</th><th>Tanggal</th><th class="num">Expected</th><th class="num">Physical</th><th class="num">Gantungan</th><th class="num">Selisih</th><th>Status</th></tr></thead><tbody>
