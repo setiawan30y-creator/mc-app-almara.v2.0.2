@@ -18,4 +18,9 @@ class ErpGantungan extends Model
         'amount_rp' => 'decimal:2',
         'returned_at' => 'datetime',
     ];
+
+    public function scopeOutstanding($query)
+    {
+        return $query->where('status', 'OUTSTANDING');
+    }
 }
