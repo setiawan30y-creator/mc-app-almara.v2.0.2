@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\Erp\PaymentPostingService;
+use App\Services\Erp\TransactionPostingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ErpPaymentController extends Controller
 {
-    public function store(Request $request, int $transactionId, PaymentPostingService $service): JsonResponse
+    public function store(Request $request, string $transactionId, TransactionPostingService $service): JsonResponse
     {
         $validated = $request->validate([
             'payments' => ['required', 'array', 'min:1'],
@@ -19,16 +19,20 @@ class ErpPaymentController extends Controller
             'payments.*.bank_account_id' => ['nullable', 'integer'],
             'payments.*.reference' => ['nullable', 'string', 'max:255'],
             'payments.*.bank_reference' => ['nullable', 'string', 'max:255'],
-            'payments.*.direction' => ['nullable', 'in:in,out'],
+            'payments.*.idempotency_key' => ['nullable', 'string', 'max:100'],
             'payments.*.description' => ['nullable', 'string'],
         ]);
 
-        $payments = $service->post($transactionId, $validated['payments'], optional($request->user())->id);
+        $result = $service->post(
+            $transactionId,
+            $validated['payments'],
+            optional($request->user())->id
+        );
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment posted successfully.',
-            'data' => $payments,
+            'message' => 'Transaction payment, stock and settlement posted successfully.',
+            'data' => $result,
         ], 201);
     }
 }
