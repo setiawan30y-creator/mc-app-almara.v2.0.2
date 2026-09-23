@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ErpCashAccount;
 use App\Models\ErpCashClosing;
+use App\Models\ErpCashClosingDenomination;
 use App\Models\ErpGantungan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class ErpCashClosingController extends Controller
         $account = $this->getOrCreateIdrCashAccount();
         $summary = $this->calculate($date, $account);
         $gantungan = ErpGantungan::where('status', 'OUTSTANDING')->orderBy('occurred_at')->get();
-        $closings = ErpCashClosing::orderByDesc('closing_date')->limit(30)->get();
+        $closings = ErpCashClosing::with('denominations')->orderByDesc('closing_date')->limit(30)->get();
 
         $start = $date . ' 00:00:00';
         $end = $date . ' 23:59:59';
@@ -27,7 +28,8 @@ class ErpCashClosingController extends Controller
             ->orderBy('id')
             ->get();
 
-        $latestClosing = ErpCashClosing::whereDate('closing_date', $date)
+        $latestClosing = ErpCashClosing::with('denominations')
+            ->whereDate('closing_date', $date)
             ->orderByDesc('id')
             ->first();
 
@@ -36,9 +38,6 @@ class ErpCashClosingController extends Controller
         ));
     }
 
-    /**
-     * Machine-readable ERP source of truth for the legacy Closing Harian UI.
-     */
     public function summary(Request $request)
     {
         $date = $request->date ?: now()->toDateString();
@@ -108,11 +107,14 @@ class ErpCashClosingController extends Controller
         $data = $request->validate([
             'closing_date' => ['required', 'date'],
             'physical_cash' => ['required', 'numeric', 'min:0'],
+            'closing_mode' => ['nullable', 'in:temporary,final'],
+            'denominations' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
         ]);
 
         return DB::transaction(function () use ($data) {
             $date = $data['closing_date'];
+            $mode = $data['closing_mode'] ?? 'final';
             $account = $this->getOrCreateIdrCashAccount(true);
             $summary = $this->calculate($date, $account);
 
@@ -125,7 +127,13 @@ class ErpCashClosingController extends Controller
             $hanging = (float) $summary['hanging_amount'];
             $accounted = $physical + $hanging;
             $difference = $accounted - (float) $summary['expected_cash'];
-            $status = abs($difference) < 0.005 ? 'BALANCED' : ($difference < 0 ? 'SHORT' : 'OVER');
+            $balanced = abs($difference) < 0.005;
+
+            if ($mode === 'temporary') {
+                $status = 'TEMPORARY';
+            } else {
+                $status = $balanced ? 'CLOSED' : ($difference < 0 ? 'SHORT' : 'OVER');
+            }
 
             $closing->fill([
                 'closing_no' => $closing->closing_no ?: 'CLS-' . date('Ymd', strtotime($date)) . '-' . Str::upper(Str::random(4)),
@@ -140,20 +148,55 @@ class ErpCashClosingController extends Controller
                 'difference' => $difference,
                 'status' => $status,
                 'notes' => $data['notes'] ?? null,
-                'closed_by' => $status === 'BALANCED' ? auth()->id() : null,
-                'closed_at' => $status === 'BALANCED' ? now() : null,
+                'closed_by' => $status === 'CLOSED' ? auth()->id() : null,
+                'closed_at' => $status === 'CLOSED' ? now() : null,
             ]);
-            if ($status === 'BALANCED') {
-                $closing->status = 'CLOSED';
-            }
             $closing->created_by = $closing->created_by ?: auth()->id();
             $closing->updated_by = auth()->id();
             $closing->save();
 
-            return back()->with($status === 'CLOSED' ? 'success' : 'warning', $status === 'CLOSED'
-                ? 'Closing berhasil difinalisasi: BALANCED.'
-                : "Closing disimpan sebagai $status dan belum difinalisasi.");
+            $this->saveDenominations($closing, $data['denominations'] ?? null);
+
+            return back()->with(
+                $status === 'CLOSED' ? 'success' : 'warning',
+                $status === 'CLOSED'
+                    ? 'Closing berhasil difinalisasi: BALANCED.'
+                    : ($status === 'TEMPORARY'
+                        ? 'Closing disimpan sementara. Cash Count tetap tersimpan dan belum difinalisasi.'
+                        : "Closing disimpan sebagai $status dan belum difinalisasi.")
+            );
         }, 3);
+    }
+
+    private function saveDenominations(ErpCashClosing $closing, ?string $json): void
+    {
+        if (!$json) {
+            return;
+        }
+
+        $rows = json_decode($json, true);
+        if (!is_array($rows)) {
+            return;
+        }
+
+        $allowed = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500];
+        $closing->denominations()->delete();
+
+        foreach ($rows as $row) {
+            $denom = (int) ($row['denomination'] ?? 0);
+            $qty = max(0, (int) ($row['quantity'] ?? 0));
+            if (!in_array($denom, $allowed, true) || $qty < 1) {
+                continue;
+            }
+
+            ErpCashClosingDenomination::create([
+                'closing_id' => $closing->id,
+                'currency_code' => 'IDR',
+                'denomination' => $denom,
+                'quantity' => $qty,
+                'amount' => $denom * $qty,
+            ]);
+        }
     }
 
     private function getOrCreateIdrCashAccount(bool $lock = false): ErpCashAccount
@@ -216,15 +259,13 @@ class ErpCashClosingController extends Controller
             ->where('reference_type', 'expense')
             ->sum('amount');
 
-        $hanging = $this->hangingAt($end);
-
         return [
             'opening_cash' => $opening,
             'cash_in' => $in,
             'cash_out' => $out,
             'expense' => $expense,
             'expected_cash' => $opening + $in - $out,
-            'hanging_amount' => $hanging,
+            'hanging_amount' => $this->hangingAt($end),
         ];
     }
 
