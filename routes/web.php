@@ -45,7 +45,12 @@ Route::post('/erp/transactions/{transactionId}/payments', [ErpPaymentController:
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.transactions.payments.store');
 
-// ERP Cash Control: Closing Rp and Catatan Gantungan are separate menus but remain integrated.
+// ERP Cash Control: the legacy Closing Harian UI remains the cashier-facing screen.
+// /erp/closing is the internal ERP screen/endpoint, while /erp/closing/summary
+// exposes the same ledger calculation to the legacy UI without duplicating numbers.
+Route::get('/erp/closing/summary', [ErpCashClosingController::class, 'summary'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.closing.summary');
 Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.closing.index');
