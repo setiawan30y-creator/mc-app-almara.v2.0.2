@@ -44,11 +44,20 @@ class EnsureSingleSession
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
+            // API/AJAX requests must not return 423 here because the dashboard
+            // fetch interceptor treats 423 as a single-session conflict and
+            // reloads the page. That creates an endless reload loop when an
+            // old browser tab/session is still active. Return 401 so the
+            // dashboard can perform its existing silent re-login flow.
+            $isApiRequest = $request->expectsJson()
+                || $request->ajax()
+                || $request->is('api/*');
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Akun ini sedang dipakai di perangkat lain. Silakan login ulang.',
+                'message' => 'Sesi login sudah tidak aktif. Silakan autentikasi kembali.',
                 'code' => 'single_session_conflict',
-            ], 423);
+            ], $isApiRequest ? 401 : 423);
         }
 
         return $next($request);
