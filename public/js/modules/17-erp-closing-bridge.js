@@ -14,6 +14,7 @@
 
     const ERP_SUMMARY_URL = '/erp/closing/summary';
     const ERP_STORE_URL = '/erp/closing';
+    const DRAFT_STORAGE_PREFIX = 'almara:closing:draft:';
 
     const FIELD_IDS = {
         kasSistem: ['closingKasSistem'],
@@ -98,6 +99,70 @@
         return 0;
     }
 
+    function writePhysicalCash(value) {
+        const amount = Number(value || 0);
+        const el = findByIds(FIELD_IDS.physical);
+
+        if (el) {
+            if ('value' in el) {
+                el.value = String(amount);
+                el.dataset.value = String(amount);
+            } else {
+                el.textContent = formatMoney(amount);
+                el.dataset.value = String(amount);
+            }
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return el;
+        }
+
+        const fallback = document.querySelector('[data-closing-physical], [data-closing-fisik], #totalCashFisik, #totalCashPhysical');
+        if (fallback) {
+            if ('value' in fallback) fallback.value = String(amount);
+            else fallback.textContent = formatMoney(amount);
+            fallback.dataset.value = String(amount);
+        }
+        return fallback;
+    }
+
+    function draftStorageKey(date = selectedClosingDate()) {
+        return `${DRAFT_STORAGE_PREFIX}${date}`;
+    }
+
+    function rememberTemporaryPhysicalCash(amount, date = selectedClosingDate()) {
+        try {
+            localStorage.setItem(draftStorageKey(date), JSON.stringify({
+                physical_cash: Number(amount || 0),
+                date,
+                saved_at: new Date().toISOString()
+            }));
+        } catch (error) {
+            console.warn('[ERP Closing] Draft physical cash tidak bisa disimpan:', error);
+        }
+    }
+
+    function restoreTemporaryPhysicalCash(date = selectedClosingDate()) {
+        try {
+            const raw = localStorage.getItem(draftStorageKey(date));
+            if (!raw) return null;
+
+            const draft = JSON.parse(raw);
+            if (!draft || draft.physical_cash === undefined) return null;
+
+            writePhysicalCash(draft.physical_cash);
+            return Number(draft.physical_cash || 0);
+        } catch (error) {
+            console.warn('[ERP Closing] Draft physical cash tidak bisa dipulihkan:', error);
+            return null;
+        }
+    }
+
+    function clearTemporaryPhysicalCash(date = selectedClosingDate()) {
+        try {
+            localStorage.removeItem(draftStorageKey(date));
+        } catch (_) {}
+    }
+
     function closingUiExists() {
         return !!(
             findByIds(FIELD_IDS.physical) ||
@@ -136,7 +201,11 @@
         setText(FIELD_IDS.gantunganUtang, 0);
         setText(FIELD_IDS.expenses, data.expense);
 
-        const physical = readPhysicalCash();
+        // A temporary closing is a saved draft, not a new ERP cash movement.
+        // Restore its physical-cash snapshot before calculating reconciliation,
+        // so the cashier does not see Rp 0 after clicking Simpan Sementara.
+        const draftPhysical = restoreTemporaryPhysicalCash();
+        const physical = draftPhysical === null ? readPhysicalCash() : draftPhysical;
         const expected = Number(data.expected_cash || 0);
         const hanging = Number(data.hanging_amount || 0);
         const difference = physical + hanging - expected;
@@ -155,7 +224,6 @@
             sourceNode.style.color = '#10B981';
         }
 
-        // Notify other legacy UI modules without coupling them to this bridge.
         document.dispatchEvent(new CustomEvent('almara:erp-closing-refreshed', {
             detail: { ...data, physical_cash: physical, accounted_cash: physical + hanging, difference }
         }));
@@ -225,12 +293,25 @@
 
         window.saveClosing = async function () {
             const type = findByIds(FIELD_IDS.type)?.value || 'temporary';
+            const closingDate = selectedClosingDate();
 
-            // Temporary save remains owned by the legacy workflow. We still refresh
-            // the ERP numbers afterwards so the screen never displays stale ERP data.
+            // Temporary save remains owned by the legacy workflow, but its
+            // physical-cash result is persisted as a draft so the summary keeps
+            // showing exactly what the cashier counted.
             if (type !== 'final') {
+                const physicalBeforeSave = readPhysicalCash();
+                rememberTemporaryPhysicalCash(physicalBeforeSave, closingDate);
+
                 const result = await legacySaveClosing.apply(this, arguments);
-                setTimeout(() => refreshClosingFromErp(true), 150);
+
+                // Legacy save may reset the total to zero. Restore the saved
+                // snapshot after it finishes, then refresh ERP numbers.
+                writePhysicalCash(physicalBeforeSave);
+                setTimeout(() => {
+                    restoreTemporaryPhysicalCash(closingDate);
+                    refreshClosingFromErp(true);
+                }, 150);
+
                 return result;
             }
 
@@ -254,6 +335,7 @@
 
             try {
                 await postFinalClosingToErp();
+                clearTemporaryPhysicalCash(closingDate);
                 await refreshClosingFromErp(true);
 
                 if (typeof Swal !== 'undefined') {
@@ -280,25 +362,36 @@
 
     function boot() {
         installSaveClosingBridge();
+        restoreTemporaryPhysicalCash();
         refreshClosingFromErp(true);
 
-        findByIds(FIELD_IDS.date)?.addEventListener('change', () => refreshClosingFromErp(true));
+        findByIds(FIELD_IDS.date)?.addEventListener('change', () => {
+            restoreTemporaryPhysicalCash();
+            refreshClosingFromErp(true);
+        });
         findByIds(FIELD_IDS.type)?.addEventListener('change', () => refreshClosingFromErp(true));
 
-        // Legacy Closing Harian may initialize after the main DOM is ready.
-        // Retry briefly and refresh when its save function becomes available.
         let attempts = 0;
         const timer = setInterval(() => {
             installSaveClosingBridge();
-            if (closingUiExists()) refreshClosingFromErp(true);
+            if (closingUiExists()) {
+                restoreTemporaryPhysicalCash();
+                refreshClosingFromErp(true);
+            }
             attempts += 1;
             if (window.__erpClosingBridgeInstalled && attempts >= 8) clearInterval(timer);
             if (attempts >= 30) clearInterval(timer);
         }, 500);
     }
 
-    document.addEventListener('almara:closing-saved', () => refreshClosingFromErp(true));
-    document.addEventListener('almara:closing-updated', () => refreshClosingFromErp(true));
+    document.addEventListener('almara:closing-saved', () => {
+        restoreTemporaryPhysicalCash();
+        refreshClosingFromErp(true);
+    });
+    document.addEventListener('almara:closing-updated', () => {
+        restoreTemporaryPhysicalCash();
+        refreshClosingFromErp(true);
+    });
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot, { once: true });
