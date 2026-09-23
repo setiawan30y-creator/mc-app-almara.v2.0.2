@@ -32,11 +32,20 @@ Route::get('/', function () {
 
     $html = view('dashboard')->render();
     $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-3') . '">';
+    $iso4217Js = '<script src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-2') . '"></script>';
+    $denominationEditorJs = '<script src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
     if (stripos($html, 'currency-master-ui-override.css') === false) {
         $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
     }
+    if (stripos($html, '21-iso4217-currency-dropdown.js') === false) {
+        $html = str_ireplace('</body>', $iso4217Js . "\n</body>", $html);
+    }
+    if (stripos($html, '23-currency-denomination-editor.js') === false) {
+        $html = str_ireplace('</body>', $denominationEditorJs . "\n</body>", $html);
+    }
 
-    // Dashboard isolation: do not inject ERP/currency JS bridges here.
+    // Dashboard isolation: do not inject ERP/currency transaction bridges here.
+    // The denomination editor above is master-data only and has no transaction polling.
     // Dedicated ERP pages keep their existing bridge middleware.
     return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
 })->middleware([DevelopmentBypassAuth::class]);
