@@ -18,9 +18,10 @@ class InjectClosingBridge
 
         $html = $response->getContent();
         $scripts = '<script src="/js/modules/17-erp-closing-bridge.js?v=2cea470"></script>'
-            . '<script src="/js/modules/18-closing-harian-status.js?v=9539584"></script>';
+            . '<script src="/js/modules/18-closing-harian-status.js?v=9539584"></script>'
+            . '<script src="/js/modules/19-erp-transaction-payment-bridge.js?v=7049aa6"></script>';
 
-        if (!str_contains($html, '18-closing-harian-status.js')) {
+        if (!str_contains($html, '19-erp-transaction-payment-bridge.js')) {
             $html = str_replace('</body>', $scripts . '</body>', $html);
             $response->setContent($html);
         }
