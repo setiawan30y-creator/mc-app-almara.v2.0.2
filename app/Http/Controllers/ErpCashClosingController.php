@@ -19,7 +19,21 @@ class ErpCashClosingController extends Controller
         $gantungan = ErpGantungan::where('status', 'OUTSTANDING')->orderBy('occurred_at')->get();
         $closings = ErpCashClosing::orderByDesc('closing_date')->limit(30)->get();
 
-        return view('erp.cash-closing', compact('date', 'account', 'summary', 'gantungan', 'closings'));
+        $start = $date . ' 00:00:00';
+        $end = $date . ' 23:59:59';
+        $movements = $account->movements()
+            ->whereBetween('posted_at', [$start, $end])
+            ->orderBy('posted_at')
+            ->orderBy('id')
+            ->get();
+
+        $latestClosing = ErpCashClosing::whereDate('closing_date', $date)
+            ->orderByDesc('id')
+            ->first();
+
+        return view('erp.cash-closing', compact(
+            'date', 'account', 'summary', 'gantungan', 'closings', 'movements', 'latestClosing'
+        ));
     }
 
     public function gantungan(Request $request)
