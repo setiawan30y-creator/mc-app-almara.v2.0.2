@@ -34,6 +34,7 @@ Route::get('/', function () {
     $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-3') . '">';
     $iso4217Js = '<script src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-2') . '"></script>';
     $denominationEditorJs = '<script src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
+    $denominationFallbackJs = '<script src="' . asset('js/modules/24-currency-denomination-ui-fallback.js?v=20260923-1') . '"></script>';
     if (stripos($html, 'currency-master-ui-override.css') === false) {
         $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
     }
@@ -43,9 +44,12 @@ Route::get('/', function () {
     if (stripos($html, '23-currency-denomination-editor.js') === false) {
         $html = str_ireplace('</body>', $denominationEditorJs . "\n</body>", $html);
     }
+    if (stripos($html, '24-currency-denomination-ui-fallback.js') === false) {
+        $html = str_ireplace('</body>', $denominationFallbackJs . "\n</body>", $html);
+    }
 
     // Dashboard isolation: do not inject ERP/currency transaction bridges here.
-    // The denomination editor above is master-data only and has no transaction polling.
+    // The denomination editors above are master-data only and have no transaction polling.
     // Dedicated ERP pages keep their existing bridge middleware.
     return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
 })->middleware([DevelopmentBypassAuth::class]);
@@ -71,9 +75,9 @@ Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
 Route::post('/erp/closing', [ErpCashClosingController::class, 'store'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.closing.store');
-Route::get('/erp/gantungan', [ErpCashClosingController::class, 'gantungan'])
-    ->middleware(DevelopmentBypassAuth::class)
-    ->name('erp.gantungan.index');
+Route::get('/erp/gantungan', function () {
+    return view('erp.gantungan');
+})->middleware(DevelopmentBypassAuth::class)->name('erp.gantungan.index');
 Route::post('/erp/gantungan', [ErpCashClosingController::class, 'gantunganStore'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.gantungan.store');
