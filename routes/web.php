@@ -45,13 +45,16 @@ Route::post('/erp/transactions/{transactionId}/payments', [ErpPaymentController:
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.transactions.payments.store');
 
-// ERP Cash Control: Gantungan + Closing Rp + Reconciliation.
+// ERP Cash Control: Closing Rp and Catatan Gantungan are separate menus but remain integrated.
 Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.closing.index');
 Route::post('/erp/closing', [ErpCashClosingController::class, 'store'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.closing.store');
+Route::get('/erp/gantungan', [ErpCashClosingController::class, 'gantungan'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.gantungan.index');
 Route::post('/erp/gantungan', [ErpCashClosingController::class, 'gantunganStore'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.gantungan.store');
