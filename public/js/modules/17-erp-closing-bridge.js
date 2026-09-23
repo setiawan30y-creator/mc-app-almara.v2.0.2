@@ -1,396 +1,329 @@
 /*
  * ERP Closing Bridge
  *
- * Keeps the existing cashier-facing Closing Harian screen as the UI,
- * while ERP Ledger is the source of truth for Expected Cash + Gantungan.
- *
- * Important: the legacy Closing Harian screen is not required to have a
- * #closing-view wrapper. Older builds use different DOM structures, so this
- * bridge deliberately works by field IDs and saveClosing() instead of a
- * specific page container.
+ * Closing Harian lama tetap menjadi UI utama.
+ * Temporary = simpan draft/count fisik, JANGAN reset denominasi.
+ * Final = rekonsiliasi dan posting ke ERP.
  */
 (function () {
     'use strict';
 
     const ERP_SUMMARY_URL = '/erp/closing/summary';
     const ERP_STORE_URL = '/erp/closing';
-    const DRAFT_STORAGE_PREFIX = 'almara:closing:draft:';
+    const DRAFT_PREFIX = 'almara:closing:draft:';
 
-    const FIELD_IDS = {
-        kasSistem: ['closingKasSistem'],
-        gantunganPiutang: ['closingGantunganPiutang'],
-        gantunganUtang: ['closingGantunganUtang'],
-        expenses: ['closingTotalExpenses'],
+    const ids = {
         physical: ['closingFisik'],
+        expected: ['closingKasSistem'],
+        hanging: ['closingGantunganPiutang'],
+        expenses: ['closingTotalExpenses'],
         difference: ['closingSelisih'],
-        source: ['closingErpSourceStatus'],
         date: ['closingDateInput'],
         type: ['closingType'],
-        note: ['closingNote']
+        note: ['closingNote'],
+        source: ['closingErpSourceStatus']
     };
 
-    function findByIds(ids) {
-        for (const id of ids) {
+    const find = list => {
+        for (const id of list) {
             const el = document.getElementById(id);
             if (el) return el;
         }
         return null;
-    }
+    };
 
-    function csrfToken() {
-        return typeof window.getCsrfToken === 'function'
-            ? window.getCsrfToken()
-            : (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
-    }
-
-    function selectedClosingDate() {
-        const el = findByIds(FIELD_IDS.date)
-            || document.querySelector('input[name="closing_date"]')
-            || document.querySelector('[data-closing-date]');
-
-        const value = el?.value || el?.dataset?.closingDate;
-        return value?.slice(0, 10) || new Date().toISOString().slice(0, 10);
-    }
-
-    function formatMoney(value) {
+    const money = value => {
         const n = Number(value || 0);
-        return typeof formatIdr === 'function'
-            ? formatIdr(n)
-            : `Rp ${n.toLocaleString('id-ID')}`;
+        return typeof formatIdr === 'function' ? formatIdr(n) : `Rp ${n.toLocaleString('id-ID')}`;
+    };
+
+    const parseMoney = value => {
+        if (value === null || value === undefined || value === '') return 0;
+        const negative = String(value).trim().startsWith('-');
+        const digits = String(value).replace(/[^0-9]/g, '');
+        const n = Number(digits || 0);
+        return negative ? -n : n;
+    };
+
+    function closingDate() {
+        return (find(ids.date)?.value || document.querySelector('[name="closing_date"]')?.value || new Date().toISOString()).slice(0, 10);
     }
 
-    function setText(idOrIds, value) {
-        const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
-        const el = findByIds(ids);
-        if (el) el.textContent = formatMoney(value);
-        return el;
+    function physicalValue() {
+        const el = find(ids.physical);
+        if (!el) return 0;
+        return parseMoney(el.value !== undefined && el.value !== '' ? el.value : el.textContent);
     }
 
-    function parseMoney(value) {
-        if (value === null || value === undefined) return 0;
-        const raw = String(value).trim();
-        if (!raw) return 0;
-        const negative = /^\s*-/.test(raw);
-        const digits = raw.replace(/[^0-9]/g, '');
-        const amount = Number(digits || 0);
-        return negative ? -amount : amount;
+    function setPhysical(value) {
+        const el = find(ids.physical);
+        if (!el) return;
+        if ('value' in el) el.value = String(Number(value || 0));
+        el.dataset.value = String(Number(value || 0));
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    function readPhysicalCash() {
-        const el = findByIds(FIELD_IDS.physical);
-        if (el) {
-            // Prefer a numeric value stored on the element, then its text.
-            const direct = el.value ?? el.dataset?.value;
-            if (direct !== undefined && direct !== '') return parseMoney(direct);
-            return parseMoney(el.textContent);
-        }
-
-        // Fallbacks for older Closing Harian variants.
-        const candidates = [
-            '[data-closing-physical]',
-            '[data-closing-fisik]',
-            '#totalCashFisik',
-            '#totalCashPhysical'
-        ];
-        for (const selector of candidates) {
-            const node = document.querySelector(selector);
-            if (node) return parseMoney(node.value ?? node.textContent);
-        }
-        return 0;
+    function draftKey(date = closingDate()) {
+        return `${DRAFT_PREFIX}${date}`;
     }
 
-    function writePhysicalCash(value) {
-        const amount = Number(value || 0);
-        const el = findByIds(FIELD_IDS.physical);
+    /*
+     * IMPORTANT:
+     * The old Closing Harian screen calculates the physical total from the
+     * denomination inputs. Its save routine clears those inputs after saving.
+     * We therefore snapshot the denomination controls BEFORE saveClosing(),
+     * then restore them AFTER saveClosing() finishes.
+     */
+    function denominationControls() {
+        return Array.from(document.querySelectorAll('input, select, textarea')).filter(el => {
+            if (!el || el.disabled) return false;
+            if (el.type === 'hidden' || el.type === 'button' || el.type === 'submit') return false;
 
-        if (el) {
-            if ('value' in el) {
-                el.value = String(amount);
-                el.dataset.value = String(amount);
+            const key = `${el.id || ''} ${el.name || ''} ${el.className || ''}`.toLowerCase();
+            return /(denom|denominasi|pecahan|jumlah|qty|quantity|count|cash)/.test(key);
+        });
+    }
+
+    function snapshotClosingForm() {
+        const controls = denominationControls();
+        const values = controls.map((el, index) => ({
+            index,
+            id: el.id || '',
+            name: el.name || '',
+            value: el.value,
+            checked: el.checked,
+            type: el.type
+        }));
+
+        return {
+            date: closingDate(),
+            physical: physicalValue(),
+            controls: values,
+            savedAt: Date.now()
+        };
+    }
+
+    function restoreClosingForm(snapshot) {
+        if (!snapshot) return;
+
+        const controls = denominationControls();
+        snapshot.controls.forEach(item => {
+            let el = item.id ? document.getElementById(item.id) : null;
+            if (!el && item.name) {
+                el = controls.find(x => x.name === item.name && x.type === item.type);
+            }
+            if (!el) el = controls[item.index];
+            if (!el) return;
+
+            if (el.type === 'checkbox' || el.type === 'radio') {
+                el.checked = !!item.checked;
             } else {
-                el.textContent = formatMoney(amount);
-                el.dataset.value = String(amount);
+                el.value = item.value ?? '';
             }
             el.dispatchEvent(new Event('input', { bubbles: true }));
             el.dispatchEvent(new Event('change', { bubbles: true }));
-            return el;
-        }
-
-        const fallback = document.querySelector('[data-closing-physical], [data-closing-fisik], #totalCashFisik, #totalCashPhysical');
-        if (fallback) {
-            if ('value' in fallback) fallback.value = String(amount);
-            else fallback.textContent = formatMoney(amount);
-            fallback.dataset.value = String(amount);
-        }
-        return fallback;
-    }
-
-    function draftStorageKey(date = selectedClosingDate()) {
-        return `${DRAFT_STORAGE_PREFIX}${date}`;
-    }
-
-    function rememberTemporaryPhysicalCash(amount, date = selectedClosingDate()) {
-        try {
-            localStorage.setItem(draftStorageKey(date), JSON.stringify({
-                physical_cash: Number(amount || 0),
-                date,
-                saved_at: new Date().toISOString()
-            }));
-        } catch (error) {
-            console.warn('[ERP Closing] Draft physical cash tidak bisa disimpan:', error);
-        }
-    }
-
-    function restoreTemporaryPhysicalCash(date = selectedClosingDate()) {
-        try {
-            const raw = localStorage.getItem(draftStorageKey(date));
-            if (!raw) return null;
-
-            const draft = JSON.parse(raw);
-            if (!draft || draft.physical_cash === undefined) return null;
-
-            writePhysicalCash(draft.physical_cash);
-            return Number(draft.physical_cash || 0);
-        } catch (error) {
-            console.warn('[ERP Closing] Draft physical cash tidak bisa dipulihkan:', error);
-            return null;
-        }
-    }
-
-    function clearTemporaryPhysicalCash(date = selectedClosingDate()) {
-        try {
-            localStorage.removeItem(draftStorageKey(date));
-        } catch (_) {}
-    }
-
-    function closingUiExists() {
-        return !!(
-            findByIds(FIELD_IDS.physical) ||
-            findByIds(FIELD_IDS.kasSistem) ||
-            findByIds(FIELD_IDS.difference) ||
-            findByIds(FIELD_IDS.date) ||
-            document.querySelector('[data-closing-harian]')
-        );
-    }
-
-    async function fetchErpSummary(date = selectedClosingDate()) {
-        const response = await fetch(`${ERP_SUMMARY_URL}?date=${encodeURIComponent(date)}&ts=${Date.now()}`, {
-            method: 'GET',
-            credentials: 'same-origin',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            cache: 'no-store'
         });
 
-        if (!response.ok) throw new Error(`ERP summary HTTP ${response.status}`);
+        // Restore the calculated physical total as well. This is deliberately
+        // done after the denomination events so the displayed total cannot
+        // fall back to zero when the legacy handler resets the form.
+        setPhysical(snapshot.physical);
 
-        const result = await response.json();
-        if (result.status !== 'success' || !result.data) {
-            throw new Error('Format ERP summary tidak valid.');
-        }
-        return result.data;
-    }
+        try {
+            localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot));
+        } catch (_) {}
 
-    function renderErpSummary(data) {
-        window.__almaraErpClosingSummary = data;
-
-        setText(FIELD_IDS.kasSistem, data.expected_cash);
-        setText(FIELD_IDS.gantunganPiutang, Math.max(0, Number(data.hanging_amount || 0)));
-        setText(FIELD_IDS.gantunganUtang, 0);
-        setText(FIELD_IDS.expenses, data.expense);
-
-        // A temporary closing is a saved draft, not a new ERP cash movement.
-        // Restore its physical-cash snapshot before calculating reconciliation,
-        // so the cashier does not see Rp 0 after clicking Simpan Sementara.
-        const draftPhysical = restoreTemporaryPhysicalCash();
-        const physical = draftPhysical === null ? readPhysicalCash() : draftPhysical;
-        const expected = Number(data.expected_cash || 0);
-        const hanging = Number(data.hanging_amount || 0);
-        const difference = physical + hanging - expected;
-
-        const diffNode = findByIds(FIELD_IDS.difference);
-        if (diffNode) {
-            diffNode.textContent = difference === 0
-                ? formatMoney(0)
-                : `${difference < 0 ? '-' : '+'}${formatMoney(Math.abs(difference)).replace(/^[-+]/, '')}`;
-            diffNode.style.color = difference === 0 ? '#10B981' : difference < 0 ? '#F87171' : '#3B82F6';
-        }
-
-        const sourceNode = findByIds(FIELD_IDS.source);
-        if (sourceNode) {
-            sourceNode.textContent = `ERP Ledger aktif • Expected Cash ${formatMoney(expected)} • Gantungan ${formatMoney(hanging)}`;
-            sourceNode.style.color = '#10B981';
-        }
-
-        document.dispatchEvent(new CustomEvent('almara:erp-closing-refreshed', {
-            detail: { ...data, physical_cash: physical, accounted_cash: physical + hanging, difference }
+        document.dispatchEvent(new CustomEvent('almara:closing-draft-restored', {
+            detail: snapshot
         }));
     }
 
-    async function refreshClosingFromErp(force = false) {
-        if (!force && !closingUiExists()) return null;
-
+    function loadDraft(date = closingDate()) {
         try {
-            const data = await fetchErpSummary();
-            renderErpSummary(data);
-            return data;
-        } catch (error) {
-            console.warn('[ERP Closing] Gagal mengambil summary ERP:', error);
-            const sourceNode = findByIds(FIELD_IDS.source);
-            if (sourceNode) {
-                sourceNode.textContent = 'ERP Ledger belum tersambung — angka lokal tidak dianggap final.';
-                sourceNode.style.color = '#F59E0B';
-            }
+            const raw = localStorage.getItem(draftKey(date));
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch (_) {
             return null;
         }
     }
 
-    async function postFinalClosingToErp() {
-        const physicalCash = readPhysicalCash();
-        const closingDate = selectedClosingDate();
-        const noteNode = findByIds(FIELD_IDS.note);
-        const notes = noteNode?.value || '';
+    async function fetchSummary(date = closingDate()) {
+        const response = await fetch(`${ERP_SUMMARY_URL}?date=${encodeURIComponent(date)}&ts=${Date.now()}`, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        if (!response.ok) throw new Error(`ERP summary HTTP ${response.status}`);
+        const result = await response.json();
+        if (result.status !== 'success' || !result.data) throw new Error('Format ERP summary tidak valid.');
+        return result.data;
+    }
 
+    function renderSummary(data) {
+        const expected = Number(data.expected_cash || 0);
+        const hanging = Number(data.hanging_amount || 0);
+        const draft = loadDraft();
+        const physical = draft ? Number(draft.physical || 0) : physicalValue();
+        const difference = physical + hanging - expected;
+
+        const expectedEl = find(ids.expected);
+        const hangingEl = find(ids.hanging);
+        const expenseEl = find(ids.expenses);
+        const diffEl = find(ids.difference);
+
+        if (expectedEl) expectedEl.textContent = money(expected);
+        if (hangingEl) hangingEl.textContent = money(hanging);
+        if (expenseEl) expenseEl.textContent = money(data.expense || 0);
+
+        if (diffEl) {
+            diffEl.textContent = difference === 0
+                ? money(0)
+                : `${difference < 0 ? '-' : '+'}${money(Math.abs(difference))}`;
+            diffEl.style.color = difference === 0 ? '#10B981' : difference < 0 ? '#F87171' : '#3B82F6';
+        }
+
+        const source = find(ids.source);
+        if (source) {
+            source.textContent = `ERP Ledger aktif • Expected Cash ${money(expected)} • Gantungan ${money(hanging)}`;
+            source.style.color = '#10B981';
+        }
+
+        setPhysical(physical);
+    }
+
+    async function refresh() {
+        try {
+            const data = await fetchSummary();
+            window.__almaraErpClosingSummary = data;
+            renderSummary(data);
+            return data;
+        } catch (error) {
+            console.warn('[ERP Closing]', error);
+            return null;
+        }
+    }
+
+    function csrf() {
+        return typeof window.getCsrfToken === 'function'
+            ? window.getCsrfToken()
+            : document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    async function postFinal() {
         const response = await fetch(ERP_STORE_URL, {
             method: 'POST',
             credentials: 'same-origin',
             headers: {
-                'Accept': 'application/json, text/html',
+                Accept: 'application/json, text/html',
                 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': csrfToken()
+                'X-CSRF-TOKEN': csrf()
             },
             body: new URLSearchParams({
-                closing_date: closingDate,
-                physical_cash: String(physicalCash),
-                notes: notes || 'Closing Final dari Closing Harian Kasir'
+                closing_date: closingDate(),
+                physical_cash: String(physicalValue()),
+                notes: find(ids.note)?.value || 'Closing Final dari Closing Harian Kasir'
             }).toString()
         });
 
-        if (response.status === 419) {
-            throw new Error('Token keamanan kedaluwarsa (419). Refresh halaman lalu ulangi closing.');
-        }
-
-        if (!response.ok) {
-            let message = `ERP Closing gagal (HTTP ${response.status}).`;
-            try {
-                const body = await response.text();
-                if (body && body.length < 500) message += ` ${body}`;
-            } catch (_) {}
-            throw new Error(message);
-        }
-
+        if (response.status === 419) throw new Error('Token keamanan kedaluwarsa (419). Refresh halaman lalu ulangi closing.');
+        if (!response.ok) throw new Error(`ERP Closing gagal (HTTP ${response.status}).`);
         return response;
     }
 
-    function installSaveClosingBridge() {
-        if (typeof window.saveClosing !== 'function' || window.__erpClosingBridgeInstalled) return;
+    function install() {
+        if (window.__erpClosingBridgeInstalled) return true;
+        if (typeof window.saveClosing !== 'function') return false;
 
-        const legacySaveClosing = window.saveClosing;
+        const legacySave = window.saveClosing;
         window.__erpClosingBridgeInstalled = true;
 
         window.saveClosing = async function () {
-            const type = findByIds(FIELD_IDS.type)?.value || 'temporary';
-            const closingDate = selectedClosingDate();
+            const type = find(ids.type)?.value || 'temporary';
+            const snapshot = snapshotClosingForm();
 
-            // Temporary save remains owned by the legacy workflow, but its
-            // physical-cash result is persisted as a draft so the summary keeps
-            // showing exactly what the cashier counted.
+            // Temporary: save legacy history, then restore EXACTLY what the
+            // cashier counted. The history entry is kept, but the working form
+            // remains populated for review/reconciliation.
             if (type !== 'final') {
-                const physicalBeforeSave = readPhysicalCash();
-                rememberTemporaryPhysicalCash(physicalBeforeSave, closingDate);
+                try {
+                    localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot));
+                } catch (_) {}
 
-                const result = await legacySaveClosing.apply(this, arguments);
+                const result = await Promise.resolve(legacySave.apply(this, arguments));
 
-                // Legacy save may reset the total to zero. Restore the saved
-                // snapshot after it finishes, then refresh ERP numbers.
-                writePhysicalCash(physicalBeforeSave);
+                const restore = () => restoreClosingForm(snapshot);
+                restore();
+                setTimeout(restore, 50);
+                setTimeout(restore, 200);
+                setTimeout(restore, 500);
                 setTimeout(() => {
-                    restoreTemporaryPhysicalCash(closingDate);
-                    refreshClosingFromErp(true);
-                }, 150);
+                    restore();
+                    refresh();
+                }, 900);
 
                 return result;
             }
 
-            const physical = readPhysicalCash();
-            let erp;
+            // Final: ERP must be balanced before posting/locking.
+            const erp = await fetchSummary();
+            const difference = physicalValue() + Number(erp.hanging_amount || 0) - Number(erp.expected_cash || 0);
 
-            try {
-                erp = await fetchErpSummary();
-            } catch (error) {
-                alert('Closing Final dihentikan: ERP Ledger belum dapat dibaca. ' + error.message);
-                return;
-            }
-
-            const difference = physical + Number(erp.hanging_amount || 0) - Number(erp.expected_cash || 0);
             if (Math.abs(difference) >= 0.005) {
-                alert(`Closing Final belum dapat dikunci. Selisih ERP = ${formatMoney(difference)}. Periksa Cash Fisik dan Gantungan.`);
+                alert(`Closing Final belum dapat dikunci. Selisih ERP = ${money(difference)}.`);
                 return;
             }
 
             if (!confirm('ERP menunjukkan BALANCED. Simpan dan kunci Closing Final?')) return;
 
             try {
-                await postFinalClosingToErp();
-                clearTemporaryPhysicalCash(closingDate);
-                await refreshClosingFromErp(true);
-
-                if (typeof Swal !== 'undefined') {
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Closing Final Berhasil',
-                        text: 'Closing sudah tercatat di ERP Ledger sebagai CLOSED / BALANCED.',
-                        timer: 1800,
-                        showConfirmButton: false
-                    });
-                } else {
-                    alert('Closing Final berhasil dicatat di ERP Ledger.');
-                }
-
-                if (typeof window.openClosingHistoryModal === 'function') {
-                    window.openClosingHistoryModal();
-                }
+                await postFinal();
+                localStorage.removeItem(draftKey(closingDate()));
+                await refresh();
+                alert('Closing Final berhasil dicatat di ERP Ledger.');
+                if (typeof window.openClosingHistoryModal === 'function') window.openClosingHistoryModal();
             } catch (error) {
-                console.error('[ERP Closing] store gagal:', error);
+                console.error('[ERP Closing]', error);
                 alert(error.message || 'Closing Final gagal disimpan ke ERP.');
             }
         };
+
+        return true;
     }
 
     function boot() {
-        installSaveClosingBridge();
-        restoreTemporaryPhysicalCash();
-        refreshClosingFromErp(true);
+        install();
 
-        findByIds(FIELD_IDS.date)?.addEventListener('change', () => {
-            restoreTemporaryPhysicalCash();
-            refreshClosingFromErp(true);
-        });
-        findByIds(FIELD_IDS.type)?.addEventListener('change', () => refreshClosingFromErp(true));
+        const draft = loadDraft();
+        if (draft) restoreClosingForm(draft);
+        refresh();
 
-        let attempts = 0;
+        let tries = 0;
         const timer = setInterval(() => {
-            installSaveClosingBridge();
-            if (closingUiExists()) {
-                restoreTemporaryPhysicalCash();
-                refreshClosingFromErp(true);
-            }
-            attempts += 1;
-            if (window.__erpClosingBridgeInstalled && attempts >= 8) clearInterval(timer);
-            if (attempts >= 30) clearInterval(timer);
+            install();
+            const currentDraft = loadDraft();
+            if (currentDraft) restoreClosingForm(currentDraft);
+            tries++;
+            if (window.__erpClosingBridgeInstalled && tries >= 8) clearInterval(timer);
+            if (tries >= 30) clearInterval(timer);
         }, 500);
     }
 
     document.addEventListener('almara:closing-saved', () => {
-        restoreTemporaryPhysicalCash();
-        refreshClosingFromErp(true);
+        const draft = loadDraft();
+        if (draft) restoreClosingForm(draft);
+        refresh();
     });
+
     document.addEventListener('almara:closing-updated', () => {
-        restoreTemporaryPhysicalCash();
-        refreshClosingFromErp(true);
+        const draft = loadDraft();
+        if (draft) restoreClosingForm(draft);
+        refresh();
     });
 
     if (document.readyState === 'loading') {
@@ -399,5 +332,5 @@
         boot();
     }
 
-    window.refreshClosingFromErp = () => refreshClosingFromErp(true);
+    window.refreshClosingFromErp = refresh;
 })();
