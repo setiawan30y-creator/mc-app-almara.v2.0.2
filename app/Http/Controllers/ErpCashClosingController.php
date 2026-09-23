@@ -14,7 +14,7 @@ class ErpCashClosingController extends Controller
     public function index(Request $request)
     {
         $date = $request->date ?: now()->toDateString();
-        $account = ErpCashAccount::where('currency_code', 'IDR')->where('is_active', true)->orderBy('id')->first();
+        $account = $this->getOrCreateIdrCashAccount();
         $summary = $this->calculate($date, $account);
         $gantungan = ErpGantungan::where('status', 'OUTSTANDING')->orderBy('occurred_at')->get();
         $closings = ErpCashClosing::orderByDesc('closing_date')->limit(30)->get();
@@ -75,7 +75,9 @@ class ErpCashClosingController extends Controller
 
         return DB::transaction(function () use ($data) {
             $date = $data['closing_date'];
-            $account = ErpCashAccount::where('currency_code', 'IDR')->where('is_active', true)->orderBy('id')->lockForUpdate()->firstOrFail();
+            // A new ERP installation may have no active IDR cash account yet.
+            // Provision the default account instead of returning Laravel's 404 from firstOrFail().
+            $account = $this->getOrCreateIdrCashAccount(true);
             $summary = $this->calculate($date, $account);
 
             $closing = ErpCashClosing::firstOrNew(['closing_date' => $date]);
@@ -118,6 +120,29 @@ class ErpCashClosingController extends Controller
         }, 3);
     }
 
+    private function getOrCreateIdrCashAccount(bool $lock = false): ErpCashAccount
+    {
+        $query = ErpCashAccount::where('currency_code', 'IDR')
+            ->where('is_active', true)
+            ->orderBy('id');
+
+        $account = $lock ? $query->lockForUpdate()->first() : $query->first();
+
+        if ($account) {
+            return $account;
+        }
+
+        return ErpCashAccount::firstOrCreate(
+            ['code' => 'CASH-IDR-01'],
+            [
+                'name' => 'Kas Utama IDR',
+                'currency_code' => 'IDR',
+                'opening_balance' => 0,
+                'is_active' => true,
+            ]
+        );
+    }
+
     private function calculate(string $date, ?ErpCashAccount $account): array
     {
         $start = $date . ' 00:00:00';
@@ -134,7 +159,6 @@ class ErpCashClosingController extends Controller
             ];
         }
 
-        // Opening = configured opening balance + all posted cash movements before this date.
         $opening = (float) $account->opening_balance
             + (float) $account->movements()
                 ->where('posted_at', '<', $start)
@@ -168,10 +192,6 @@ class ErpCashClosingController extends Controller
         ];
     }
 
-    /**
-     * Outstanding Gantungan at the selected closing cut-off.
-     * Future-created items and items returned before the cut-off are excluded.
-     */
     private function hangingAt(string $cutoff): float
     {
         return (float) ErpGantungan::query()
