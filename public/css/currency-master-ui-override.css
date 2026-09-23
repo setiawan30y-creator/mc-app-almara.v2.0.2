@@ -1,0 +1,206 @@
+/* Almara Currency Master - readable desktop modal override */
+#currencyModal .almara-currency-modal {
+    width: min(1420px, 96vw) !important;
+    max-width: 1420px !important;
+    max-height: 94vh !important;
+    overflow: auto !important;
+    padding: 0 !important;
+    border-radius: 20px !important;
+}
+
+#currencyModal .almara-cm-head {
+    padding: 24px 30px !important;
+}
+
+#currencyModal .almara-cm-title-icon {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 26px !important;
+}
+
+#currencyModal .almara-cm-title h2 {
+    font-size: 1.65rem !important;
+    line-height: 1.2 !important;
+}
+
+#currencyModal .almara-cm-title p {
+    font-size: .98rem !important;
+}
+
+#currencyModal .almara-cm-body {
+    grid-template-columns: minmax(0, 1fr) 380px !important;
+    gap: 24px !important;
+    padding: 24px 30px !important;
+    align-items: start !important;
+}
+
+#currencyModal .almara-cm-card {
+    border-radius: 16px !important;
+}
+
+#currencyModal .almara-cm-card-head {
+    padding: 17px 20px !important;
+    font-size: 1.02rem !important;
+}
+
+#currencyModal .almara-cm-card-body {
+    padding: 20px !important;
+}
+
+#currencyModal .almara-cm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px 20px !important;
+}
+
+#currencyModal .almara-cm-field label {
+    font-size: .94rem !important;
+    margin-bottom: 8px !important;
+}
+
+#currencyModal .almara-cm-field input,
+#currencyModal .almara-cm-field select {
+    min-height: 48px !important;
+    padding: 12px 14px !important;
+    font-size: 1rem !important;
+    border-radius: 10px !important;
+}
+
+#currencyModal .almara-cm-field small {
+    font-size: .82rem !important;
+    line-height: 1.35 !important;
+}
+
+#currencyModal .almara-cm-switch {
+    min-height: 48px !important;
+    font-size: .98rem !important;
+}
+
+#currencyModal .almara-cm-tabs {
+    padding: 16px 20px 0 !important;
+    gap: 10px !important;
+}
+
+#currencyModal .almara-cm-tab {
+    min-height: 46px !important;
+    font-size: .94rem !important;
+}
+
+#currencyModal .almara-cm-denom-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    padding: 18px 20px 22px !important;
+}
+
+#currencyModal .almara-cm-denom-head {
+    padding: 14px 16px !important;
+    font-size: .98rem !important;
+}
+
+#currencyModal .almara-cm-denom-table th,
+#currencyModal .almara-cm-denom-table td {
+    padding: 11px 13px !important;
+    font-size: .9rem !important;
+}
+
+#currencyModal .almara-cm-mini {
+    width: 34px !important;
+    height: 34px !important;
+}
+
+#currencyModal .almara-cm-add {
+    margin: 12px 14px 16px !important;
+    min-height: 44px !important;
+    padding: 10px 15px !important;
+    font-size: .92rem !important;
+}
+
+#currencyModal .almara-cm-preview {
+    position: sticky !important;
+    top: 12px !important;
+}
+
+#currencyModal .almara-cm-preview-box {
+    margin: 18px !important;
+}
+
+#currencyModal .almara-cm-preview-top {
+    padding: 20px !important;
+}
+
+#currencyModal .almara-cm-flag {
+    width: 68px !important;
+    height: 46px !important;
+    font-size: 1rem !important;
+}
+
+#currencyModal .almara-cm-preview-top strong {
+    font-size: 1.5rem !important;
+}
+
+#currencyModal .almara-cm-preview-top small {
+    font-size: .9rem !important;
+}
+
+#currencyModal .almara-cm-preview-section {
+    padding: 16px 20px !important;
+}
+
+#currencyModal .almara-cm-preview-section h4 {
+    font-size: .92rem !important;
+}
+
+#currencyModal .almara-cm-chip {
+    padding: 7px 11px !important;
+    font-size: .82rem !important;
+}
+
+#currencyModal .almara-cm-note {
+    margin: 0 18px 18px !important;
+    padding: 14px !important;
+    font-size: .84rem !important;
+    line-height: 1.45 !important;
+}
+
+#currencyModal .almara-cm-footer {
+    padding: 18px 30px !important;
+}
+
+#currencyModal .almara-cm-footer button {
+    min-height: 46px !important;
+    min-width: 140px !important;
+    font-size: .95rem !important;
+}
+
+@media (max-width: 1100px) {
+    #currencyModal .almara-cm-body {
+        grid-template-columns: minmax(0, 1fr) 330px !important;
+    }
+}
+
+@media (max-width: 900px) {
+    #currencyModal .almara-currency-modal {
+        width: 96vw !important;
+    }
+    #currencyModal .almara-cm-body {
+        grid-template-columns: 1fr !important;
+    }
+    #currencyModal .almara-cm-preview {
+        position: static !important;
+    }
+}
+
+@media (max-width: 650px) {
+    #currencyModal .almara-cm-head,
+    #currencyModal .almara-cm-body,
+    #currencyModal .almara-cm-footer {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+    #currencyModal .almara-cm-grid,
+    #currencyModal .almara-cm-denom-layout {
+        grid-template-columns: 1fr !important;
+    }
+    #currencyModal .almara-cm-title h2 {
+        font-size: 1.3rem !important;
+    }
+}
