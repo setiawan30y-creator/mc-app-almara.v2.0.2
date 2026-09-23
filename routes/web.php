@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ErpCashClosingController;
 use App\Http\Controllers\ErpPaymentController;
 use App\Http\Middleware\DevelopmentBypassAuth;
+use App\Http\Middleware\InjectClosingBridge;
 use App\Models\Datastore;
 use Illuminate\Support\Facades\Route;
 
@@ -52,7 +53,7 @@ Route::get('/erp/closing/summary', [ErpCashClosingController::class, 'summary'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.closing.summary');
 Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
-    ->middleware(DevelopmentBypassAuth::class)
+    ->middleware([DevelopmentBypassAuth::class, InjectClosingBridge::class])
     ->name('erp.closing.index');
 Route::post('/erp/closing', [ErpCashClosingController::class, 'store'])
     ->middleware(DevelopmentBypassAuth::class)
