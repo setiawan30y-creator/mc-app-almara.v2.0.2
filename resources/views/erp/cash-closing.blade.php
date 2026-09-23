@@ -1,93 +1,16 @@
 <!doctype html>
 <html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Closing Harian - MC Almara</title>
-    <style>
-        :root{--paper:#fff;--ink:#20262d;--muted:#69727d;--line:#d9dee4;--line2:#edf0f2;--head:#eef1f4;--nav:#26313a;--ok:#166534;--warn:#9a6700;--bad:#b42318}
-        *{box-sizing:border-box}html{scroll-behavior:smooth}
-        body{margin:0;background:#e9ecef;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.35}
-        .wrap{max-width:1380px;margin:18px auto;padding:0 14px}.paper{background:var(--paper);border:1px solid #cfd5db;box-shadow:0 1px 4px #0000000d}
-        .top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 14px;border-bottom:2px solid #20262d}.top h1{font-size:20px;line-height:1.1;margin:0;font-weight:800}.top .sub{font-size:11px;color:var(--muted);margin-top:3px}.top a{color:var(--ink);text-decoration:none;border:1px solid var(--line);padding:6px 9px;background:#fafbfc}
-        .erp-nav{display:flex;align-items:stretch;background:var(--nav);border-bottom:1px solid #182027;overflow-x:auto;white-space:nowrap}.erp-nav a{display:inline-flex;align-items:center;padding:8px 11px;color:#e9edf0;text-decoration:none;font-size:11px;font-weight:750;border-right:1px solid #3c4750}.erp-nav a:hover{background:#35424c}.erp-nav a.active{background:#fff;color:var(--ink);box-shadow:inset 0 -3px 0 #20262d}.erp-nav .brand{padding:8px 12px;font-size:10px;font-weight:900;letter-spacing:.7px;background:#1c252c;color:#fff;border-right:1px solid #46515a}
-        .toolbar{display:flex;align-items:end;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafbfc}.row{display:flex;gap:7px;flex-wrap:wrap;align-items:end}label{display:grid;gap:3px;font-size:11px;font-weight:700;color:#4c5661}input,select,textarea,button{font:inherit;border:1px solid #c8ced5;border-radius:3px;background:#fff;color:var(--ink);padding:6px 8px;min-height:31px}textarea{resize:vertical}button{background:#28313a;color:#fff;border-color:#28313a;cursor:pointer;font-weight:700;padding:6px 10px}button:hover{filter:brightness(.94)}
-        .flash{margin:8px 0;padding:7px 9px;border-left:3px solid var(--ok);background:#f0f8f2}.flash.warn{border-color:#b7791f;background:#fff8e8}.ledger-title{padding:7px 10px;background:var(--head);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-        .summary{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line)}.metric{padding:8px 10px;border-right:1px solid var(--line);min-width:0}.metric:last-child{border-right:0}.metric .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.35px}.metric .value{font-size:17px;font-weight:800;white-space:nowrap;margin-top:2px;font-variant-numeric:tabular-nums}
-        .recon{display:grid;grid-template-columns:minmax(0,1fr) 390px;border-bottom:1px solid var(--line)}.recon-table{width:100%;border-collapse:collapse}.recon-table td{padding:5px 10px;border-bottom:1px dotted #cfd4d9;font-variant-numeric:tabular-nums}.recon-table td:last-child{text-align:right;font-weight:750;white-space:nowrap}.recon-table tr.total td{border-top:2px solid #333;border-bottom:0;font-weight:900}.recon-form{border-left:1px solid var(--line);padding:9px 10px;background:#fbfcfd}.recon-form .fields{display:grid;grid-template-columns:1fr;gap:6px}.hint{font-size:10px;color:var(--muted);margin-top:6px}
-        .section{border-bottom:1px solid var(--line)}.section:last-child{border-bottom:0}.table-wrap{overflow:auto}table.table{width:100%;border-collapse:collapse;min-width:820px}.table th{background:#f1f3f5;font-size:10px;text-transform:uppercase;letter-spacing:.35px;font-weight:800;color:#505963;border-bottom:1px solid #c9ced4;white-space:nowrap}.table th,.table td{padding:5px 8px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);text-align:left;vertical-align:middle}.table th:last-child,.table td:last-child{border-right:0}.table tbody tr:nth-child(even){background:#fafbfc}.table tbody tr:hover{background:#f3f6f8}.num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}.status{font-weight:800;white-space:nowrap}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
-        .compact-form{padding:8px 10px;background:#fcfcfd;border-bottom:1px solid var(--line)}.compact-form .grid{display:grid;grid-template-columns:150px 1.2fr 150px 160px 1.4fr auto;gap:7px;align-items:end}.actions{white-space:nowrap}.actions button{padding:4px 7px;min-height:27px;font-size:11px}.empty{text-align:center!important;color:var(--muted);padding:14px!important}
-        .section-note{padding:6px 10px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--line2);background:#fff}
-        @media(max-width:950px){.summary{grid-template-columns:repeat(3,1fr)}.recon{grid-template-columns:1fr}.recon-form{border-left:0;border-top:1px solid var(--line)}.compact-form .grid{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:600px){.wrap{margin:0;padding:0}.summary{grid-template-columns:1fr 1fr}.metric{border-bottom:1px solid var(--line)}.top{align-items:flex-start}.top a{font-size:11px}.toolbar{align-items:stretch}.compact-form .grid{grid-template-columns:1fr}.recon-form{padding:10px}.erp-nav a{padding:8px 9px}.erp-nav .brand{padding:8px 10px}}
-    </style>
-</head>
-<body>
-<div class="wrap"><div class="paper">
-    <header class="top">
-        <div><h1>Closing Harian</h1><div class="sub">Buku Kas • Rekonsiliasi Cash Fisik + Catatan Gantungan</div></div>
-        <a href="/">← Dashboard</a>
-    </header>
-
-    <nav class="erp-nav" aria-label="ERP Navigation">
-        <span class="brand">MC ALMARA ERP</span>
-        <a href="/">Dashboard</a>
-        <a href="/erp/closing" class="active">Closing Harian</a>
-        <a href="#reconciliation">Rekonsiliasi</a>
-        <a href="#gantungan">Catatan Gantungan</a>
-        <a href="#closing-history">Riwayat Closing</a>
-        <a href="/papan-kurs">Papan Kurs</a>
-    </nav>
-
-    @if(session('success'))<div class="flash">{{ session('success') }}</div>@endif
-    @if(session('warning'))<div class="flash warn">{{ session('warning') }}</div>@endif
-    @if($errors->any())<div class="flash warn">{{ $errors->first() }}</div>@endif
-
-    <div class="toolbar">
-        <form method="GET" action="/erp/closing" class="row"><label>TANGGAL<input type="date" name="date" value="{{ $date }}"></label><button type="submit">Hitung</button></form>
-        <div class="sub">Periode: <strong>{{ $date }}</strong></div>
-    </div>
-
-    <div class="ledger-title">Ringkasan Buku Kas</div>
-    <div class="summary">
-        <div class="metric"><div class="label">Opening Cash</div><div class="value">Rp {{ number_format($summary['opening_cash'],0,',','.') }}</div></div>
-        <div class="metric"><div class="label">Cash In</div><div class="value">Rp {{ number_format($summary['cash_in'],0,',','.') }}</div></div>
-        <div class="metric"><div class="label">Cash Out</div><div class="value">Rp {{ number_format($summary['cash_out'],0,',','.') }}</div></div>
-        <div class="metric"><div class="label">Expected Cash</div><div class="value">Rp {{ number_format($summary['expected_cash'],0,',','.') }}</div></div>
-        <div class="metric"><div class="label">Gantungan Outstanding</div><div class="value">Rp {{ number_format($summary['hanging_amount'],0,',','.') }}</div></div>
-    </div>
-
-    <div class="section" id="reconciliation">
-        <div class="ledger-title">Rekonsiliasi Closing</div>
-        <div class="recon"><div><table class="recon-table"><tbody>
-            <tr><td>Expected Cash / Saldo Sistem</td><td>Rp {{ number_format($summary['expected_cash'],0,',','.') }}</td></tr>
-            <tr><td>Outstanding Gantungan</td><td>Rp {{ number_format($summary['hanging_amount'],0,',','.') }}</td></tr>
-            <tr class="total"><td>Accounted Cash = Physical + Gantungan</td><td>Diisi saat closing</td></tr>
-        </tbody></table></div>
-        <div class="recon-form"><form method="POST" action="/erp/closing">
-            @csrf<input type="hidden" name="closing_date" value="{{ $date }}">
-            <div class="fields"><label>PHYSICAL CASH (Rp)<input required min="0" step="0.01" type="number" name="physical_cash" placeholder="0"></label><label>CATATAN<textarea name="notes" rows="2" placeholder="Catatan closing / selisih"></textarea></label><button type="submit">Reconcile & Closing</button></div>
-            <div class="hint">Closing difinalisasi otomatis bila selisih = Rp0. Gantungan outstanding ikut diperhitungkan dalam rekonsiliasi.</div>
-        </form></div></div>
-    </div>
-
-    <div class="section" id="gantungan">
-        <div class="ledger-title">Catatan Gantungan</div>
-        <div class="section-note">Uang Rupiah yang secara fisik berada di luar kas. Status outstanding otomatis masuk perhitungan Closing Harian.</div>
-        <div class="compact-form"><form method="POST" action="/erp/gantungan">@csrf
-            <div class="grid"><label>TANGGAL/JAM<input required type="datetime-local" name="occurred_at" value="{{ now()->format('Y-m-d\\TH:i') }}"></label><label>PENERIMA<input required name="recipient" placeholder="Nama penerima"></label><label>JENIS<select name="type"><option value="OUTSIDE_CASH">OUTSIDE CASH</option><option value="BORROWED">DIPINJAM</option><option value="DEPOSIT">DITITIPKAN</option><option value="TEMP_USE">PENGGUNAAN SEMENTARA</option></select></label><label>NOMINAL RP<input required min="0.01" step="0.01" type="number" name="amount_rp"></label><label>KETERANGAN<input name="description" placeholder="Keterangan"></label><button type="submit">+ Gantungan</button></div>
-        </form></div>
-        <div class="table-wrap"><table class="table"><thead><tr><th>Ref</th><th>Penerima</th><th>Jenis</th><th class="num">Nominal</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-        @forelse($gantungan as $item)<tr><td>{{ $item->reference_no }}</td><td>{{ $item->recipient }}</td><td>{{ $item->type }}</td><td class="num">Rp {{ number_format($item->amount_rp,0,',','.') }}</td><td>{{ $item->occurred_at }}</td><td class="status">{{ $item->status }}</td><td class="actions"><form method="POST" action="/erp/gantungan/{{ $item->id }}/return">@csrf<button type="submit">Kembalikan</button></form></td></tr>
-        @empty<tr><td colspan="7" class="empty">Tidak ada Gantungan Outstanding.</td></tr>@endforelse
-        </tbody></table></div>
-    </div>
-
-    <div class="section" id="closing-history">
-        <div class="ledger-title">Riwayat Closing Harian</div><div class="table-wrap"><table class="table"><thead><tr><th>No</th><th>Tanggal</th><th class="num">Expected</th><th class="num">Physical</th><th class="num">Gantungan</th><th class="num">Selisih</th><th>Status</th></tr></thead><tbody>
-        @forelse($closings as $c)<tr><td>{{ $c->closing_no }}</td><td>{{ $c->closing_date?->format('Y-m-d') }}</td><td class="num">Rp {{ number_format($c->expected_cash,0,',','.') }}</td><td class="num">Rp {{ number_format($c->physical_cash,0,',','.') }}</td><td class="num">Rp {{ number_format($c->hanging_amount,0,',','.') }}</td><td class="num">Rp {{ number_format($c->difference,0,',','.') }}</td><td class="status">{{ $c->status }}</td></tr>
-        @empty<tr><td colspan="7" class="empty">Belum ada closing.</td></tr>@endforelse
-        </tbody></table></div>
-    </div>
-</div></div>
-</body></html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Closing Rp - MC Almara</title>
+<style>
+:root{--paper:#fff;--ink:#20262d;--muted:#69727d;--line:#d9dee4;--line2:#edf0f2;--head:#eef1f4;--nav:#26313a;--ok:#166534;--warn:#9a6700;--bad:#b42318}*{box-sizing:border-box}body{margin:0;background:#e9ecef;color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.35}.wrap{max-width:1380px;margin:18px auto;padding:0 14px}.paper{background:#fff;border:1px solid #cfd5db;box-shadow:0 1px 4px #0001}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 14px;border-bottom:2px solid #20262d}.top h1{font-size:20px;line-height:1.1;margin:0;font-weight:800}.sub{font-size:11px;color:var(--muted);margin-top:3px}.top a{color:var(--ink);text-decoration:none;border:1px solid var(--line);padding:6px 9px;background:#fafbfc}.erp-nav{display:flex;background:var(--nav);overflow-x:auto;white-space:nowrap}.erp-nav a{display:inline-flex;padding:8px 11px;color:#e9edf0;text-decoration:none;font-size:11px;font-weight:750;border-right:1px solid #3c4750}.erp-nav a.active{background:#fff;color:var(--ink);box-shadow:inset 0 -3px #20262d}.erp-nav .brand{padding:8px 12px;font-size:10px;font-weight:900;letter-spacing:.7px;background:#1c252c;color:#fff;border-right:1px solid #46515a}.toolbar{display:flex;align-items:end;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafbfc}.row{display:flex;gap:7px;flex-wrap:wrap;align-items:end}label{display:grid;gap:3px;font-size:11px;font-weight:700;color:#4c5661}input,textarea,button{font:inherit;border:1px solid #c8ced5;border-radius:3px;background:#fff;color:var(--ink);padding:6px 8px;min-height:31px}textarea{resize:vertical}button{background:#28313a;color:#fff;border-color:#28313a;cursor:pointer;font-weight:700}.flash{margin:8px 0;padding:7px 9px;border-left:3px solid var(--ok);background:#f0f8f2}.flash.warn{border-color:#b7791f;background:#fff8e8}.ledger-title{padding:7px 10px;background:var(--head);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}.summary{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line)}.metric{padding:8px 10px;border-right:1px solid var(--line)}.metric:last-child{border-right:0}.metric .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.35px}.metric .value{font-size:17px;font-weight:800;white-space:nowrap;margin-top:2px;font-variant-numeric:tabular-nums}.recon{display:grid;grid-template-columns:minmax(0,1fr) 390px;border-bottom:1px solid var(--line)}.recon-table{width:100%;border-collapse:collapse}.recon-table td{padding:5px 10px;border-bottom:1px dotted #cfd4d9;font-variant-numeric:tabular-nums}.recon-table td:last-child{text-align:right;font-weight:750;white-space:nowrap}.recon-table tr.total td{border-top:2px solid #333;border-bottom:0;font-weight:900}.recon-form{border-left:1px solid var(--line);padding:9px 10px;background:#fbfcfd}.fields{display:grid;gap:6px}.hint{font-size:10px;color:var(--muted);margin-top:6px}.section{border-bottom:1px solid var(--line)}.table-wrap{overflow:auto}table.table{width:100%;border-collapse:collapse;min-width:820px}.table th{background:#f1f3f5;font-size:10px;text-transform:uppercase;letter-spacing:.35px;font-weight:800;color:#505963;white-space:nowrap}.table th,.table td{padding:5px 8px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);text-align:left;vertical-align:middle}.table tbody tr:nth-child(even){background:#fafbfc}.num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}.status{font-weight:800}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.section-note{padding:6px 10px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--line2)}@media(max-width:950px){.summary{grid-template-columns:repeat(3,1fr)}.recon{grid-template-columns:1fr}.recon-form{border-left:0;border-top:1px solid var(--line)}}@media(max-width:600px){.wrap{margin:0;padding:0}.summary{grid-template-columns:1fr 1fr}.top{align-items:flex-start}.erp-nav a{padding:8px 9px}}
+</style></head>
+<body><div class="wrap"><div class="paper">
+<header class="top"><div><h1>Closing Rp</h1><div class="sub">Buku Kas • Rekonsiliasi Cash Fisik + Gantungan Outstanding</div></div><a href="/">← Dashboard</a></header>
+<nav class="erp-nav" aria-label="ERP Navigation"><span class="brand">MC ALMARA ERP</span><a href="/">Dashboard</a><a href="/erp/closing" class="active">Closing Rp</a><a href="/erp/gantungan">Catatan Gantungan</a><a href="#reconciliation">Rekonsiliasi</a><a href="#closing-history">Riwayat Closing</a><a href="/papan-kurs">Papan Kurs</a></nav>
+@if(session('success'))<div class="flash">{{ session('success') }}</div>@endif @if(session('warning'))<div class="flash warn">{{ session('warning') }}</div>@endif @if($errors->any())<div class="flash warn">{{ $errors->first() }}</div>@endif
+<div class="toolbar"><form method="GET" action="/erp/closing" class="row"><label>TANGGAL<input type="date" name="date" value="{{ $date }}"></label><button type="submit">Hitung</button></form><div class="sub">Periode: <strong>{{ $date }}</strong></div></div>
+<div class="ledger-title">Ringkasan Buku Kas</div><div class="summary"><div class="metric"><div class="label">Opening Cash</div><div class="value">Rp {{ number_format($summary['opening_cash'],0,',','.') }}</div></div><div class="metric"><div class="label">Cash In</div><div class="value">Rp {{ number_format($summary['cash_in'],0,',','.') }}</div></div><div class="metric"><div class="label">Cash Out</div><div class="value">Rp {{ number_format($summary['cash_out'],0,',','.') }}</div></div><div class="metric"><div class="label">Expected Cash</div><div class="value">Rp {{ number_format($summary['expected_cash'],0,',','.') }}</div></div><div class="metric"><div class="label">Gantungan Outstanding</div><div class="value">Rp {{ number_format($summary['hanging_amount'],0,',','.') }}</div></div></div>
+<div class="section" id="reconciliation"><div class="ledger-title">Rekonsiliasi Closing</div><div class="recon"><div><table class="recon-table"><tbody><tr><td>Expected Cash / Saldo Sistem</td><td>Rp {{ number_format($summary['expected_cash'],0,',','.') }}</td></tr><tr><td>Outstanding Gantungan</td><td>Rp {{ number_format($summary['hanging_amount'],0,',','.') }}</td></tr><tr class="total"><td>Accounted Cash = Physical + Gantungan</td><td>Diisi saat closing</td></tr></tbody></table></div><div class="recon-form"><form method="POST" action="/erp/closing">@csrf<input type="hidden" name="closing_date" value="{{ $date }}"><div class="fields"><label>PHYSICAL CASH (Rp)<input required min="0" step="0.01" type="number" name="physical_cash" placeholder="0"></label><label>CATATAN<textarea name="notes" rows="2" placeholder="Catatan closing / selisih"></textarea></label><button type="submit">Reconcile & Closing</button></div><div class="hint">Gantungan outstanding ikut diperhitungkan. BALANCED akan memfinalisasi Closing Rp.</div></form></div></div></div>
+<div class="section" id="closing-history"><div class="ledger-title">Riwayat Closing Rp</div><div class="table-wrap"><table class="table"><thead><tr><th>No</th><th>Tanggal</th><th class="num">Expected</th><th class="num">Physical</th><th class="num">Gantungan</th><th class="num">Selisih</th><th>Status</th></tr></thead><tbody>@forelse($closings as $c)<tr><td>{{ $c->closing_no }}</td><td>{{ $c->closing_date?->format('Y-m-d') }}</td><td class="num">Rp {{ number_format($c->expected_cash,0,',','.') }}</td><td class="num">Rp {{ number_format($c->physical_cash,0,',','.') }}</td><td class="num">Rp {{ number_format($c->hanging_amount,0,',','.') }}</td><td class="num">Rp {{ number_format($c->difference,0,',','.') }}</td><td class="status">{{ $c->status }}</td></tr>@empty<tr><td colspan="7" style="text-align:center;color:#69727d;padding:14px">Belum ada closing.</td></tr>@endforelse</tbody></table></div></div>
+</div></div></body></html>
