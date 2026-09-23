@@ -30,7 +30,16 @@ Route::get('/', function () {
         return redirect('/papan-kurs');
     }
 
-    return view('dashboard');
+    // Dashboard tetap menggunakan view utama. Tambahkan stylesheet Currency Master
+    // setelah seluruh stylesheet dashboard agar override layout modal benar-benar
+    // berada di layer terakhir dan tidak tertutup aturan .modal-content lama.
+    $html = view('dashboard')->render();
+    $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-2') . '">';
+    if (stripos($html, 'currency-master-ui-override.css') === false) {
+        $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
+    }
+
+    return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
 })->middleware([DevelopmentBypassAuth::class, InjectClosingBridge::class]);
 
 Route::get('/login', function () {
