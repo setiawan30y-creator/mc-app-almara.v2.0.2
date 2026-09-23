@@ -32,17 +32,13 @@ Route::get('/', function () {
 
     $html = view('dashboard')->render();
     $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-2') . '">';
-    $iso4217Js = '<script src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-1') . '"></script>';
     if (stripos($html, 'currency-master-ui-override.css') === false) {
         $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
     }
-    if (stripos($html, '21-iso4217-currency-dropdown.js') === false) {
-        $html = str_ireplace('</body>', $iso4217Js . "\n</body>", $html);
-    }
 
-    // Denomination transaction bridge sementara dinonaktifkan.
-    // Versi sebelumnya memasang MutationObserver yang memicu perubahan DOM
-    // berulang pada select denominasi sehingga browser terus loading.
+    // Currency/denomination JavaScript bridges are intentionally not injected here.
+    // They will be reintroduced through an event-driven implementation after the
+    // dashboard is stable; body-wide MutationObservers previously caused browser freezes.
     return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
 })->middleware([DevelopmentBypassAuth::class, InjectClosingBridge::class]);
 
