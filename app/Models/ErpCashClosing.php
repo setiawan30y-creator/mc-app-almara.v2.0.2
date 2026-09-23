@@ -11,7 +11,7 @@ class ErpCashClosing extends Model
     protected $fillable = [
         'closing_no', 'closing_date', 'opening_cash', 'cash_in', 'cash_out', 'expense',
         'expected_cash', 'physical_cash', 'hanging_amount', 'accounted_cash', 'difference',
-        'status', 'notes', 'closed_by', 'closed_at',
+        'status', 'notes', 'closed_by', 'closed_at', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
@@ -24,7 +24,6 @@ class ErpCashClosing extends Model
         'physical_cash' => 'decimal:2',
         'hanging_amount' => 'decimal:2',
         'accounted_cash' => 'decimal:2',
-        'difference' => 'decimal:2',
         'closed_at' => 'datetime',
     ];
 }
