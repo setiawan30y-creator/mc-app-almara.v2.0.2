@@ -31,7 +31,7 @@ Route::get('/', function () {
     }
 
     return view('dashboard');
-})->middleware(DevelopmentBypassAuth::class);
+})->middleware([DevelopmentBypassAuth::class, InjectClosingBridge::class]);
 
 Route::get('/login', function () {
     return redirect('/');
@@ -47,8 +47,6 @@ Route::post('/erp/transactions/{transactionId}/payments', [ErpPaymentController:
     ->name('erp.transactions.payments.store');
 
 // ERP Cash Control: the legacy Closing Harian UI remains the cashier-facing screen.
-// /erp/closing is the internal ERP screen/endpoint, while /erp/closing/summary
-// exposes the same ledger calculation to the legacy UI without duplicating numbers.
 Route::get('/erp/closing/summary', [ErpCashClosingController::class, 'summary'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.closing.summary');
