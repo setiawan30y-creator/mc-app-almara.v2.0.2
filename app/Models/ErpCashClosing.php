@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ErpCashClosing extends Model
 {
@@ -26,4 +27,9 @@ class ErpCashClosing extends Model
         'accounted_cash' => 'decimal:2',
         'closed_at' => 'datetime',
     ];
+
+    public function denominations(): HasMany
+    {
+        return $this->hasMany(ErpCashClosingDenomination::class, 'closing_id');
+    }
 }
