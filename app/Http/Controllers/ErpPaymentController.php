@@ -8,6 +8,7 @@ use App\Services\Erp\TransactionPostingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class ErpPaymentController extends Controller
 {
@@ -38,6 +39,18 @@ class ErpPaymentController extends Controller
                     ->orderBy('id')
                     ->first();
 
+                if (!$account && $currency === 'IDR') {
+                    $account = ErpCashAccount::firstOrCreate(
+                        ['code' => 'CASH-IDR-01'],
+                        [
+                            'name' => 'Kas Utama IDR',
+                            'currency_code' => 'IDR',
+                            'opening_balance' => 0,
+                            'is_active' => true,
+                        ]
+                    );
+                }
+
                 if (!$account) {
                     throw ValidationException::withMessages([
                         "payments.$index.cash_account_id" => "Active {$currency} cash account was not found.",
@@ -49,24 +62,44 @@ class ErpPaymentController extends Controller
 
             if ($method === 'bank' && empty($payment['bank_account_id'])) {
                 $bankName = trim((string) ($payment['bank_name'] ?? ''));
+                if ($bankName === '') {
+                    throw ValidationException::withMessages([
+                        "payments.$index.bank_name" => 'Bank name is required for bank payment.',
+                    ]);
+                }
+
                 $query = ErpBankAccount::query()
                     ->where('currency_code', $currency)
-                    ->where('is_active', true);
-
-                if ($bankName !== '') {
-                    $query->where(function ($q) use ($bankName) {
+                    ->where('is_active', true)
+                    ->where(function ($q) use ($bankName) {
                         $q->whereRaw('LOWER(bank_name) = ?', [strtolower($bankName)])
                             ->orWhereRaw('LOWER(bank_name) LIKE ?', ['%'.strtolower($bankName).'%']);
                     });
-                }
 
                 $account = $query->orderBy('id')->first();
 
+                if (!$account && $currency === 'IDR') {
+                    $safeCode = strtoupper(preg_replace('/[^A-Z0-9]+/i', '-', $bankName));
+                    $safeCode = trim($safeCode, '-');
+                    $safeCode = $safeCode !== '' ? $safeCode : 'BANK';
+                    $code = 'BANK-'.$safeCode.'-IDR';
+
+                    $account = ErpBankAccount::firstOrCreate(
+                        ['code' => $code],
+                        [
+                            'bank_name' => $bankName,
+                            'account_name' => null,
+                            'account_number' => null,
+                            'currency_code' => 'IDR',
+                            'opening_balance' => 0,
+                            'is_active' => true,
+                        ]
+                    );
+                }
+
                 if (!$account) {
                     throw ValidationException::withMessages([
-                        "payments.$index.bank_account_id" => $bankName !== ''
-                            ? "Active {$currency} bank account for {$bankName} was not found."
-                            : "Active {$currency} bank account was not found.",
+                        "payments.$index.bank_account_id" => "Active {$currency} bank account for {$bankName} was not found.",
                     ]);
                 }
 
