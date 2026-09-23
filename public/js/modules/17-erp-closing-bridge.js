@@ -57,11 +57,6 @@
         ).slice(0, 10);
     }
 
-    /*
-     * The actual Closing Harian page uses .denom-qty + data-denom.
-     * Always prefer this calculation. It prevents the hidden ERP bridge field
-     * from becoming the source of truth for the physical cash count.
-     */
     function denominationInputs() {
         return Array.from(document.querySelectorAll('input.denom-qty[data-denom]'));
     }
@@ -99,17 +94,14 @@
         writeText(ids.physicalSummary, n);
         writeText(ids.cashTotal, n);
 
-        const inputs = denominationInputs();
-        if (inputs.length) {
-            inputs.forEach(input => {
-                const row = input.closest('tr');
-                const totalCell = row?.querySelector('.line-total');
-                if (totalCell) {
-                    const line = Number(input.dataset.denom || 0) * Math.max(0, Number(input.value || 0));
-                    totalCell.textContent = money(line);
-                }
-            });
-        }
+        denominationInputs().forEach(input => {
+            const row = input.closest('tr');
+            const totalCell = row?.querySelector('.line-total');
+            if (totalCell) {
+                const line = Number(input.dataset.denom || 0) * Math.max(0, Number(input.value || 0));
+                totalCell.textContent = money(line);
+            }
+        });
     }
 
     function updateReconciliation(data = window.__almaraErpClosingSummary || {}) {
@@ -141,7 +133,6 @@
         if (hangingEl) hangingEl.textContent = money(hanging);
 
         setPhysical(physical);
-
         return { expected, hanging, physical, accounted, difference };
     }
 
@@ -149,12 +140,8 @@
         return `${DRAFT_PREFIX}${date}`;
     }
 
-    function denominationControls() {
-        return denominationInputs();
-    }
-
     function snapshotClosingForm() {
-        const controls = denominationControls();
+        const controls = denominationInputs();
         return {
             date: closingDate(),
             physical: calculateDenominationTotal(),
@@ -171,10 +158,19 @@
         };
     }
 
+    function saveDraft(snapshot) {
+        try {
+            localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot));
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
     function restoreClosingForm(snapshot) {
         if (!snapshot) return;
 
-        const controls = denominationControls();
+        const controls = denominationInputs();
         snapshot.controls.forEach(item => {
             let el = item.id ? document.getElementById(item.id) : null;
             if (!el && item.name) el = controls.find(x => x.name === item.name);
@@ -186,11 +182,7 @@
 
         setPhysical(calculateDenominationTotal() || Number(snapshot.physical || 0));
         updateReconciliation();
-
-        try {
-            localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot));
-        } catch (_) {}
-
+        saveDraft(snapshot);
         document.dispatchEvent(new CustomEvent('almara:closing-draft-restored', { detail: snapshot }));
     }
 
@@ -218,7 +210,6 @@
     function renderSummary(data) {
         window.__almaraErpClosingSummary = data;
         updateReconciliation(data);
-
         const source = find(ids.source);
         if (source) {
             source.textContent = `ERP Ledger aktif • Expected Cash ${money(data.expected_cash || 0)} • Gantungan ${money(data.hanging_amount || 0)}`;
@@ -278,15 +269,12 @@
             const snapshot = snapshotClosingForm();
 
             if (type !== 'final') {
-                try { localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot)); } catch (_) {}
-
+                saveDraft(snapshot);
                 const result = await Promise.resolve(legacySave.apply(this, arguments));
-
                 const restore = () => {
                     restoreClosingForm(snapshot);
                     updateReconciliation();
                 };
-
                 restore();
                 setTimeout(restore, 50);
                 setTimeout(restore, 200);
@@ -296,18 +284,15 @@
                     await refresh();
                     updateReconciliation();
                 }, 900);
-
                 return result;
             }
 
             const erp = await fetchSummary();
             const current = updateReconciliation(erp);
-
             if (Math.abs(current.difference) >= 0.005) {
                 alert(`Closing Final belum dapat dikunci. Selisih ERP = ${money(current.difference)}.`);
                 return;
             }
-
             if (!confirm('ERP menunjukkan BALANCED. Simpan dan kunci Closing Final?')) return;
 
             try {
@@ -321,7 +306,6 @@
                 alert(error.message || 'Closing Final gagal disimpan ke ERP.');
             }
         };
-
         return true;
     }
 
@@ -335,9 +319,33 @@
         updateReconciliation();
     }
 
+    /*
+     * The legacy page can submit its form natively instead of calling saveClosing().
+     * In that case the browser reloads the page and the HTML renders zeros again.
+     * Capture only a temporary-save submit, persist the exact denomination snapshot,
+     * and let the normal POST/redirect continue. boot() restores it after reload.
+     */
+    function bindTemporarySubmitDraft() {
+        const form = document.getElementById('closing-form');
+        if (!form || form.dataset.erpTemporaryDraftBound === '1') return;
+        form.dataset.erpTemporaryDraftBound = '1';
+
+        form.addEventListener('submit', event => {
+            const submitter = event.submitter;
+            const label = String(submitter?.value || submitter?.textContent || '').toLowerCase();
+            const type = String(find(ids.type)?.value || submitter?.dataset?.closingType || '').toLowerCase();
+            const temporary = type === 'temporary' || type === 'temp' || label.includes('sementara');
+            if (!temporary) return;
+
+            const snapshot = snapshotClosingForm();
+            saveDraft(snapshot);
+        }, true);
+    }
+
     function boot() {
         install();
         bindDenominationCalculation();
+        bindTemporarySubmitDraft();
 
         const draft = loadDraft();
         if (draft) restoreClosingForm(draft);
@@ -347,6 +355,7 @@
         const timer = setInterval(() => {
             install();
             bindDenominationCalculation();
+            bindTemporarySubmitDraft();
             const currentDraft = loadDraft();
             if (currentDraft) restoreClosingForm(currentDraft);
             tries++;
