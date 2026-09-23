@@ -120,17 +120,43 @@ class ErpCashClosingController extends Controller
 
     private function calculate(string $date, ?ErpCashAccount $account): array
     {
-        if (!$account) {
-            return ['opening_cash' => 0, 'cash_in' => 0, 'cash_out' => 0, 'expense' => 0, 'expected_cash' => 0, 'hanging_amount' => (float) ErpGantungan::outstanding()->sum('amount_rp')];
-        }
-
         $start = $date . ' 00:00:00';
         $end = $date . ' 23:59:59';
-        $opening = (float) $account->opening_balance + (float) $account->movements()->where('posted_at', '<', $start)->sum(DB::raw("CASE WHEN direction = 'IN' THEN amount ELSE -amount END"));
-        $in = (float) $account->movements()->whereBetween('posted_at', [$start, $end])->where('direction', 'IN')->sum('amount');
-        $out = (float) $account->movements()->whereBetween('posted_at', [$start, $end])->where('direction', 'OUT')->sum('amount');
-        $expense = (float) $account->movements()->whereBetween('posted_at', [$start, $end])->where('direction', 'OUT')->where('reference_type', 'expense')->sum('amount');
-        $hanging = (float) ErpGantungan::outstanding()->sum('amount_rp');
+
+        if (!$account) {
+            return [
+                'opening_cash' => 0,
+                'cash_in' => 0,
+                'cash_out' => 0,
+                'expense' => 0,
+                'expected_cash' => 0,
+                'hanging_amount' => $this->hangingAt($end),
+            ];
+        }
+
+        // Opening = configured opening balance + all posted cash movements before this date.
+        $opening = (float) $account->opening_balance
+            + (float) $account->movements()
+                ->where('posted_at', '<', $start)
+                ->sum(DB::raw("CASE WHEN direction = 'IN' THEN amount ELSE -amount END"));
+
+        $in = (float) $account->movements()
+            ->whereBetween('posted_at', [$start, $end])
+            ->where('direction', 'IN')
+            ->sum('amount');
+
+        $out = (float) $account->movements()
+            ->whereBetween('posted_at', [$start, $end])
+            ->where('direction', 'OUT')
+            ->sum('amount');
+
+        $expense = (float) $account->movements()
+            ->whereBetween('posted_at', [$start, $end])
+            ->where('direction', 'OUT')
+            ->where('reference_type', 'expense')
+            ->sum('amount');
+
+        $hanging = $this->hangingAt($end);
 
         return [
             'opening_cash' => $opening,
@@ -140,5 +166,20 @@ class ErpCashClosingController extends Controller
             'expected_cash' => $opening + $in - $out,
             'hanging_amount' => $hanging,
         ];
+    }
+
+    /**
+     * Outstanding Gantungan at the selected closing cut-off.
+     * Future-created items and items returned before the cut-off are excluded.
+     */
+    private function hangingAt(string $cutoff): float
+    {
+        return (float) ErpGantungan::query()
+            ->where('occurred_at', '<=', $cutoff)
+            ->where(function ($query) use ($cutoff) {
+                $query->whereNull('returned_at')
+                    ->orWhere('returned_at', '>', $cutoff);
+            })
+            ->sum('amount_rp');
     }
 }
