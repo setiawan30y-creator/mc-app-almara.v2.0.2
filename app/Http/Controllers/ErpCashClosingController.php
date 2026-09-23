@@ -36,6 +36,30 @@ class ErpCashClosingController extends Controller
         ));
     }
 
+    /**
+     * Machine-readable ERP source of truth for the legacy Closing Harian UI.
+     */
+    public function summary(Request $request)
+    {
+        $date = $request->date ?: now()->toDateString();
+        $account = $this->getOrCreateIdrCashAccount();
+        $summary = $this->calculate($date, $account);
+
+        return response()->json([
+            'status' => 'success',
+            'date' => $date,
+            'source' => 'erp_ledger',
+            'data' => [
+                'opening_cash' => (float) $summary['opening_cash'],
+                'cash_in' => (float) $summary['cash_in'],
+                'cash_out' => (float) $summary['cash_out'],
+                'expense' => (float) $summary['expense'],
+                'expected_cash' => (float) $summary['expected_cash'],
+                'hanging_amount' => (float) $summary['hanging_amount'],
+            ],
+        ]);
+    }
+
     public function gantungan(Request $request)
     {
         $items = ErpGantungan::orderByDesc('occurred_at')->limit(100)->get();
@@ -89,8 +113,6 @@ class ErpCashClosingController extends Controller
 
         return DB::transaction(function () use ($data) {
             $date = $data['closing_date'];
-            // A new ERP installation may have no active IDR cash account yet.
-            // Provision the default account instead of returning Laravel's 404 from firstOrFail().
             $account = $this->getOrCreateIdrCashAccount(true);
             $summary = $this->calculate($date, $account);
 
