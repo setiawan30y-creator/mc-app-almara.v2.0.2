@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ErpCashAccount;
 use App\Models\ErpCashClosing;
-use App\Models\ErpCashMovement;
 use App\Models\ErpGantungan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +20,15 @@ class ErpCashClosingController extends Controller
         $closings = ErpCashClosing::orderByDesc('closing_date')->limit(30)->get();
 
         return view('erp.cash-closing', compact('date', 'account', 'summary', 'gantungan', 'closings'));
+    }
+
+    public function gantungan(Request $request)
+    {
+        $items = ErpGantungan::orderByDesc('occurred_at')->limit(100)->get();
+        $outstanding = (float) ErpGantungan::where('status', 'OUTSTANDING')->sum('amount_rp');
+        $returned = (float) ErpGantungan::where('status', 'RETURNED')->sum('amount_rp');
+
+        return view('erp.gantungan', compact('items', 'outstanding', 'returned'));
     }
 
     public function gantunganStore(Request $request)
