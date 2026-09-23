@@ -10,7 +10,6 @@ use App\Models\ErpPayment;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 
 class PaymentPostingService
 {
@@ -20,15 +19,6 @@ class PaymentPostingService
      * The operation is atomic and idempotent. A payment retry using the same
      * idempotency_key will return the existing posted payment instead of
      * creating another financial movement.
-     *
-     * Each payment may contain:
-     * - method: cash|bank
-     * - amount: positive numeric amount
-     * - currency_code: settlement currency
-     * - cash_account_id for cash
-     * - bank_account_id for bank
-     * - idempotency_key: stable client/request key (recommended)
-     * - reference / bank_reference / description
      */
     public function post(string $transactionRef, array $payments, ?int $userId = null): array
     {
@@ -114,6 +104,7 @@ class PaymentPostingService
                 }
 
                 // Direction is derived from the transaction, never trusted from the browser.
+                // BELI = MC pays IDR to customer (OUT); JUAL = customer pays IDR to MC (IN).
                 $direction = $this->directionForTransaction((string) $transaction->tipe);
 
                 $idempotencyKey = trim((string) ($data['idempotency_key'] ?? ''));
@@ -204,8 +195,8 @@ class PaymentPostingService
     private function directionForTransaction(string $type): string
     {
         return match (strtolower(trim($type))) {
-            'beli', 'buy', 'purchase' => 'out',
-            'jual', 'sell', 'sale' => 'in',
+            'beli', 'buy', 'purchase' => 'OUT',
+            'jual', 'sell', 'sale' => 'IN',
             default => throw ValidationException::withMessages([
                 'transaction' => 'Transaction type is not supported for automatic payment posting.',
             ]),
