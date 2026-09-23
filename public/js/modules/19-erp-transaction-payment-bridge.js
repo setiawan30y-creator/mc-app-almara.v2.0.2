@@ -37,7 +37,7 @@
     }
 
     function buildAllocations(cart, payCash, payTransfer) {
-        const rows = Array.isArray(cart) ? cart.filter(item => Number(item?.totalIdr || 0) > 0) : [];
+        const rows = Array.isArray(cart) ? cart.filter(item => positive(item?.totalIdr) > 0) : [];
         if (!rows.length) return [];
 
         const baseTotal = rows.reduce((sum, item) => sum + positive(item.totalIdr), 0);
@@ -45,19 +45,43 @@
 
         let cashRemaining = positive(payCash);
         let transferRemaining = positive(payTransfer);
+        let itemTotalRemaining = baseTotal;
         const allocations = [];
 
         rows.forEach((item, index) => {
+            const rawItemTotal = positive(item.totalIdr);
             const isLast = index === rows.length - 1;
-            const ratio = positive(item.totalIdr) / baseTotal;
-            const cash = isLast ? cashRemaining : Math.min(cashRemaining, Math.round(positive(payCash) * ratio));
-            const transfer = isLast ? transferRemaining : Math.min(transferRemaining, Math.round(positive(payTransfer) * ratio));
+            const itemTarget = isLast
+                ? Math.max(0, itemTotalRemaining)
+                : Math.min(itemTotalRemaining, Math.max(0, Math.round(rawItemTotal)));
 
-            if (cash > 0) cashRemaining -= cash;
-            if (transfer > 0) transferRemaining -= transfer;
+            const cash = isLast
+                ? Math.min(cashRemaining, itemTarget)
+                : Math.min(cashRemaining, Math.max(0, Math.round(positive(payCash) * rawItemTotal / baseTotal)));
+            const transfer = Math.max(0, itemTarget - cash);
 
-            allocations.push({ item, cash: Math.max(0, cash), transfer: Math.max(0, transfer) });
+            cashRemaining = Math.max(0, cashRemaining - cash);
+            transferRemaining = Math.max(0, transferRemaining - transfer);
+            itemTotalRemaining = Math.max(0, itemTotalRemaining - itemTarget);
+
+            allocations.push({
+                item,
+                cash: Math.max(0, cash),
+                transfer: Math.max(0, transfer)
+            });
         });
+
+        // Correct the final row for any integer rounding drift while preserving
+        // the exact transaction total required by TransactionPostingService.
+        if (allocations.length) {
+            const allocatedCash = allocations.reduce((sum, row) => sum + row.cash, 0);
+            const allocatedTransfer = allocations.reduce((sum, row) => sum + row.transfer, 0);
+            const cashDrift = positive(payCash) - allocatedCash;
+            const transferDrift = positive(payTransfer) - allocatedTransfer;
+            const last = allocations[allocations.length - 1];
+            last.cash = Math.max(0, last.cash + cashDrift);
+            last.transfer = Math.max(0, last.transfer + transferDrift);
+        }
 
         return allocations;
     }
@@ -105,9 +129,9 @@
         const cart = Array.isArray(printContext?.cart) ? printContext.cart : [];
         if (!summary || !summary.receiptId || !cart.length) return { skipped: true };
 
-        // Booking/DP transactions are not in the normal transactions table yet.
-        // Keep them out of this bridge until booking settlement is implemented.
-        if (session.fields?.paymentMethod === 'BOOKING' || session.fields?.checkoutType === 'BOOKING') {
+        // Booking/DP transactions are stored outside the normal transactions table.
+        // ERP payment for bookings will be wired when booking settlement is implemented.
+        if (String(summary.receiptId).toUpperCase().startsWith('BKG-') || session.fields?.checkoutType === 'BOOKING') {
             return { skipped: true, reason: 'booking' };
         }
 
@@ -210,8 +234,6 @@
         const original = window.processPayment;
         window.processPayment = async function (...args) {
             const result = await original.apply(this, args);
-            // processPayment saves the legacy transaction asynchronously; give it
-            // a moment, then the ERP endpoint itself retries until the DB row exists.
             setTimeout(bridgeAfterProcess, 250);
             return result;
         };
