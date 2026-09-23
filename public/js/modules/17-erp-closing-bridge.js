@@ -1,9 +1,8 @@
 /*
  * ERP Closing Bridge
- *
  * Closing Harian lama tetap menjadi UI utama.
- * Temporary = simpan draft/count fisik, JANGAN reset denominasi.
- * Final = rekonsiliasi dan posting ke ERP.
+ * Temporary menyimpan draft/count fisik tanpa mengosongkan denominasi.
+ * Rekonsiliasi membaca langsung total denominasi pada UI lama.
  */
 (function () {
     'use strict';
@@ -13,11 +12,14 @@
     const DRAFT_PREFIX = 'almara:closing:draft:';
 
     const ids = {
-        physical: ['closingFisik'],
-        expected: ['closingKasSistem'],
-        hanging: ['closingGantunganPiutang'],
+        physical: ['closingFisik', 'physical_cash'],
+        physicalSummary: ['physical-summary'],
+        cashTotal: ['cash-total'],
+        expected: ['closingKasSistem', 'expected-cash'],
+        hanging: ['closingGantunganPiutang', 'hanging-cash'],
         expenses: ['closingTotalExpenses'],
-        difference: ['closingSelisih'],
+        accounted: ['accounted-cash'],
+        difference: ['closingSelisih', 'difference'],
         date: ['closingDateInput'],
         type: ['closingType'],
         note: ['closingNote'],
@@ -34,7 +36,9 @@
 
     const money = value => {
         const n = Number(value || 0);
-        return typeof formatIdr === 'function' ? formatIdr(n) : `Rp ${n.toLocaleString('id-ID')}`;
+        return typeof formatIdr === 'function'
+            ? formatIdr(n)
+            : `Rp ${n.toLocaleString('id-ID')}`;
     };
 
     const parseMoney = value => {
@@ -46,60 +50,123 @@
     };
 
     function closingDate() {
-        return (find(ids.date)?.value || document.querySelector('[name="closing_date"]')?.value || new Date().toISOString()).slice(0, 10);
+        return (
+            find(ids.date)?.value ||
+            document.querySelector('[name="closing_date"]')?.value ||
+            new Date().toISOString()
+        ).slice(0, 10);
+    }
+
+    /*
+     * The actual Closing Harian page uses .denom-qty + data-denom.
+     * Always prefer this calculation. It prevents the hidden ERP bridge field
+     * from becoming the source of truth for the physical cash count.
+     */
+    function denominationInputs() {
+        return Array.from(document.querySelectorAll('input.denom-qty[data-denom]'));
+    }
+
+    function calculateDenominationTotal() {
+        return denominationInputs().reduce((total, input) => {
+            const denom = Number(input.dataset.denom || 0);
+            const qty = Math.max(0, Number(input.value || 0));
+            return total + (denom * qty);
+        }, 0);
     }
 
     function physicalValue() {
+        const denominationTotal = calculateDenominationTotal();
+        if (denominationInputs().length) return denominationTotal;
+
         const el = find(ids.physical);
-        if (!el) return 0;
-        return parseMoney(el.value !== undefined && el.value !== '' ? el.value : el.textContent);
+        return el ? parseMoney(el.value !== undefined && el.value !== '' ? el.value : el.textContent) : 0;
+    }
+
+    function writeText(list, value) {
+        const el = find(list);
+        if (el) el.textContent = money(value);
     }
 
     function setPhysical(value) {
-        const el = find(ids.physical);
-        if (!el) return;
-        if ('value' in el) el.value = String(Number(value || 0));
-        el.dataset.value = String(Number(value || 0));
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+        const n = Number(value || 0);
+        const hidden = find(ids.physical);
+
+        if (hidden) {
+            if ('value' in hidden) hidden.value = String(n);
+            hidden.dataset.value = String(n);
+        }
+
+        writeText(ids.physicalSummary, n);
+        writeText(ids.cashTotal, n);
+
+        const inputs = denominationInputs();
+        if (inputs.length) {
+            inputs.forEach(input => {
+                const row = input.closest('tr');
+                const totalCell = row?.querySelector('.line-total');
+                if (totalCell) {
+                    const line = Number(input.dataset.denom || 0) * Math.max(0, Number(input.value || 0));
+                    totalCell.textContent = money(line);
+                }
+            });
+        }
+    }
+
+    function updateReconciliation(data = window.__almaraErpClosingSummary || {}) {
+        const expected = Number(data.expected_cash || 0);
+        const hanging = Number(data.hanging_amount || 0);
+        const physical = physicalValue();
+        const accounted = physical + hanging;
+        const difference = accounted - expected;
+
+        writeText(ids.physicalSummary, physical);
+        writeText(ids.cashTotal, physical);
+        writeText(ids.accounted, accounted);
+
+        const diffEl = find(ids.difference);
+        if (diffEl) {
+            diffEl.textContent = difference === 0
+                ? money(0)
+                : `${difference < 0 ? '-' : '+'}${money(Math.abs(difference))}`;
+            diffEl.classList.toggle('ok', difference === 0);
+            diffEl.classList.toggle('bad', difference < 0);
+            diffEl.classList.toggle('warn', difference > 0);
+            diffEl.style.color = difference === 0 ? '#166534' : difference < 0 ? '#b42318' : '#9a6700';
+        }
+
+        const expectedEl = find(ids.expected);
+        if (expectedEl) expectedEl.textContent = money(expected);
+
+        const hangingEl = find(ids.hanging);
+        if (hangingEl) hangingEl.textContent = money(hanging);
+
+        setPhysical(physical);
+
+        return { expected, hanging, physical, accounted, difference };
     }
 
     function draftKey(date = closingDate()) {
         return `${DRAFT_PREFIX}${date}`;
     }
 
-    /*
-     * IMPORTANT:
-     * The old Closing Harian screen calculates the physical total from the
-     * denomination inputs. Its save routine clears those inputs after saving.
-     * We therefore snapshot the denomination controls BEFORE saveClosing(),
-     * then restore them AFTER saveClosing() finishes.
-     */
     function denominationControls() {
-        return Array.from(document.querySelectorAll('input, select, textarea')).filter(el => {
-            if (!el || el.disabled) return false;
-            if (el.type === 'hidden' || el.type === 'button' || el.type === 'submit') return false;
-
-            const key = `${el.id || ''} ${el.name || ''} ${el.className || ''}`.toLowerCase();
-            return /(denom|denominasi|pecahan|jumlah|qty|quantity|count|cash)/.test(key);
-        });
+        return denominationInputs();
     }
 
     function snapshotClosingForm() {
         const controls = denominationControls();
-        const values = controls.map((el, index) => ({
-            index,
-            id: el.id || '',
-            name: el.name || '',
-            value: el.value,
-            checked: el.checked,
-            type: el.type
-        }));
-
         return {
             date: closingDate(),
-            physical: physicalValue(),
-            controls: values,
+            physical: calculateDenominationTotal(),
+            controls: controls.map((el, index) => ({
+                index,
+                id: el.id || '',
+                name: el.name || '',
+                value: el.value,
+                checked: el.checked,
+                type: el.type,
+                denom: el.dataset.denom || ''
+            })),
             savedAt: Date.now()
         };
     }
@@ -110,40 +177,27 @@
         const controls = denominationControls();
         snapshot.controls.forEach(item => {
             let el = item.id ? document.getElementById(item.id) : null;
-            if (!el && item.name) {
-                el = controls.find(x => x.name === item.name && x.type === item.type);
-            }
+            if (!el && item.name) el = controls.find(x => x.name === item.name);
+            if (!el && item.denom) el = controls.find(x => x.dataset.denom === String(item.denom));
             if (!el) el = controls[item.index];
             if (!el) return;
-
-            if (el.type === 'checkbox' || el.type === 'radio') {
-                el.checked = !!item.checked;
-            } else {
-                el.value = item.value ?? '';
-            }
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
+            el.value = item.value ?? '';
         });
 
-        // Restore the calculated physical total as well. This is deliberately
-        // done after the denomination events so the displayed total cannot
-        // fall back to zero when the legacy handler resets the form.
-        setPhysical(snapshot.physical);
+        setPhysical(calculateDenominationTotal() || Number(snapshot.physical || 0));
+        updateReconciliation();
 
         try {
             localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot));
         } catch (_) {}
 
-        document.dispatchEvent(new CustomEvent('almara:closing-draft-restored', {
-            detail: snapshot
-        }));
+        document.dispatchEvent(new CustomEvent('almara:closing-draft-restored', { detail: snapshot }));
     }
 
     function loadDraft(date = closingDate()) {
         try {
             const raw = localStorage.getItem(draftKey(date));
-            if (!raw) return null;
-            return JSON.parse(raw);
+            return raw ? JSON.parse(raw) : null;
         } catch (_) {
             return null;
         }
@@ -153,10 +207,7 @@
         const response = await fetch(`${ERP_SUMMARY_URL}?date=${encodeURIComponent(date)}&ts=${Date.now()}`, {
             credentials: 'same-origin',
             cache: 'no-store',
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         });
         if (!response.ok) throw new Error(`ERP summary HTTP ${response.status}`);
         const result = await response.json();
@@ -165,45 +216,24 @@
     }
 
     function renderSummary(data) {
-        const expected = Number(data.expected_cash || 0);
-        const hanging = Number(data.hanging_amount || 0);
-        const draft = loadDraft();
-        const physical = draft ? Number(draft.physical || 0) : physicalValue();
-        const difference = physical + hanging - expected;
-
-        const expectedEl = find(ids.expected);
-        const hangingEl = find(ids.hanging);
-        const expenseEl = find(ids.expenses);
-        const diffEl = find(ids.difference);
-
-        if (expectedEl) expectedEl.textContent = money(expected);
-        if (hangingEl) hangingEl.textContent = money(hanging);
-        if (expenseEl) expenseEl.textContent = money(data.expense || 0);
-
-        if (diffEl) {
-            diffEl.textContent = difference === 0
-                ? money(0)
-                : `${difference < 0 ? '-' : '+'}${money(Math.abs(difference))}`;
-            diffEl.style.color = difference === 0 ? '#10B981' : difference < 0 ? '#F87171' : '#3B82F6';
-        }
+        window.__almaraErpClosingSummary = data;
+        updateReconciliation(data);
 
         const source = find(ids.source);
         if (source) {
-            source.textContent = `ERP Ledger aktif • Expected Cash ${money(expected)} • Gantungan ${money(hanging)}`;
-            source.style.color = '#10B981';
+            source.textContent = `ERP Ledger aktif • Expected Cash ${money(data.expected_cash || 0)} • Gantungan ${money(data.hanging_amount || 0)}`;
+            source.style.color = '#166534';
         }
-
-        setPhysical(physical);
     }
 
     async function refresh() {
         try {
             const data = await fetchSummary();
-            window.__almaraErpClosingSummary = data;
             renderSummary(data);
             return data;
         } catch (error) {
             console.warn('[ERP Closing]', error);
+            updateReconciliation();
             return null;
         }
     }
@@ -247,35 +277,34 @@
             const type = find(ids.type)?.value || 'temporary';
             const snapshot = snapshotClosingForm();
 
-            // Temporary: save legacy history, then restore EXACTLY what the
-            // cashier counted. The history entry is kept, but the working form
-            // remains populated for review/reconciliation.
             if (type !== 'final') {
-                try {
-                    localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot));
-                } catch (_) {}
+                try { localStorage.setItem(draftKey(snapshot.date), JSON.stringify(snapshot)); } catch (_) {}
 
                 const result = await Promise.resolve(legacySave.apply(this, arguments));
 
-                const restore = () => restoreClosingForm(snapshot);
+                const restore = () => {
+                    restoreClosingForm(snapshot);
+                    updateReconciliation();
+                };
+
                 restore();
                 setTimeout(restore, 50);
                 setTimeout(restore, 200);
                 setTimeout(restore, 500);
-                setTimeout(() => {
+                setTimeout(async () => {
                     restore();
-                    refresh();
+                    await refresh();
+                    updateReconciliation();
                 }, 900);
 
                 return result;
             }
 
-            // Final: ERP must be balanced before posting/locking.
             const erp = await fetchSummary();
-            const difference = physicalValue() + Number(erp.hanging_amount || 0) - Number(erp.expected_cash || 0);
+            const current = updateReconciliation(erp);
 
-            if (Math.abs(difference) >= 0.005) {
-                alert(`Closing Final belum dapat dikunci. Selisih ERP = ${money(difference)}.`);
+            if (Math.abs(current.difference) >= 0.005) {
+                alert(`Closing Final belum dapat dikunci. Selisih ERP = ${money(current.difference)}.`);
                 return;
             }
 
@@ -296,8 +325,19 @@
         return true;
     }
 
+    function bindDenominationCalculation() {
+        denominationInputs().forEach(input => {
+            if (input.dataset.erpReconBound === '1') return;
+            input.dataset.erpReconBound = '1';
+            input.addEventListener('input', () => updateReconciliation());
+            input.addEventListener('change', () => updateReconciliation());
+        });
+        updateReconciliation();
+    }
+
     function boot() {
         install();
+        bindDenominationCalculation();
 
         const draft = loadDraft();
         if (draft) restoreClosingForm(draft);
@@ -306,6 +346,7 @@
         let tries = 0;
         const timer = setInterval(() => {
             install();
+            bindDenominationCalculation();
             const currentDraft = loadDraft();
             if (currentDraft) restoreClosingForm(currentDraft);
             tries++;
@@ -333,4 +374,5 @@
     }
 
     window.refreshClosingFromErp = refresh;
+    window.recalculateClosingReconciliation = updateReconciliation;
 })();
