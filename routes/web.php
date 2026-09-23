@@ -31,16 +31,15 @@ Route::get('/', function () {
     }
 
     $html = view('dashboard')->render();
-    $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-2') . '">';
+    $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-3') . '">';
     if (stripos($html, 'currency-master-ui-override.css') === false) {
         $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
     }
 
-    // Currency/denomination JavaScript bridges are intentionally not injected here.
-    // They will be reintroduced through an event-driven implementation after the
-    // dashboard is stable; body-wide MutationObservers previously caused browser freezes.
+    // Dashboard isolation: do not inject ERP/currency JS bridges here.
+    // Dedicated ERP pages keep their existing bridge middleware.
     return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
-})->middleware([DevelopmentBypassAuth::class, InjectClosingBridge::class]);
+})->middleware([DevelopmentBypassAuth::class]);
 
 Route::get('/login', function () {
     return redirect('/');
