@@ -75,9 +75,9 @@ Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
 Route::post('/erp/closing', [ErpCashClosingController::class, 'store'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.closing.store');
-Route::get('/erp/gantungan', function () {
-    return view('erp.gantungan');
-})->middleware(DevelopmentBypassAuth::class)->name('erp.gantungan.index');
+Route::get('/erp/gantungan', [ErpCashClosingController::class, 'gantungan'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.gantungan.index');
 Route::post('/erp/gantungan', [ErpCashClosingController::class, 'gantunganStore'])
     ->middleware(DevelopmentBypassAuth::class)
     ->name('erp.gantungan.store');
