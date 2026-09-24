@@ -55,15 +55,14 @@
 
         Object.keys(map).forEach(k => root.style.setProperty(map[k], t[k]));
 
-        // Dashboard still uses the original styles.css variables. Bridge the
-        // global theme into those variables so Dashboard follows the same theme.
+        // Legacy variables used by Dashboard's original styles.css.
         const legacy = {
             '--bg-dark': t.pageBg,
             '--panel-bg': t.cardBg,
             '--panel-border': t.border,
             '--text-primary': t.text,
             '--text-muted': t.textMuted,
-            '--accent-green': t.buy,
+            '--accent-green': t.primary,
             '--accent-green-hover': t.primaryHover,
             '--accent-red': t.sell,
             '--accent-blue': t.primary,
@@ -74,10 +73,35 @@
 
         root.dataset.mcTheme = t.name || 'almara-default';
 
-        // Keep Dashboard's APV theme class active. The APV stylesheet remains
-        // responsible for structural styling while the variables above provide
-        // the user-selected palette.
-        if (document.body) document.body.classList.add('apv-theme');
+        if (document.body) {
+            document.body.classList.add('apv-theme');
+
+            // apv-theme.css declares these same variables on body.apv-theme
+            // with !important. Root variables are therefore shadowed there.
+            // Apply the selected values directly to body with !important so
+            // the Dashboard receives the exact same theme as every other page.
+            const apvLegacy = {
+                '--bg-dark': t.pageBg,
+                '--panel-bg': t.cardBg,
+                '--panel-border': t.border,
+                '--text-primary': t.text,
+                '--text-muted': t.textMuted,
+                '--accent-green': t.primary,
+                '--accent-green-hover': t.primaryHover,
+                '--accent-red': t.sell,
+                '--accent-blue': t.primary,
+                '--accent-blue-hover': t.primaryHover,
+                '--sidebar-bg-apv': t.sidebarBg,
+                '--sidebar-hover-apv': t.primaryHover,
+                '--sidebar-active-apv': t.primary,
+                '--sidebar-border-apv': t.border,
+                '--sidebar-text-apv': t.sidebarText,
+                '--sidebar-label-apv': t.secondary
+            };
+            Object.entries(apvLegacy).forEach(([key, value]) => {
+                document.body.style.setProperty(key, value, 'important');
+            });
+        }
 
         if (persist) {
             try { localStorage.setItem(KEY, JSON.stringify(t)); } catch (e) {}
@@ -91,9 +115,8 @@
         return apply(defaults, false);
     }
 
-    window.MCTheme = { defaults, load, apply, reset, key: KEY, version: 3 };
+    window.MCTheme = { defaults, load, apply, reset, key: KEY, version: 4 };
 
-    // Apply after DOM is available so Dashboard's body can receive apv-theme.
     if (document.body) apply(load(), false);
     else document.addEventListener('DOMContentLoaded', function () { apply(load(), false); }, { once: true });
 })();
