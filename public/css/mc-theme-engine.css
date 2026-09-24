@@ -1,0 +1,31 @@
+:root {
+    --mc-primary:#2563eb;
+    --mc-primary-hover:#1d4ed8;
+    --mc-secondary:#64748b;
+    --mc-page-bg:#f8fafc;
+    --mc-card-bg:#ffffff;
+    --mc-sidebar-bg:#111827;
+    --mc-sidebar-text:#ffffff;
+    --mc-header-bg:#ffffff;
+    --mc-text:#111827;
+    --mc-text-muted:#64748b;
+    --mc-border:#e5e7eb;
+    --mc-input-bg:#ffffff;
+    --mc-input-border:#d1d5db;
+    --mc-button-bg:#2563eb;
+    --mc-button-text:#ffffff;
+    --mc-shadow:0 4px 14px rgba(15,23,42,.08);
+    --mc-radius:12px;
+    --mc-buy:#16a34a;
+    --mc-sell:#dc2626;
+    --mc-draft:#eab308;
+    --mc-final:#16a34a;
+}
+body { background:var(--mc-page-bg); color:var(--mc-text); }
+.mc-theme-card, .card, .panel, .modal-content { border-color:var(--mc-border); box-shadow:var(--mc-shadow); border-radius:var(--mc-radius); }
+button.btn-primary, .btn-primary, .mc-btn-primary { background:var(--mc-button-bg); color:var(--mc-button-text); border-color:var(--mc-button-bg); }
+button.btn-primary:hover, .btn-primary:hover, .mc-btn-primary:hover { background:var(--mc-primary-hover); border-color:var(--mc-primary-hover); }
+input, select, textarea { background:var(--mc-input-bg); border-color:var(--mc-input-border); color:var(--mc-text); }
+.mc-theme-sidebar, aside, .sidebar { background:var(--mc-sidebar-bg); color:var(--mc-sidebar-text); }
+.mc-theme-header, header { background:var(--mc-header-bg); }
+.mc-muted { color:var(--mc-text-muted); }
