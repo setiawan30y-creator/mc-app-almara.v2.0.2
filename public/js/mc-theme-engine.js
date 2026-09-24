@@ -8,14 +8,14 @@
         primary: '#1D6C5D',
         primaryHover: '#123D35',
         secondary: '#69736F',
-        pageBg: '#F0F4F8',
-        cardBg: '#FFFFFF',
+        pageBg: '#F7F5EF',
+        cardBg: '#FCFBF7',
         sidebarBg: '#0B2F29',
         sidebarText: '#B8CEC4',
         headerBg: '#FFFFFF',
         text: '#18221F',
-        textMuted: '#64748B',
-        border: '#E2E8F0',
+        textMuted: '#69736F',
+        border: '#D7D8CF',
         inputBg: '#FFFFFF',
         inputBorder: '#D7D8CF',
         buttonBg: '#1D6C5D',
@@ -52,8 +52,33 @@
     function apply(theme, persist = true) {
         const t = normalize(theme);
         const root = document.documentElement;
+
         Object.keys(map).forEach(k => root.style.setProperty(map[k], t[k]));
+
+        // Dashboard still uses the original styles.css variables. Bridge the
+        // global theme into those variables so Dashboard follows the same theme.
+        const legacy = {
+            '--bg-dark': t.pageBg,
+            '--panel-bg': t.cardBg,
+            '--panel-border': t.border,
+            '--text-primary': t.text,
+            '--text-muted': t.textMuted,
+            '--accent-green': t.buy,
+            '--accent-green-hover': t.primaryHover,
+            '--accent-red': t.sell,
+            '--accent-blue': t.primary,
+            '--accent-blue-hover': t.primaryHover,
+            '--border-radius': t.radius
+        };
+        Object.keys(legacy).forEach(k => root.style.setProperty(k, legacy[k]));
+
         root.dataset.mcTheme = t.name || 'almara-default';
+
+        // Keep Dashboard's APV theme class active. The APV stylesheet remains
+        // responsible for structural styling while the variables above provide
+        // the user-selected palette.
+        if (document.body) document.body.classList.add('apv-theme');
+
         if (persist) {
             try { localStorage.setItem(KEY, JSON.stringify(t)); } catch (e) {}
         }
@@ -66,6 +91,9 @@
         return apply(defaults, false);
     }
 
-    window.MCTheme = { defaults, load, apply, reset, key: KEY, version: 2 };
-    apply(load(), false);
+    window.MCTheme = { defaults, load, apply, reset, key: KEY, version: 3 };
+
+    // Apply after DOM is available so Dashboard's body can receive apv-theme.
+    if (document.body) apply(load(), false);
+    else document.addEventListener('DOMContentLoaded', function () { apply(load(), false); }, { once: true });
 })();
