@@ -1,12 +1,16 @@
 document.addEventListener('DOMContentLoaded', function () {
     if (!window.MCTheme) return;
-    const fields = ['primary','primaryHover','secondary','pageBg','cardBg','sidebarBg','sidebarText','headerBg','text','textMuted','border','inputBg','inputBorder','buttonBg','buttonText','buy','sell','draft','final'];
+
+    const colorFields = ['primary','primaryHover','secondary','pageBg','cardBg','sidebarBg','sidebarText','headerBg','text','textMuted','border','inputBg','inputBorder','buttonBg','buttonText','buy','sell','draft','final'];
     const textFields = ['shadow','radius'];
+    const allFields = [...colorFields, ...textFields];
     const theme = MCTheme.load();
 
-    fields.forEach(k => {
-        const el = document.getElementById('theme-' + k);
-        if (el) el.value = theme[k];
+    colorFields.forEach(k => {
+        const color = document.getElementById('theme-' + k);
+        const text = document.getElementById('theme-' + k + '-text');
+        if (color) color.value = theme[k];
+        if (text) text.value = theme[k];
     });
     textFields.forEach(k => {
         const el = document.getElementById('theme-' + k);
@@ -15,57 +19,103 @@ document.addEventListener('DOMContentLoaded', function () {
     refreshPreview();
 
     document.querySelectorAll('[data-theme-field]').forEach(el => {
-        el.addEventListener('input', refreshPreview);
+        el.addEventListener('input', function () {
+            const key = this.id.replace('theme-', '');
+            const text = document.getElementById('theme-' + key + '-text');
+            if (text && this.type === 'color') text.value = this.value;
+            refreshPreview();
+        });
         el.addEventListener('change', refreshPreview);
+    });
+
+    colorFields.forEach(k => {
+        const text = document.getElementById('theme-' + k + '-text');
+        const color = document.getElementById('theme-' + k);
+        if (!text || !color) return;
+        text.addEventListener('input', function () {
+            if (/^#[0-9a-f]{6}$/i.test(this.value.trim())) color.value = this.value.trim();
+            refreshPreview();
+        });
     });
 
     document.getElementById('theme-save')?.addEventListener('click', function () {
         MCTheme.apply(readForm());
-        toast('Tema berhasil disimpan.');
+        toast('Tema Almara berhasil disimpan.');
     });
+
     document.getElementById('theme-reset')?.addEventListener('click', function () {
-        MCTheme.apply(MCTheme.defaults);
-        location.reload();
+        MCTheme.reset();
+        fillForm(MCTheme.defaults);
+        refreshPreview();
+        toast('Almara Default dipulihkan.');
     });
+
+    const presets = {
+        default: Object.assign({}, MCTheme.defaults),
+        light: Object.assign({}, MCTheme.defaults, {
+            pageBg:'#F7F5EF', cardBg:'#FCFBF7', headerBg:'#FFFFFF', border:'#D7D8CF',
+            text:'#18221F', textMuted:'#69736F', inputBorder:'#D7D8CF'
+        }),
+        dark: Object.assign({}, MCTheme.defaults, {
+            pageBg:'#101A18', cardBg:'#172522', sidebarBg:'#071E1A', sidebarText:'#C7D8D1',
+            headerBg:'#12201D', text:'#F3F7F5', textMuted:'#9EB0A8', border:'#29423B',
+            inputBg:'#10201C', inputBorder:'#36564D', buttonBg:'#2A8A76'
+        }),
+        forest: Object.assign({}, MCTheme.defaults, {
+            primary:'#2E7D6B', primaryHover:'#1F5E50', buttonBg:'#2E7D6B', sidebarBg:'#0A332B'
+        }),
+        classic: Object.assign({}, MCTheme.defaults, {
+            primary:'#366C91', primaryHover:'#285775', buttonBg:'#366C91', sidebarBg:'#18222F',
+            pageBg:'#F4F6F8', cardBg:'#FFFFFF'
+        })
+    };
+
     document.querySelectorAll('[data-preset]').forEach(btn => btn.addEventListener('click', function () {
-        const preset = this.dataset.preset === 'dark' ? darkPreset : this.dataset.preset === 'emerald' ? emeraldPreset : MCTheme.defaults;
-        fillForm(preset); refreshPreview();
+        const preset = presets[this.dataset.preset] || presets.default;
+        fillForm(preset);
+        refreshPreview();
     }));
 
     function readForm() {
         const out = {};
-        [...fields, ...textFields].forEach(k => {
+        allFields.forEach(k => {
             const el = document.getElementById('theme-' + k);
             if (el) out[k] = el.value;
         });
         return out;
     }
+
     function fillForm(t) {
-        Object.keys(t).forEach(k => { const el = document.getElementById('theme-' + k); if (el) el.value = t[k]; });
+        colorFields.forEach(k => {
+            const color = document.getElementById('theme-' + k);
+            const text = document.getElementById('theme-' + k + '-text');
+            if (color) color.value = t[k];
+            if (text) text.value = t[k];
+        });
+        textFields.forEach(k => {
+            const el = document.getElementById('theme-' + k);
+            if (el) el.value = t[k];
+        });
     }
+
     function refreshPreview() {
         const t = readForm();
         const p = document.getElementById('theme-preview');
         if (!p) return;
-        p.style.setProperty('--p-primary', t.primary);
-        p.style.setProperty('--p-page', t.pageBg);
-        p.style.setProperty('--p-card', t.cardBg);
-        p.style.setProperty('--p-sidebar', t.sidebarBg);
-        p.style.setProperty('--p-sidebar-text', t.sidebarText);
-        p.style.setProperty('--p-text', t.text);
-        p.style.setProperty('--p-muted', t.textMuted);
-        p.style.setProperty('--p-border', t.border);
-        p.style.setProperty('--p-button', t.buttonBg);
-        p.style.setProperty('--p-button-text', t.buttonText);
-        p.style.setProperty('--p-shadow', t.shadow);
-        p.style.setProperty('--p-radius', t.radius);
+        const map = {
+            primary:'--p-primary', pageBg:'--p-page', cardBg:'--p-card', sidebarBg:'--p-sidebar',
+            sidebarText:'--p-sidebar-text', text:'--p-text', textMuted:'--p-muted', border:'--p-border',
+            buttonBg:'--p-button', buttonText:'--p-button-text', shadow:'--p-shadow', radius:'--p-radius',
+            buy:'--p-buy', sell:'--p-sell'
+        };
+        Object.keys(map).forEach(k => p.style.setProperty(map[k], t[k]));
     }
+
     function toast(message) {
         const el = document.getElementById('theme-toast');
         if (!el) return;
-        el.textContent = message; el.classList.add('show');
+        el.textContent = message;
+        el.classList.add('show');
         setTimeout(() => el.classList.remove('show'), 1800);
     }
-    const darkPreset = Object.assign({}, MCTheme.defaults, {pageBg:'#0f172a',cardBg:'#1e293b',sidebarBg:'#020617',sidebarText:'#e2e8f0',headerBg:'#111827',text:'#f8fafc',textMuted:'#94a3b8',border:'#334155',inputBg:'#0f172a',inputBorder:'#475569',buttonBg:'#3b82f6'});
-    const emeraldPreset = Object.assign({}, MCTheme.defaults, {primary:'#059669',primaryHover:'#047857',buttonBg:'#059669',sidebarBg:'#064e3b',buy:'#16a34a'});
 });
