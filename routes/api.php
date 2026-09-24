@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\CurrencyDenominationController;
 use App\Http\Controllers\DatastoreController;
 use App\Http\Controllers\SmartdealController;
 use App\Http\Controllers\UploadController;
@@ -46,6 +47,15 @@ Route::middleware(['web', 'auth', 'single.session'])->group(function () {
     Route::get('/currencies', [CurrencyController::class, 'index']);
     Route::post('/currencies', [CurrencyController::class, 'store']);
     Route::delete('/currencies', [CurrencyController::class, 'destroy'])->middleware('role:owner,superadmin,admin,supervisor');
+
+    // Master pecahan valuta: dipisahkan dari master valuta utama agar
+    // pecahan dapat dipakai kembali oleh Manajemen Kurs, POS, dan Stok Valas.
+    Route::get('/currency-denominations', [CurrencyDenominationController::class, 'index']);
+    Route::post('/currency-denominations', [CurrencyDenominationController::class, 'store']);
+    Route::get('/currency-denominations/{currencyDenomination}', [CurrencyDenominationController::class, 'show']);
+    Route::put('/currency-denominations/{currencyDenomination}', [CurrencyDenominationController::class, 'update']);
+    Route::patch('/currency-denominations/{currencyDenomination}', [CurrencyDenominationController::class, 'update']);
+    Route::delete('/currency-denominations/{currencyDenomination}', [CurrencyDenominationController::class, 'destroy'])->middleware('role:owner,superadmin,admin,supervisor');
 
     Route::get('/smartdeal-rates', [SmartdealController::class, 'rates']);
 
