@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Tenant;
 use App\Models\TenantDomain;
 use Closure;
 use Illuminate\Http\Request;
@@ -14,26 +13,30 @@ class TenantSubdomainMiddleware
     {
         $host = strtolower($request->getHost());
 
-        // Local development:
-        // abc.mc-app-almara.v2.0.2.test
-        // Production:
-        // abc.mc-almara.com
-        $domain = TenantDomain::query()
+        /*
+         * Local:
+         *   abc.mc-app-almara.v2.0.2.test
+         *
+         * Production:
+         *   abc.mc-almara.com
+         */
+        $tenantDomain = TenantDomain::query()
             ->with('tenant')
             ->where('host', $host)
             ->where('status', 'active')
             ->first();
 
-        if ($domain?->tenant?->status === 'active') {
-            $request->attributes->set('tenant', $domain->tenant);
-            $request->attributes->set('tenant_id', $domain->tenant->id);
+        if ($tenantDomain?->tenant?->status === 'active') {
+            $request->attributes->set('tenant', $tenantDomain->tenant);
+            $request->attributes->set('tenant_id', $tenantDomain->tenant->id);
 
             return $next($request);
         }
 
         /*
-         * Fallback untuk domain utama / localhost.
-         * Domain utama tidak memilih tenant secara otomatis.
+         * Main domain remains tenant-neutral.
+         * Tenant is resolved after successful login when the
+         * application is later opened through a tenant subdomain.
          */
         $request->attributes->set('tenant', null);
         $request->attributes->set('tenant_id', null);
