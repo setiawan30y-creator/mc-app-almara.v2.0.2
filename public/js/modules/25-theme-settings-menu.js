@@ -1,41 +1,53 @@
 /*
  * MC-Almara - Theme Settings sidebar menu
- * Adds a dedicated button to /settings/theme without changing the existing
- * dashboard navigation targets.
+ * Adds a dedicated button to /settings/theme without changing existing dashboard navigation.
  */
 (function () {
     'use strict';
 
+    function getSidebarNav() {
+        return document.querySelector('.sidebar nav') || document.querySelector('.sidebar-nav');
+    }
+
     function addThemeSettingsMenu() {
-        var sidebarNav = document.querySelector('.sidebar-nav');
-        if (!sidebarNav || sidebarNav.querySelector('[data-theme-settings-menu="true"]')) {
-            return;
+        var sidebarNav = getSidebarNav();
+        if (!sidebarNav) return false;
+
+        if (sidebarNav.querySelector('[data-theme-settings-menu="true"]') || sidebarNav.querySelector('a[href="/settings/theme"]')) {
+            return true;
         }
 
-        var group = document.createElement('div');
-        group.className = 'theme-settings-nav-group';
-        group.innerHTML =
-            '<div class="sidebar-group-title" style="padding:15px 20px 6px 15px;color:#475569;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid rgba(255,255,255,.02);margin-top:10px;margin-bottom:5px;">Pengaturan</div>' +
-            '<a href="/settings/theme" class="nav-item" data-theme-settings-menu="true" title="Tema & Tampilan" onclick="event.preventDefault();event.stopPropagation();window.location.assign(\'/settings/theme\');">' +
-                '<i class="fa-solid fa-palette" style="color:#a78bfa;"></i> Tema & Tampilan' +
-            '</a>';
+        var settingsItem = sidebarNav.querySelector('a[data-target="settings-view"]');
+        var button = document.createElement('a');
+        button.href = '/settings/theme';
+        button.className = 'nav-item';
+        button.setAttribute('data-theme-settings-menu', 'true');
+        button.title = 'Tema & Tampilan';
+        button.innerHTML = '<i class="fa-solid fa-palette" style="color:#a78bfa;"></i> Tema & Tampilan';
 
-        sidebarNav.appendChild(group);
+        if (settingsItem && settingsItem.parentNode) {
+            settingsItem.parentNode.insertBefore(button, settingsItem.nextSibling);
+        } else {
+            sidebarNav.appendChild(button);
+        }
+
+        return true;
+    }
+
+    function init() {
+        if (addThemeSettingsMenu()) return;
+
+        var attempts = 0;
+        var timer = setInterval(function () {
+            if (addThemeSettingsMenu() || ++attempts >= 40) {
+                clearInterval(timer);
+            }
+        }, 250);
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', addThemeSettingsMenu);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        addThemeSettingsMenu();
+        init();
     }
-
-    // Dashboard UI can be re-rendered by other modules, so retry briefly.
-    var attempts = 0;
-    var timer = setInterval(function () {
-        addThemeSettingsMenu();
-        attempts++;
-        if (attempts >= 20 || document.querySelector('[data-theme-settings-menu="true"]')) {
-            clearInterval(timer);
-        }
-    }, 250);
 })();
