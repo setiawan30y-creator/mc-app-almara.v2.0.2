@@ -59,6 +59,16 @@ class User extends Authenticatable
         ];
     }
 
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function isOwner(): bool
     {
         return strtolower((string) $this->role) === 'owner';
