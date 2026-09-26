@@ -28,9 +28,11 @@ Route::get('/', function () {
     $html = view('dashboard')->render();
     $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-3') . '">';
     $themeCss = '<link rel="stylesheet" href="' . asset('css/mc-theme-engine.css?v=20260924-1') . '">';
+    $posErpCss = '<link rel="stylesheet" href="' . asset('css/pos-erp-ux.css?v=20260926-1') . '">';
     $themeJs = '<script src="' . asset('js/mc-theme-engine.js?v=20260924-1') . '"></script>';
     $themeMenuJs = '<script src="' . asset('js/modules/25-theme-settings-menu.js?v=20260925-2') . '"></script>';
     $themeMenuDirectJs = '<script src="' . asset('js/modules/26-theme-settings-menu-direct.js?v=20260925-1') . '"></script>';
+    $posErpUxJs = '<script src="' . asset('js/modules/27-pos-erp-ux.js?v=20260926-1') . '"></script>';
     $iso4217Js = '<script src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-2') . '"></script>';
     $denominationEditorJs = '<script src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
     $denominationFallbackJs = '<script src="' . asset('js/modules/24-currency-denomination-ui-fallback.js?v=20260923-1') . '"></script>';
@@ -41,6 +43,9 @@ Route::get('/', function () {
     if (stripos($html, 'mc-theme-engine.css') === false) {
         $html = str_ireplace('</head>', $themeCss . "\n</head>", $html);
     }
+    if (stripos($html, 'pos-erp-ux.css') === false) {
+        $html = str_ireplace('</head>', $posErpCss . "\n</head>", $html);
+    }
     if (stripos($html, 'mc-theme-engine.js') === false) {
         $html = str_ireplace('</body>', $themeJs . "\n</body>", $html);
     }
@@ -49,6 +54,9 @@ Route::get('/', function () {
     }
     if (stripos($html, '26-theme-settings-menu-direct.js') === false) {
         $html = str_ireplace('</body>', $themeMenuDirectJs . "\n</body>", $html);
+    }
+    if (stripos($html, '27-pos-erp-ux.js') === false) {
+        $html = str_ireplace('</body>', $posErpUxJs . "\n</body>", $html);
     }
     if (stripos($html, '21-iso4217-currency-dropdown.js') === false) {
         $html = str_ireplace('</body>', $iso4217Js . "\n</body>", $html);
