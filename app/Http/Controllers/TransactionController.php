@@ -110,15 +110,10 @@ class TransactionController extends Controller
                 $data
             );
 
-            if (!TransactionAudit::where('itemId', $itemId)
-                ->where('tenant_id', $context['tenant_id'])
-                ->where('branch_id', $context['branch_id'])
-                ->exists()) {
-                TransactionAudit::updateOrCreate(
-                    ['itemId' => $itemId],
-                    $data
-                );
-            }
+            TransactionAudit::updateOrCreate(
+                ['itemId' => $itemId, 'tenant_id' => $context['tenant_id'], 'branch_id' => $context['branch_id']],
+                $data
+            );
 
             return response()->json([
                 'status' => 'success',
@@ -155,7 +150,7 @@ class TransactionController extends Controller
 
         $existingAudits = [];
         foreach (array_keys($invoiceIdsToClear) as $invoiceId) {
-            if (TransactionAudit::where('id', $invoiceId)
+            if (TransactionAudit::where('itemId', $invoiceId)
                 ->where('tenant_id', $context['tenant_id'])
                 ->where('branch_id', $context['branch_id'])
                 ->exists()) {
@@ -203,7 +198,7 @@ class TransactionController extends Controller
 
                     if (!isset($existingAudits[$invoiceId])) {
                         TransactionAudit::updateOrCreate(
-                            ['itemId' => $itemId],
+                            ['itemId' => $itemId, 'tenant_id' => $context['tenant_id'], 'branch_id' => $context['branch_id']],
                             $data
                         );
                     }
