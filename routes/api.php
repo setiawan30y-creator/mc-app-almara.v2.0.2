@@ -29,13 +29,15 @@ Route::middleware(['web', 'auth', 'single.session'])->group(function () {
     Route::get('/user-chats/users', [UserChatController::class, 'getChatUsers']);
     Route::get('/user-chats/poll', [UserChatController::class, 'pollNewMessages']);
 
-    Route::get('/transactions', [TransactionController::class, 'index']);
-    Route::post('/transactions', [TransactionController::class, 'store']);
-    Route::post('/transactions/bulk', [TransactionController::class, 'bulkStore']);
-    Route::delete('/transactions', [TransactionController::class, 'destroy'])->middleware('role:owner,superadmin,admin,supervisor');
-    Route::delete('/transactions/clear-all', [TransactionController::class, 'clearAll'])->middleware('role:owner,superadmin,admin,supervisor');
-    Route::get('/audit', [TransactionController::class, 'audit']);
-    Route::delete('/audit', [TransactionController::class, 'destroyAudit'])->middleware('role:owner,superadmin,admin,supervisor');
+    Route::middleware('tenant.auth')->group(function () {
+        Route::get('/transactions', [TransactionController::class, 'index']);
+        Route::post('/transactions', [TransactionController::class, 'store']);
+        Route::post('/transactions/bulk', [TransactionController::class, 'bulkStore']);
+        Route::delete('/transactions', [TransactionController::class, 'destroy'])->middleware('role:owner,superadmin,admin,supervisor');
+        Route::delete('/transactions/clear-all', [TransactionController::class, 'clearAll'])->middleware('role:owner,superadmin,admin,supervisor');
+        Route::get('/audit', [TransactionController::class, 'audit']);
+        Route::delete('/audit', [TransactionController::class, 'destroyAudit'])->middleware('role:owner,superadmin,admin,supervisor');
+    });
 
     Route::get('/customers', [CustomerController::class, 'index']);
     Route::post('/customers', [CustomerController::class, 'store']);
