@@ -6,20 +6,63 @@ use App\Models\Transaction;
 use App\Models\TransactionAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TransactionController extends Controller
 {
-    public function index()
+    /**
+     * Resolve the authenticated tenant/branch context.
+     * Transactions must never be read or written without a valid SaaS context.
+     */
+    private function tenantContext(Request $request): array
     {
-        $transactions = Transaction::orderBy('timestamp', 'desc')
+        $user = $request->user();
+
+        if (!$user || !$user->tenant_id || !$user->branch_id) {
+            abort(403, 'Akun belum memiliki tenant dan branch aktif.');
+        }
+
+        $tenant = $request->attributes->get('tenant');
+        if ($tenant && (string) $tenant->id !== (string) $user->tenant_id) {
+            abort(403, 'Tenant akun tidak sesuai dengan tenant request.');
+        }
+
+        if (!$user->tenant()->where('status', 'active')->exists()) {
+            abort(403, 'Tenant akun tidak aktif.');
+        }
+
+        if (!$user->tenant->branches()
+            ->whereKey($user->branch_id)
+            ->where('status', 'active')
+            ->exists()) {
+            abort(403, 'Branch akun tidak aktif atau bukan bagian dari tenant.');
+        }
+
+        return [
+            'tenant_id' => (string) $user->tenant_id,
+            'branch_id' => (string) $user->branch_id,
+        ];
+    }
+
+    public function index(Request $request)
+    {
+        $context = $this->tenantContext($request);
+
+        $transactions = Transaction::query()
+            ->forTenant($context['tenant_id'])
+            ->forBranch($context['branch_id'])
+            ->orderBy('timestamp', 'desc')
             ->orderBy('itemId', 'desc')
             ->get();
+
         return response()->json($transactions);
     }
 
     public function store(Request $request)
     {
+        $context = $this->tenantContext($request);
+
         $validated = $request->validate([
             'id' => ['nullable', 'string', 'max:50', 'required_without:itemId'],
             'itemId' => ['nullable', 'string', 'max:100'],
@@ -44,6 +87,8 @@ class TransactionController extends Controller
 
         $data = [
             'id' => $invoiceId,
+            'tenant_id' => $context['tenant_id'],
+            'branch_id' => $context['branch_id'],
             'timestamp' => Carbon::parse($validated['timestamp'])->format('Y-m-d H:i:s'),
             'tipe' => $validated['tipe'],
             'valuta' => $validated['valuta'],
@@ -56,17 +101,19 @@ class TransactionController extends Controller
             'paymentMethod' => $validated['paymentMethod'] ?? 'TUNAI',
             'isOldMoney' => (bool) ($validated['isOldMoney'] ?? false),
             'keterangan' => $validated['keterangan'] ?? '',
-            'raw_json' => json_encode($input)
+            'raw_json' => json_encode($input),
         ];
 
         try {
             Transaction::updateOrCreate(
-                ['itemId' => $itemId],
+                ['itemId' => $itemId, 'tenant_id' => $context['tenant_id'], 'branch_id' => $context['branch_id']],
                 $data
             );
 
-            // RWT (TransactionAudit) is independent and only gets inserted on initial creation, never updated/changed.
-            if (!TransactionAudit::where('id', $invoiceId)->exists()) {
+            if (!TransactionAudit::where('itemId', $itemId)
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('branch_id', $context['branch_id'])
+                ->exists()) {
                 TransactionAudit::updateOrCreate(
                     ['itemId' => $itemId],
                     $data
@@ -74,20 +121,22 @@ class TransactionController extends Controller
             }
 
             return response()->json([
-                'status' => 'success', 
-                'message' => 'Transaksi Disimpan ke Database (Laravel)'
+                'status' => 'success',
+                'message' => 'Transaksi Disimpan ke Database (Laravel)',
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error', 
-                'message' => 'Gagal: ' . $e->getMessage()
+                'status' => 'error',
+                'message' => 'Gagal: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     public function bulkStore(Request $request)
     {
+        $context = $this->tenantContext($request);
         $transactions = $request->input('transactions', []);
+
         if (!is_array($transactions)) {
             return response()->json(['status' => 'error', 'message' => 'Format data tidak valid'], 400);
         }
@@ -95,8 +144,8 @@ class TransactionController extends Controller
         $successCount = 0;
         $failedCount = 0;
         $errors = [];
-
         $invoiceIdsToClear = [];
+
         foreach ($transactions as $trx) {
             $invoiceId = $trx['id'] ?? $trx['itemId'] ?? null;
             if ($invoiceId) {
@@ -106,15 +155,21 @@ class TransactionController extends Controller
 
         $existingAudits = [];
         foreach (array_keys($invoiceIdsToClear) as $invoiceId) {
-            if (TransactionAudit::where('id', $invoiceId)->exists()) {
+            if (TransactionAudit::where('id', $invoiceId)
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('branch_id', $context['branch_id'])
+                ->exists()) {
                 $existingAudits[$invoiceId] = true;
             }
         }
 
-        \Illuminate\Support\Facades\DB::beginTransaction();
+        DB::beginTransaction();
         try {
             foreach (array_keys($invoiceIdsToClear) as $invoiceId) {
-                Transaction::where('id', $invoiceId)->delete();
+                Transaction::where('id', $invoiceId)
+                    ->where('tenant_id', $context['tenant_id'])
+                    ->where('branch_id', $context['branch_id'])
+                    ->delete();
             }
 
             foreach ($transactions as $index => $input) {
@@ -123,6 +178,8 @@ class TransactionController extends Controller
 
                 $data = [
                     'id' => $invoiceId,
+                    'tenant_id' => $context['tenant_id'],
+                    'branch_id' => $context['branch_id'],
                     'timestamp' => Carbon::parse($input['timestamp'] ?? now())->format('Y-m-d H:i:s'),
                     'tipe' => $input['tipe'] ?? 'JUAL',
                     'valuta' => $input['valuta'] ?? '',
@@ -135,16 +192,15 @@ class TransactionController extends Controller
                     'paymentMethod' => $input['paymentMethod'] ?? 'TUNAI',
                     'isOldMoney' => (bool) ($input['isOldMoney'] ?? false),
                     'keterangan' => $input['keterangan'] ?? '',
-                    'raw_json' => json_encode($input)
+                    'raw_json' => json_encode($input),
                 ];
 
                 try {
                     Transaction::updateOrCreate(
-                        ['itemId' => $itemId],
+                        ['itemId' => $itemId, 'tenant_id' => $context['tenant_id'], 'branch_id' => $context['branch_id']],
                         $data
                     );
 
-                    // RWT (TransactionAudit) is independent and only gets inserted on initial creation, never updated/changed.
                     if (!isset($existingAudits[$invoiceId])) {
                         TransactionAudit::updateOrCreate(
                             ['itemId' => $itemId],
@@ -158,12 +214,13 @@ class TransactionController extends Controller
                     $errors[] = "Baris " . ($index + 1) . " (Item ID: $itemId): " . $e->getMessage();
                 }
             }
-            \Illuminate\Support\Facades\DB::commit();
+
+            DB::commit();
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
+            DB::rollBack();
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal memproses transaksi database: ' . $e->getMessage()
+                'message' => 'Gagal memproses transaksi database: ' . $e->getMessage(),
             ], 500);
         }
 
@@ -172,12 +229,13 @@ class TransactionController extends Controller
             'message' => "Proses import transaksi selesai. Sukses: {$successCount}, Gagal: {$failedCount}",
             'success_count' => $successCount,
             'failed_count' => $failedCount,
-            'errors' => $errors
+            'errors' => $errors,
         ]);
     }
 
     public function destroy(Request $request)
     {
+        $context = $this->tenantContext($request);
         $itemId = $request->input('itemId');
         $id = $request->input('id');
 
@@ -186,7 +244,9 @@ class TransactionController extends Controller
         }
 
         try {
-            $query = Transaction::query();
+            $query = Transaction::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('branch_id', $context['branch_id']);
 
             if ($itemId) {
                 $query->where('itemId', $itemId);
@@ -197,36 +257,48 @@ class TransactionController extends Controller
             $deleted = $query->delete();
 
             return response()->json([
-                'status' => 'success', 
+                'status' => 'success',
                 'message' => $deleted > 0
                     ? 'Transaksi Dibatalkan/Dihapus (Laravel)'
-                    : 'Tidak ada transaksi yang cocok untuk dihapus'
+                    : 'Tidak ada transaksi yang cocok untuk dihapus',
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error', 
-                'message' => 'Gagal: ' . $e->getMessage()
+                'status' => 'error',
+                'message' => 'Gagal: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    public function audit()
+    public function audit(Request $request)
     {
-        $audit = TransactionAudit::orderBy('timestamp', 'desc')
+        $context = $this->tenantContext($request);
+
+        $audit = TransactionAudit::query()
+            ->forTenant($context['tenant_id'])
+            ->forBranch($context['branch_id'])
+            ->orderBy('timestamp', 'desc')
             ->orderBy('itemId', 'desc')
             ->get();
+
         return response()->json($audit);
     }
 
     public function destroyAudit(Request $request)
     {
+        $context = $this->tenantContext($request);
         $itemId = trim((string) $request->input('itemId', ''));
+
         if ($itemId === '') {
             return response()->json(['status' => 'error', 'message' => 'ID RWT tidak ditemukan'], 422);
         }
 
         try {
-            $deleted = TransactionAudit::where('itemId', $itemId)->delete();
+            $deleted = TransactionAudit::where('itemId', $itemId)
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('branch_id', $context['branch_id'])
+                ->delete();
+
             return response()->json([
                 'status' => 'success',
                 'message' => $deleted ? 'Baris RWT berhasil dihapus' : 'Data RWT sudah tidak ditemukan',
@@ -237,21 +309,24 @@ class TransactionController extends Controller
         }
     }
 
-    public function clearAll()
+    public function clearAll(Request $request)
     {
+        $context = $this->tenantContext($request);
+
         try {
-            // Riwayat transaksi boleh dikosongkan dari tampilan operasional,
-            // tetapi audit harus tetap tersimpan sebagai jejak administrasi.
-            Transaction::query()->delete();
+            Transaction::query()
+                ->where('tenant_id', $context['tenant_id'])
+                ->where('branch_id', $context['branch_id'])
+                ->delete();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Semua riwayat transaksi telah dikosongkan. Audit transaksi tetap tersimpan.'
+                'message' => 'Semua riwayat transaksi tenant/branch ini telah dikosongkan. Audit transaksi tetap tersimpan.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal membersihkan transaksi: ' . $e->getMessage()
+                'message' => 'Gagal membersihkan transaksi: ' . $e->getMessage(),
             ], 500);
         }
     }
