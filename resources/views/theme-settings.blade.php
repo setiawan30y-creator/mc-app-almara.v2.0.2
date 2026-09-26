@@ -7,14 +7,14 @@
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--mc-page-bg);color:var(--mc-text)}
 .wrap{max-width:1500px;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:22px}.title h1{margin:0;font-size:28px}.title p{margin:6px 0 0;color:var(--mc-text-muted)}
-.actions{display:flex;gap:10px}.btn{border:1px solid var(--mc-border);background:var(--mc-card-bg);color:var(--mc-text);padding:11px 16px;border-radius:10px;cursor:pointer;font-weight:700}.btn.primary{background:var(--mc-button-bg);color:var(--mc-button-text);border-color:var(--mc-button-bg)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{border:1px solid var(--mc-border);background:var(--mc-card-bg);color:var(--mc-text);padding:11px 16px;border-radius:10px;cursor:pointer;font-weight:700}.btn.primary{background:var(--mc-button-bg);color:var(--mc-button-text);border-color:var(--mc-button-bg)}.btn.back{background:transparent}
 .grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(420px,.8fr);gap:22px}.cardbox{background:var(--mc-card-bg);border:1px solid var(--mc-border);border-radius:var(--mc-radius);box-shadow:var(--mc-shadow);padding:22px}.section{margin-bottom:24px}.section h2{font-size:16px;margin:0 0 14px}.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:6px;color:var(--mc-text-muted)}.field input{width:100%;height:42px;border:1px solid var(--mc-input-border);border-radius:9px;padding:0 10px}.color{display:flex;gap:8px}.color input[type=color]{width:46px;padding:3px}.color input[type=text]{flex:1}.presets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}.preset{min-height:66px;text-align:left}.preset small{display:block;margin-top:3px;font-weight:500;color:var(--mc-text-muted)}.preview{position:sticky;top:20px}.mock{height:610px;border:1px solid var(--p-border);border-radius:14px;overflow:hidden;background:var(--p-page);box-shadow:var(--p-shadow);display:grid;grid-template-columns:170px 1fr}.mock-side{background:var(--p-sidebar);color:var(--p-sidebar-text);padding:18px}.mock-side strong{display:block;margin-bottom:22px}.mock-side div{padding:9px 8px;border-radius:8px;margin:3px 0}.mock-side .active{background:var(--p-primary);color:white}.mock-main{padding:20px;color:var(--p-text)}.mock-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--p-border);padding-bottom:14px}.mock-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}.mock-card{background:var(--p-card);border:1px solid var(--p-border);border-radius:var(--p-radius);padding:18px;box-shadow:var(--p-shadow)}.mock-card small{color:var(--p-muted)}.mock-button{display:inline-block;margin-top:18px;padding:10px 15px;border-radius:9px;background:var(--p-button);color:var(--p-button-text);font-weight:800}.mock-buy{color:var(--p-buy);font-weight:800}.mock-sell{color:var(--p-sell);font-weight:800}.hint{font-size:12px;color:var(--mc-text-muted);margin-top:12px}.toast{position:fixed;right:25px;bottom:25px;background:#0B2F29;color:white;padding:13px 17px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:none}
 @media(max-width:1100px){.grid{grid-template-columns:1fr}.preview{position:static}}@media(max-width:850px){.presets{grid-template-columns:repeat(2,1fr)}.fields{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.wrap{padding:14px}.top{align-items:flex-start;flex-direction:column}.fields{grid-template-columns:1fr}.presets{grid-template-columns:1fr}.mock{grid-template-columns:110px 1fr}.mock-side{padding:10px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="top"><div class="title"><h1>🎨 Theme & Appearance</h1><p>Atur identitas visual MC-Almara dari satu tempat. Almara Default mengikuti tampilan APV saat ini.</p></div><div class="actions"><button class="btn" id="theme-reset">Pulihkan Almara Default</button><button class="btn primary" id="theme-save">Simpan Tema</button></div></div>
+<div class="top"><div class="title"><h1>🎨 Theme & Appearance</h1><p>Atur identitas visual MC-Almara dari satu tempat. Almara Default mengikuti tampilan APV saat ini.</p></div><div class="actions"><button type="button" class="btn back" id="theme-back">← Kembali</button><button type="button" class="btn" id="theme-dashboard">⌂ Dashboard</button><button class="btn" id="theme-reset">Pulihkan Almara Default</button><button class="btn primary" id="theme-save">Simpan Tema</button></div></div>
 <div class="grid">
 <div class="cardbox">
 <div class="section"><h2>Preset MC-Almara</h2><div class="presets">
@@ -36,4 +36,14 @@
 </div></div>
 <div id="theme-toast" class="toast"></div>
 <script src="{{ asset('js/mc-theme-engine.js?v=20260924-2') }}"></script><script src="{{ asset('js/mc-theme-settings.js?v=20260924-2') }}"></script>
+<script>
+(function(){
+ const dashboard=()=>{window.location.href='/';};
+ document.getElementById('theme-dashboard')?.addEventListener('click',dashboard);
+ document.getElementById('theme-back')?.addEventListener('click',()=>{
+   if(document.referrer && new URL(document.referrer).origin===window.location.origin && window.history.length>1) window.history.back();
+   else dashboard();
+ });
+})();
+</script>
 </body></html>
