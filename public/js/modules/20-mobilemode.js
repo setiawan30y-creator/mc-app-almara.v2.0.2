@@ -4,14 +4,11 @@
 
 (function() {
     let mobileModeEnabled = false;
-
-    // Detect if device is mobile based on user agent or screen width
     function detectMobileDevice() {
         const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const isSmallScreen = window.innerWidth <= 768;
         return isMobileUA || isSmallScreen;
     }
-
     function injectHeaderToggle() {
         const headerRight = document.querySelector('.top-header .header-right');
         if (!headerRight) return;
@@ -25,7 +22,6 @@
         toggleDiv.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i>';
         headerRight.appendChild(toggleDiv);
     }
-
     function injectBottomNav() {
         const appContainer = document.getElementById('appContainer');
         if (!appContainer) return;
@@ -40,7 +36,6 @@
             <a href="#" class="mobile-bottom-nav-item" data-target="sidebar-menu"><i class="fa-solid fa-bars"></i><span>Lainnya</span></a>`;
         appContainer.appendChild(bottomNav);
     }
-
     function initMobileMode() {
         injectHeaderToggle();
         injectBottomNav();
@@ -50,7 +45,6 @@
         bindBottomNavEvents();
         observeViewChanges();
     }
-
     function applyMobileModeState() {
         const body = document.body;
         const toggleBtn = document.getElementById('headerMobileToggleBtn');
@@ -73,7 +67,6 @@
         }
         window.dispatchEvent(new Event('resize'));
     }
-
     window.toggleMobileMode = function() {
         mobileModeEnabled = !mobileModeEnabled;
         localStorage.setItem('mc_mobileModeEnabled', String(mobileModeEnabled));
@@ -84,7 +77,6 @@
             Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000, icon:'success', title:mobileModeEnabled ? 'Tampilan Mobile Aktif (Flutter-Style)' : 'Tampilan Desktop Aktif', background:isApv ? '#F7F5EF' : (isLight ? '#FFFFFF' : '#1E293B'), color:isApv ? '#18221F' : (isLight ? '#1E293B' : '#F8FAFC') });
         }
     };
-
     function bindBottomNavEvents() {
         document.querySelectorAll('.mobile-bottom-nav-item').forEach(item => {
             item.addEventListener('click', function(e) {
@@ -100,7 +92,6 @@
             });
         });
     }
-
     function observeViewChanges() {
         const observer = new MutationObserver(function() {
             const activeSection = document.querySelector('.view-section.active');
@@ -112,31 +103,37 @@
         });
         document.querySelectorAll('.view-section').forEach(section => observer.observe(section, { attributes:true, attributeFilter:['class'] }));
     }
-
     if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', () => setTimeout(initMobileMode, 700));
     else setTimeout(initMobileMode, 700);
 })();
 
-// Global Theme Engine bridge for Dashboard.
-// Dashboard uses the legacy styles.css variables, so load the same engine used by
-// Theme Settings and let it map --mc-* into the existing dashboard variables.
 (function () {
     function loadGlobalThemeEngine() {
         if (window.MCTheme || document.getElementById('mcGlobalThemeEngine')) return;
         const script = document.createElement('script');
         script.id = 'mcGlobalThemeEngine';
         script.src = '/js/mc-theme-engine.js?v=20260924-3';
-        script.onload = function () {
-            if (window.MCTheme) window.MCTheme.apply(window.MCTheme.load(), false);
-        };
-        script.onerror = function () {
-            console.warn('MC global theme engine gagal dimuat. Dashboard tetap menggunakan theme APV bawaan.');
-        };
+        script.onload = function () { if (window.MCTheme) window.MCTheme.apply(window.MCTheme.load(), false); };
+        script.onerror = function () { console.warn('MC global theme engine gagal dimuat. Dashboard tetap menggunakan theme APV bawaan.'); };
         document.head.appendChild(script);
     }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadGlobalThemeEngine, { once:true });
-    } else {
-        loadGlobalThemeEngine();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadGlobalThemeEngine, { once:true });
+    else loadGlobalThemeEngine();
+})();
+
+/* Sidebar recovery is loaded from Module 20 because Module 20 is dynamically
+ * injected by 01-core after DOM initialization. This makes the fix independent
+ * from optional POS/UX modules. */
+(function () {
+    function loadSidebarRecovery() {
+        if (document.getElementById('almara-sidebar-fix-loader')) return;
+        const script = document.createElement('script');
+        script.id = 'almara-sidebar-fix-loader';
+        script.src = '/js/modules/99-sidebar-fix.js?v=20260929-2';
+        script.onload = function () { console.log('[Sidebar] Recovery layer aktif.'); };
+        script.onerror = function () { console.error('[Sidebar] Recovery layer gagal dimuat:', script.src); };
+        document.head.appendChild(script);
     }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadSidebarRecovery, { once:true });
+    else loadSidebarRecovery();
 })();
