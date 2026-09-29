@@ -32,8 +32,7 @@
             }));
         } catch (e) {}
 
-        // These refreshes are deliberately fire-and-forget. Navigation must never
-        // wait for MySQL/API synchronization before the user can interact.
+        // Never block navigation on database/network work.
         if (targetId === 'dashboard-view' && typeof window.loadDashboard === 'function') {
             try { Promise.resolve(window.loadDashboard()).catch(function () {}); } catch (e) {}
         }
@@ -42,6 +41,43 @@
         }
 
         return true;
+    }
+
+    function installRealtimeGuard() {
+        // sync.js currently starts a 4-second UI-refresh loop immediately. That
+        // loop can overlap loadDashboard(), API calls and Universal Datastore work,
+        // making the browser main thread appear frozen. Stop it once the module is
+        // available and replace it with a quiet background sync.
+        var stopped = false;
+        var poll = setInterval(function () {
+            if (typeof window.stopAlmaraRealtimeSync !== 'function') return;
+            if (!stopped) {
+                try { window.stopAlmaraRealtimeSync(); } catch (e) {}
+                stopped = true;
+            }
+            clearInterval(poll);
+
+            if (window.__almaraQuietSyncTimer) clearInterval(window.__almaraQuietSyncTimer);
+            window.__almaraQuietSyncTimer = setInterval(async function () {
+                if (window.__almaraQuietSyncBusy) return;
+                window.__almaraQuietSyncBusy = true;
+                try {
+                    if (typeof window.syncFromMySQL_Transactions === 'function') {
+                        await window.syncFromMySQL_Transactions({ pushLocal: false, refreshUi: false, silent: true });
+                    }
+                    if (typeof window.syncFromMySQL_Currencies === 'function') {
+                        await window.syncFromMySQL_Currencies({ refreshUi: false, silent: true });
+                    }
+                    if (typeof window.syncFromMySQL_Customers === 'function') {
+                        await window.syncFromMySQL_Customers({ refreshUi: false, silent: true });
+                    }
+                } catch (e) {
+                    // Background sync must never surface an exception into navigation.
+                } finally {
+                    window.__almaraQuietSyncBusy = false;
+                }
+            }, 30000);
+        }, 250);
     }
 
     function bind() {
@@ -54,8 +90,6 @@
             var targetId = link.getAttribute('data-target');
             if (!targetId) return;
 
-            // If the normal 01-core handler is healthy it may also run. We still
-            // own the navigation result so a failed module cannot leave the UI inert.
             if (document.getElementById(targetId)) {
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -63,7 +97,6 @@
             }
         }, true);
 
-        // Make the main accordion menus independent from the rest of the app.
         document.querySelectorAll('.nav-accordion-header[onclick]').forEach(function (header) {
             header.addEventListener('click', function () {
                 var match = String(header.getAttribute('onclick') || '').match(/toggleNavMenu\(['"]([^'"]+)['"]\)/);
@@ -74,9 +107,10 @@
             }, true);
         });
 
-        // Remove stale diagnostic click-blocking styles if an older cached build left them behind.
         var logger = document.getElementById('visual-error-logger');
         if (logger) logger.style.pointerEvents = 'none';
+
+        installRealtimeGuard();
     }
 
     if (document.readyState === 'loading') {
