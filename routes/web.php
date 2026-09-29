@@ -29,6 +29,7 @@ Route::get('/', function () {
     $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-3') . '">';
     $themeCss = '<link rel="stylesheet" href="' . asset('css/mc-theme-engine.css?v=20260924-1') . '">';
     $posErpCss = '<link rel="stylesheet" href="' . asset('css/pos-erp-ux.css?v=20260926-1') . '">';
+    $ledgerUiCss = '<link rel="stylesheet" href="' . asset('css/mc-ledger-ui.css?v=20260929-1') . '">';
     $themeJs = '<script src="' . asset('js/mc-theme-engine.js?v=20260924-1') . '"></script>';
     $themeMenuJs = '<script src="' . asset('js/modules/25-theme-settings-menu.js?v=20260925-2') . '"></script>';
     $themeMenuDirectJs = '<script src="' . asset('js/modules/26-theme-settings-menu-direct.js?v=20260925-1') . '"></script>';
@@ -45,6 +46,9 @@ Route::get('/', function () {
     }
     if (stripos($html, 'pos-erp-ux.css') === false) {
         $html = str_ireplace('</head>', $posErpCss . "\n</head>", $html);
+    }
+    if (stripos($html, 'mc-ledger-ui.css') === false) {
+        $html = str_ireplace('</head>', $ledgerUiCss . "\n</head>", $html);
     }
     if (stripos($html, 'mc-theme-engine.js') === false) {
         $html = str_ireplace('</body>', $themeJs . "\n</body>", $html);
