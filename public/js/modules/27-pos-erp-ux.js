@@ -1,5 +1,8 @@
 /* POS ERP UX enhancement.
  * Visual/workspace layer only: reuses the existing draft-session engine in 03-pos.js.
+ * IMPORTANT: this module intentionally does not use a DOM-wide MutationObserver.
+ * The POS view mutates itself frequently; observing its subtree can create a
+ * render -> mutation -> render loop and freeze the browser.
  */
 (function () {
     'use strict';
@@ -73,7 +76,8 @@
             const count = Array.isArray(row.cart) ? row.cart.length : 0;
             const done = Boolean(row.completed);
             button.setAttribute('aria-label', `${customerName(row)}${done ? ', selesai' : ', aktif'}`);
-            button.innerHTML = button.innerHTML.replace(/\s*\([^)]*\)\s*$/, '');
+            const oldBadge = button.querySelector('.pos-erp-session-badge');
+            if (oldBadge) oldBadge.remove();
             const badge = document.createElement('span');
             badge.className = 'pos-erp-session-badge' + (done ? ' completed' : '');
             badge.innerHTML = done
@@ -96,16 +100,12 @@
             else view.prepend(node);
         }
         const row = activeSession();
-        if (!row) {
-            node.innerHTML = '<i class="fa-solid fa-user"></i><strong> Belum ada workspace</strong>';
-            return;
-        }
-        const done = Boolean(row.completed);
-        const invoice = row.lastPrint?.summary?.receiptId || '';
-        node.innerHTML = `
-            <i class="fa-solid ${done ? 'fa-circle-check' : 'fa-user'}"></i>
-            <strong>${esc(customerName(row))}</strong>
-            <small>· ${done ? `Selesai ${esc(invoice)}` : 'Workspace aktif'}</small>`;
+        const html = !row
+            ? '<i class="fa-solid fa-user"></i><strong> Belum ada workspace</strong>'
+            : `<i class="fa-solid ${row.completed ? 'fa-circle-check' : 'fa-user'}"></i>
+               <strong>${esc(customerName(row))}</strong>
+               <small>· ${row.completed ? `Selesai ${esc(row.lastPrint?.summary?.receiptId || '')}` : 'Workspace aktif'}</small>`;
+        if (node.innerHTML !== html) node.innerHTML = html;
     }
 
     function installInvoiceNote() {
@@ -128,39 +128,16 @@
     }
 
     function boot() {
-        if (!document.getElementById('pos-view')) return;
+        const view = document.getElementById('pos-view');
+        if (!view || view.dataset.erpUxBooted === '1') return;
+        view.dataset.erpUxBooted = '1';
         installHeader();
         installInvoiceNote();
         installCustomerContext();
         decorateTabs();
         document.addEventListener('keydown', keyboardShortcuts, { passive: false });
-
-        const observer = new MutationObserver(() => {
-            installHeader();
-            installInvoiceNote();
-            installCustomerContext();
-            decorateTabs();
-        });
-        const target = document.getElementById('pos-view');
-        if (target) observer.observe(target, { childList: true, subtree: true });
-
-        window.setTimeout(() => {
-            installCustomerContext();
-            decorateTabs();
-        }, 300);
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
     else boot();
-})();
-
-/* Load sidebar recovery after the normal UI modules have initialized. */
-(function () {
-    const id = 'almara-sidebar-fix-loader';
-    if (document.getElementById(id)) return;
-    const script = document.createElement('script');
-    script.id = id;
-    script.src = '/js/modules/99-sidebar-fix.js?v=20260929-1';
-    script.defer = true;
-    document.head.appendChild(script);
 })();
