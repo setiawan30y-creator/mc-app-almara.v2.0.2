@@ -72,6 +72,15 @@ Route::get('/', function () {
         $html = str_ireplace('</body>', $denominationFallbackJs . "\n</body>", $html);
     }
 
+    // Do not let synchronous third-party/local JavaScript block the initial
+    // document parser. Execution order among deferred scripts is preserved.
+    // Inline scripts are intentionally left untouched.
+    $html = preg_replace_callback('/<script\b([^>]*)\bsrc=("[^"]*"|\'[^\']*\')[^>]*>/i', function ($match) {
+        $tag = $match[0];
+        if (stripos($tag, ' defer') !== false) return $tag;
+        return preg_replace('/<script\b/i', '<script defer', $tag, 1);
+    }, $html);
+
     return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
 })->middleware([DevelopmentBypassAuth::class]);
 
