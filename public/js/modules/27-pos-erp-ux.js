@@ -153,3 +153,14 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();
 })();
+
+/* Load sidebar recovery after the normal UI modules have initialized. */
+(function () {
+    const id = 'almara-sidebar-fix-loader';
+    if (document.getElementById(id)) return;
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = '/js/modules/99-sidebar-fix.js?v=20260929-1';
+    script.defer = true;
+    document.head.appendChild(script);
+})();
