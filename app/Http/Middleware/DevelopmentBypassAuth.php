@@ -36,9 +36,10 @@ class DevelopmentBypassAuth
         ) {
             $content = $response->getContent();
 
-            // The dashboard initializes its UI authentication from localStorage.
-            // Seed the same shape only when the explicit local development
-            // bypass is enabled.
+            // Install the optional dependency fallback BEFORE the CDN tags.
+            // This prevents the Flatpickr locale script from throwing when
+            // the Flatpickr CDN is unavailable, while still allowing the real
+            // library to replace the fallback when it loads successfully.
             $bootstrap = <<<'HTML'
 <style>
 /* A diagnostic banner must never become an invisible click-blocking layer. */
@@ -57,7 +58,8 @@ class DevelopmentBypassAuth
 
     // CDN failure must not abort the whole application. Flatpickr is a
     // convenience date-picker; native <input type="date"> is a safe fallback.
-    // Only install the fallback when the real library was not loaded.
+    // Install it before the CDN scripts so the Indonesian locale file can also
+    // execute safely when the main Flatpickr CDN is unavailable.
     if (typeof window.flatpickr !== 'function') {
         var fallbackFlatpickr = function (target, options) {
             options = options || {};
@@ -110,7 +112,8 @@ class DevelopmentBypassAuth
 })();
 </script>
 HTML;
-            $content = str_replace('</head>', $bootstrap . "\n</head>", $content);
+            // Insert at the beginning of <head>, before Flatpickr and its locale CDN tags.
+            $content = preg_replace('/<head(\s[^>]*)?>/i', '$0' . "\n" . $bootstrap, $content, 1);
             $response->setContent($content);
         }
 
