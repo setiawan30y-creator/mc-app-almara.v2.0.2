@@ -4,7 +4,7 @@
     if (window.__almaraPerformanceGuardInstalled) return;
     window.__almaraPerformanceGuardInstalled = true;
 
-    /* First paint must not force a full transaction refresh. */
+    /* First paint must not parse/render the complete transaction dataset. */
     window.__almaraStartupPhase = true;
 
     const originalRefreshTransactionsThen = window.refreshTransactionsThen;
@@ -30,7 +30,9 @@
         window.__almaraOriginalServerTransactionsLikeRwt = originalServerTransactions;
         window.getServerTransactionsLikeRwt = async function () {
             if (window.__almaraStartupPhase) {
-                return window.AlmaraApp?.store?.getTransactions?.() || [];
+                /* Do not touch localStorage here either: a huge JSON cache can
+                 * block the main thread just like a huge API response. */
+                return [];
             }
             return originalServerTransactions.apply(this, arguments);
         };
@@ -110,7 +112,7 @@
         if (armSyncGuard() || attempts >= 80) window.clearInterval(retryTimer);
     }, 50);
 
-    /* Release startup phase after the first render. */
+    /* Keep startup phase until the initial dashboard render has completed. */
     window.setTimeout(function () {
         window.__almaraStartupPhase = false;
     }, 1500);
