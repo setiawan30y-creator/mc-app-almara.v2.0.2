@@ -12,9 +12,17 @@ use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\UserChatController;
 use App\Http\Controllers\OcrController;
 use App\Http\Controllers\WhatsAppGatewayController;
+use App\Http\Middleware\DevelopmentBypassAuth;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['web', 'auth', 'single.session'])->group(function () {
+// In local development, the existing DevelopmentBypassAuth is the source of
+// the temporary teller identity. In every non-local environment the normal
+// authenticated session remains mandatory.
+$apiAuthMiddleware = app()->environment('local') && (bool) config('app.dev_bypass_auth', false)
+    ? ['web', DevelopmentBypassAuth::class]
+    : ['web', 'auth', 'single.session'];
+
+Route::middleware($apiAuthMiddleware)->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me', [AuthController::class, 'updateMe']);
     Route::post('/branding/favicon', [AuthController::class, 'uploadFavicon'])->middleware('role:owner,superadmin');
