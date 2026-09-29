@@ -4,6 +4,38 @@
     if (window.__almaraPerformanceGuardInstalled) return;
     window.__almaraPerformanceGuardInstalled = true;
 
+    /* First paint must not force a full transaction refresh. */
+    window.__almaraStartupPhase = true;
+
+    const originalRefreshTransactionsThen = window.refreshTransactionsThen;
+    if (typeof originalRefreshTransactionsThen === 'function') {
+        window.refreshTransactionsThen = async function (renderFn) {
+            if (window.__almaraStartupPhase) {
+                try {
+                    if (typeof renderFn === 'function') {
+                        const result = renderFn();
+                        if (result && typeof result.then === 'function') await result;
+                    }
+                } finally {
+                    window.__almaraStartupPhase = false;
+                }
+                return;
+            }
+            return originalRefreshTransactionsThen.apply(this, arguments);
+        };
+    }
+
+    const originalServerTransactions = window.getServerTransactionsLikeRwt;
+    if (typeof originalServerTransactions === 'function') {
+        window.__almaraOriginalServerTransactionsLikeRwt = originalServerTransactions;
+        window.getServerTransactionsLikeRwt = async function () {
+            if (window.__almaraStartupPhase) {
+                return window.AlmaraApp?.store?.getTransactions?.() || [];
+            }
+            return originalServerTransactions.apply(this, arguments);
+        };
+    }
+
     const idle = window.requestIdleCallback || function (cb) {
         return window.setTimeout(function () { cb({ timeRemaining: function () { return 0; } }); }, 1200);
     };
@@ -67,18 +99,21 @@
             window.syncUniversalDatastore = fn;
         }
         guarded = true;
-        console.info('[PerfGuard] startup sync delayed; UI-first mode active.');
+        console.info('[PerfGuard] UI-first startup mode active.');
         return true;
     }
 
-    // sync.js can load before or after this module. Retry briefly so we never
-    // capture undefined functions and accidentally leave startup sync unguarded.
     armSyncGuard();
     let attempts = 0;
     const retryTimer = window.setInterval(function () {
         attempts++;
         if (armSyncGuard() || attempts >= 80) window.clearInterval(retryTimer);
     }, 50);
+
+    /* Release startup phase after the first render. */
+    window.setTimeout(function () {
+        window.__almaraStartupPhase = false;
+    }, 1500);
 
     let errorCount = 0;
     window.onerror = function (message, source, line, column, error) {
