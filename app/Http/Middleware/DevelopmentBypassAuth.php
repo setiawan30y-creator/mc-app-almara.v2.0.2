@@ -111,6 +111,7 @@ class DevelopmentBypassAuth
     }
 })();
 </script>
+<script src="{{ asset('js/modules/00-navigation-failsafe.js') }}?v={{ time() }}"></script>
 HTML;
             // Insert at the beginning of <head>, before Flatpickr and its locale CDN tags.
             $content = preg_replace('/<head(\s[^>]*)?>/i', '$0' . "\n" . $bootstrap, $content, 1);
