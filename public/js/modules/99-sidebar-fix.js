@@ -1,7 +1,31 @@
-/* MC Almara - resilient sidebar navigation */
+/* MC Almara - resilient sidebar navigation + stuck-overlay recovery */
 (function () {
     'use strict';
+
+    function recoverStuckOverlay() {
+        // A global full-screen element is the most likely reason the entire UI
+        // becomes visually loaded but impossible to click. Disable only elements
+        // that are fixed/sticky, cover almost the entire viewport, and are not
+        // legitimate interactive UI such as an open modal or error logger.
+        const vw = window.innerWidth, vh = window.innerHeight;
+        document.querySelectorAll('body *').forEach(function (el) {
+            if (el.id === 'visual-error-logger' || el.closest('.modal.show')) return;
+            const s = getComputedStyle(el);
+            if (s.display === 'none' || s.visibility === 'hidden' || s.pointerEvents === 'none') return;
+            if (!['fixed', 'sticky'].includes(s.position)) return;
+            const r = el.getBoundingClientRect();
+            const coversViewport = r.width >= vw * 0.90 && r.height >= vh * 0.90;
+            if (coversViewport && !el.classList.contains('modal')) {
+                el.style.pointerEvents = 'none';
+                if (s.position === 'fixed' && Number(s.zIndex) > 10000) el.style.zIndex = '-1';
+                el.dataset.mcOverlayRecovered = '1';
+                console.warn('[MC UI] Disabled stuck full-screen layer:', el.id || el.className || el.tagName);
+            }
+        });
+    }
+
     function activate() {
+        recoverStuckOverlay();
         const sidebar = document.getElementById('sidebar');
         const nav = sidebar?.querySelector('.sidebar-nav') || document.querySelector('.sidebar-nav');
         if (!nav) return false;
@@ -51,6 +75,7 @@
         };
 
         function navigate(item) {
+            recoverStuckOverlay();
             const targetId = item?.getAttribute('data-target');
             const target = targetId && document.getElementById(targetId);
             if (!target) return false;
@@ -94,11 +119,17 @@
         console.log('[Sidebar] Recovery layer aktif:', nav.querySelectorAll('a.nav-item[data-target]').length, 'menu');
         return true;
     }
+
     function boot() {
+        recoverStuckOverlay();
         if (activate()) return;
         let tries = 0;
-        const timer = setInterval(() => { if (activate() || ++tries >= 20) clearInterval(timer); }, 100);
+        const timer = setInterval(() => {
+            recoverStuckOverlay();
+            if (activate() || ++tries >= 30) clearInterval(timer);
+        }, 100);
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true });
     else boot();
+    window.addEventListener('load', recoverStuckOverlay, { once:true });
 })();
