@@ -30,22 +30,56 @@
         };
     }
 
-    const originals = {
-        currencies: window.syncFromMySQL_Currencies,
-        transactions: window.syncFromMySQL_Transactions,
-        customers: window.syncFromMySQL_Customers,
-        datastore: window.syncUniversalDatastore
-    };
-    window.__almaraOriginalSync = originals;
+    let guarded = false;
+    function armSyncGuard() {
+        if (guarded) return true;
+        const originals = {
+            currencies: window.syncFromMySQL_Currencies,
+            transactions: window.syncFromMySQL_Transactions,
+            customers: window.syncFromMySQL_Customers,
+            datastore: window.syncUniversalDatastore
+        };
+        const ready = typeof originals.currencies === 'function' ||
+            typeof originals.transactions === 'function' ||
+            typeof originals.customers === 'function' ||
+            typeof originals.datastore === 'function';
+        if (!ready) return false;
 
-    if (typeof originals.currencies === 'function') window.syncFromMySQL_Currencies = delayed(originals.currencies, 2500, 'currencies');
-    if (typeof originals.transactions === 'function') window.syncFromMySQL_Transactions = delayed(originals.transactions, 3500, 'transactions');
-    if (typeof originals.customers === 'function') window.syncFromMySQL_Customers = delayed(originals.customers, 4500, 'customers');
-    if (typeof originals.datastore === 'function') window.syncUniversalDatastore = delayed(originals.datastore, 5500, 'datastore');
+        window.__almaraOriginalSync = originals;
+        if (typeof originals.currencies === 'function' && !originals.currencies.__almaraGuarded) {
+            const fn = delayed(originals.currencies, 3500, 'currencies');
+            fn.__almaraGuarded = true;
+            window.syncFromMySQL_Currencies = fn;
+        }
+        if (typeof originals.transactions === 'function' && !originals.transactions.__almaraGuarded) {
+            const fn = delayed(originals.transactions, 5000, 'transactions');
+            fn.__almaraGuarded = true;
+            window.syncFromMySQL_Transactions = fn;
+        }
+        if (typeof originals.customers === 'function' && !originals.customers.__almaraGuarded) {
+            const fn = delayed(originals.customers, 6500, 'customers');
+            fn.__almaraGuarded = true;
+            window.syncFromMySQL_Customers = fn;
+        }
+        if (typeof originals.datastore === 'function' && !originals.datastore.__almaraGuarded) {
+            const fn = delayed(originals.datastore, 8000, 'datastore');
+            fn.__almaraGuarded = true;
+            window.syncUniversalDatastore = fn;
+        }
+        guarded = true;
+        console.info('[PerfGuard] startup sync delayed; UI-first mode active.');
+        return true;
+    }
 
-    // The old inline error handler POSTs to /debug_logger.php for every error.
-    // During a startup failure that can become a request/error feedback loop.
-    // Keep errors in console only during bootstrap.
+    // sync.js can load before or after this module. Retry briefly so we never
+    // capture undefined functions and accidentally leave startup sync unguarded.
+    armSyncGuard();
+    let attempts = 0;
+    const retryTimer = window.setInterval(function () {
+        attempts++;
+        if (armSyncGuard() || attempts >= 80) window.clearInterval(retryTimer);
+    }, 50);
+
     let errorCount = 0;
     window.onerror = function (message, source, line, column, error) {
         errorCount++;
@@ -62,7 +96,9 @@
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { window.setTimeout(releaseKnownLoadingState, 100); }, { once: true });
+        document.addEventListener('DOMContentLoaded', function () {
+            window.setTimeout(releaseKnownLoadingState, 100);
+        }, { once: true });
     } else {
         window.setTimeout(releaseKnownLoadingState, 100);
     }
