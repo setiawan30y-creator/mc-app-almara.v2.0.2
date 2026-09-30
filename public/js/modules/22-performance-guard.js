@@ -4,20 +4,16 @@
     if (window.__almaraPerformanceGuardInstalled) return;
     window.__almaraPerformanceGuardInstalled = true;
 
-    /* First paint must not parse/render the complete transaction dataset. */
+    // Keep the first interaction window completely free from database sync work.
     window.__almaraStartupPhase = true;
 
     const originalRefreshTransactionsThen = window.refreshTransactionsThen;
     if (typeof originalRefreshTransactionsThen === 'function') {
         window.refreshTransactionsThen = async function (renderFn) {
             if (window.__almaraStartupPhase) {
-                try {
-                    if (typeof renderFn === 'function') {
-                        const result = renderFn();
-                        if (result && typeof result.then === 'function') await result;
-                    }
-                } finally {
-                    window.__almaraStartupPhase = false;
+                if (typeof renderFn === 'function') {
+                    const result = renderFn();
+                    if (result && typeof result.then === 'function') await result;
                 }
                 return;
             }
@@ -29,9 +25,7 @@
     if (typeof originalServerTransactions === 'function') {
         window.__almaraOriginalServerTransactionsLikeRwt = originalServerTransactions;
         window.getServerTransactionsLikeRwt = async function () {
-            if (window.__almaraStartupPhase) {
-                return [];
-            }
+            if (window.__almaraStartupPhase) return [];
             return originalServerTransactions.apply(this, arguments);
         };
     }
@@ -42,6 +36,12 @@
 
     function delayed(original, delay, key) {
         return function () {
+            // sync.js registers these calls on DOMContentLoaded. Do not allow
+            // any of them to start while the dashboard is becoming interactive.
+            if (window.__almaraStartupPhase) {
+                console.info('[PerfGuard] startup sync skipped:', key);
+                return Promise.resolve({ skipped: true, reason: 'startup' });
+            }
             const args = arguments;
             window.__almaraPerfJobs = window.__almaraPerfJobs || {};
             if (window.__almaraPerfJobs[key]) return Promise.resolve({ skipped: true });
@@ -110,9 +110,11 @@
         if (armSyncGuard() || attempts >= 80) window.clearInterval(retryTimer);
     }, 50);
 
+    // The page gets a 20-second quiet window. Background sync starts later.
     window.setTimeout(function () {
         window.__almaraStartupPhase = false;
-    }, 1500);
+        console.info('[PerfGuard] startup phase released.');
+    }, 20000);
 
     let errorCount = 0;
     window.onerror = function (message, source, line, column, error) {
@@ -130,12 +132,10 @@
     }
 
     /*
-     * CRITICAL: sync.js starts a 4-second realtime loop immediately when it is
-     * evaluated. That loop performs four network pulls and can refresh the active
-     * dashboard on every tick. If any response is large, the browser main thread
-     * is repeatedly forced to parse JSON, scan localStorage and rerender tables.
-     * Stop that loop before it can run again, then replace it with a low-frequency
-     * background sync that never rerenders the active page.
+     * sync.js starts an aggressive 4-second realtime loop during script load.
+     * Every tick performs four network pulls and can rerender the active view.
+     * That is the direct source of the repeated main-thread work seen during
+     * the browser freeze. Stop it and install a quiet background loop instead.
      */
     if (typeof window.stopAlmaraRealtimeSync === 'function') {
         window.stopAlmaraRealtimeSync();
@@ -147,7 +147,7 @@
         if (typeof legacyStartRealtimeSync !== 'function') return;
 
         const runBackgroundSync = async function () {
-            if (window.__almaraRealtimeSyncBusy) return;
+            if (window.__almaraRealtimeSyncBusy || window.__almaraStartupPhase) return;
             window.__almaraRealtimeSyncBusy = true;
             try {
                 await syncFromMySQL_Transactions({ pushLocal: false, refreshUi: false, silent: true });
@@ -161,15 +161,14 @@
             }
         };
 
-        /* Give the dashboard a quiet startup window. */
         window.__almaraSafeRealtimeTimer = window.setTimeout(function () {
             window.__almaraSafeRealtimeTimer = window.setInterval(runBackgroundSync, 60000);
             runBackgroundSync();
-        }, 15000);
+        }, 60000);
 
         window.__transactionRealtimeSyncStarted = true;
         window.__globalRealtimeSyncStarted = true;
-        console.info('[PerfGuard] safe realtime sync: first run 15s, interval 60s, no UI refresh.');
+        console.info('[PerfGuard] safe realtime sync: first run 60s, interval 60s, no UI refresh.');
     };
 
     window.stopAlmaraRealtimeSync = function () {
@@ -180,12 +179,9 @@
         }
         window.__transactionRealtimeSyncStarted = false;
         window.__globalRealtimeSyncStarted = false;
-        if (typeof window.__almaraLegacyRealtimeStop === 'function') {
-            window.__almaraLegacyRealtimeStop();
-        }
     };
 
-    /* The old loop has already been stopped above. Do not start it again here. */
+    // Do not restart the legacy 4-second loop here.
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
