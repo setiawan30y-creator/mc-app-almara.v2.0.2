@@ -33,10 +33,45 @@
     window.demoPosPrintLast = function () { printTransaction(lastTransaction || safeGet(TRX_KEY).slice(-1)[0]); };
 })();
 
-// Performance guard must load after sync.js and all feature modules, but before DOMContentLoaded.
+// Install the startup firewall synchronously. sync.js registers its DOMContentLoaded
+// synchronization callback before this module reaches the end of the deferred list.
+// We must block those initial pulls here, not via a dynamically loaded guard that
+// can race with DOMContentLoaded.
+(function installStartupFirewall() {
+    window.__almaraStartupPhase = true;
+    const guardedNames = [
+        'syncFromMySQL_Currencies',
+        'syncFromMySQL_Transactions',
+        'syncFromMySQL_Customers',
+        'syncUniversalDatastore'
+    ];
+    guardedNames.forEach(function (name) {
+        const original = window[name];
+        if (typeof original !== 'function' || original.__almaraStartupGuarded) return;
+        const wrapped = function () {
+            if (window.__almaraStartupPhase) {
+                console.info('[StartupFirewall] skipped:', name);
+                return Promise.resolve({ skipped: true, reason: 'startup-firewall' });
+            }
+            return original.apply(this, arguments);
+        };
+        wrapped.__almaraStartupGuarded = true;
+        wrapped.__almaraOriginal = original;
+        window[name] = wrapped;
+    });
+    if (typeof window.stopAlmaraRealtimeSync === 'function') {
+        window.stopAlmaraRealtimeSync();
+    }
+    window.setTimeout(function () {
+        window.__almaraStartupPhase = false;
+        console.info('[StartupFirewall] startup phase released.');
+    }, 20000);
+})();
+
+// Keep the existing performance guard as a secondary/background safety net.
 (function () {
     const script = document.createElement('script');
-    script.src = '/js/modules/22-performance-guard.js?v=20260930-3';
+    script.src = '/js/modules/22-performance-guard.js?v=20260930-4';
     script.defer = false;
     document.head.appendChild(script);
 })();
