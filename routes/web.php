@@ -26,17 +26,37 @@ Route::get('/', function () {
     }
 
     $html = view('dashboard')->render();
+
+    // Remove legacy navigation tags whose Blade expression leaked into the final HTML.
+    $html = preg_replace(
+        '/<script\b[^>]*src=["\'][^"\']*(?:%7B%7B|\{\{)[^"\']*00-navigation-failsafe[^"\']*["\'][^>]*><\/script>/i',
+        '',
+        $html
+    );
+
+    // Do not block HTML parsing on the large application module set. The browser
+    // preserves the order of deferred scripts, while the dashboard can paint first.
+    $html = preg_replace_callback(
+        '/<script\b([^>]*\bsrc=["\'][^"\']*(?:\/js\/sync\.js|\/js\/modules\/)[^"\']*["\'][^>]*)><\/script>/i',
+        function ($m) {
+            $tag = $m[0];
+            if (preg_match('/\bdefer\b/i', $tag)) return $tag;
+            return '<script' . $m[1] . ' defer></script>';
+        },
+        $html
+    );
+
     $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-3') . '">';
     $themeCss = '<link rel="stylesheet" href="' . asset('css/mc-theme-engine.css?v=20260924-1') . '">';
     $posErpCss = '<link rel="stylesheet" href="' . asset('css/pos-erp-ux.css?v=20260926-1') . '">';
     $ledgerUiCss = '<link rel="stylesheet" href="' . asset('css/mc-ledger-ui.css?v=20260929-1') . '">';
-    $themeJs = '<script src="' . asset('js/mc-theme-engine.js?v=20260924-1') . '"></script>';
-    $themeMenuJs = '<script src="' . asset('js/modules/25-theme-settings-menu.js?v=20260925-2') . '"></script>';
-    $themeMenuDirectJs = '<script src="' . asset('js/modules/26-theme-settings-menu-direct.js?v=20260925-1') . '"></script>';
-    $posErpUxJs = '<script src="' . asset('js/modules/27-pos-erp-ux.js?v=20260926-1') . '"></script>';
-    $iso4217Js = '<script src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-2') . '"></script>';
-    $denominationEditorJs = '<script src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
-    $denominationFallbackJs = '<script src="' . asset('js/modules/24-currency-denomination-ui-fallback.js?v=20260923-1') . '"></script>';
+    $themeJs = '<script defer src="' . asset('js/mc-theme-engine.js?v=20260924-1') . '"></script>';
+    $themeMenuJs = '<script defer src="' . asset('js/modules/25-theme-settings-menu.js?v=20260925-2') . '"></script>';
+    $themeMenuDirectJs = '<script defer src="' . asset('js/modules/26-theme-settings-menu-direct.js?v=20260925-1') . '"></script>';
+    $posErpUxJs = '<script defer src="' . asset('js/modules/27-pos-erp-ux.js?v=20260926-1') . '"></script>';
+    $iso4217Js = '<script defer src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-2') . '"></script>';
+    $denominationEditorJs = '<script defer src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
+    $denominationFallbackJs = '<script defer src="' . asset('js/modules/24-currency-denomination-ui-fallback.js?v=20260923-1') . '"></script>';
 
     if (stripos($html, 'currency-master-ui-override.css') === false) {
         $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
