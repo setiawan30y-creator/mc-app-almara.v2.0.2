@@ -75,3 +75,20 @@
     script.defer = false;
     document.head.appendChild(script);
 })();
+
+// Currency denomination editor/fallback were previously injected by routes/web.php.
+// Keep routes/web.php simple and load these UI modules from the normal frontend chain.
+(function loadCurrencyDenominationModules() {
+    const modules = [
+        '/js/modules/23-currency-denomination-editor.js?v=20260930-1',
+        '/js/modules/24-currency-denomination-ui-fallback.js?v=20260930-1'
+    ];
+    modules.forEach(function (src) {
+        if (document.querySelector('script[data-almara-denom-module="' + src + '"]')) return;
+        const script = document.createElement('script');
+        script.src = src;
+        script.defer = false;
+        script.dataset.almaraDenomModule = src;
+        document.head.appendChild(script);
+    });
+})();
