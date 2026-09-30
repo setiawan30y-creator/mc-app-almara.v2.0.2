@@ -7,41 +7,30 @@ $files = @(
     (Join-Path $root 'public\js\synccodex.js')
 )
 
-$patch = @'
+$keyFunctionPattern = '(?s)function\s+getTransactionNotifyUserKey\s*\(\)\s*\{.*?\}'
+$keyFunctionReplacement = @'
+function getTransactionNotifyUserKey() {
+    return 'mc_seen_transaction_keys_v1__browser__';
+}
+'@
 
+$clickSeenPattern = '(?m)^\s*if\s*\(payload\.id\)\s+markTransactionNotificationSeen\(payload\.id\);\r?\n'
+$legacyAuthorityPattern = '(?s)\r?\n/\* ================================================================\r?\n \* ALMARA - TRANSACTION NOTIFICATION AUTHORITY v2.*?\r?\n\}\)\(\);\r?\n'
+
+$migration = @'
 /* ================================================================
- * ALMARA - TRANSACTION NOTIFICATION AUTHORITY v2
+ * ALMARA - TRANSACTION NOTIFICATION HISTORY v3
  * One browser-local dismissal history shared by all sync variants.
- * IMPORTANT: this patch is intentionally appended so it overrides
- * duplicate notification helpers without rewriting the sync engine.
  * ================================================================ */
-(function installAlmaraTransactionNotificationAuthority() {
-    if (window.__almaraTransactionNotificationAuthorityV2) return;
-    window.__almaraTransactionNotificationAuthorityV2 = true;
+(function migrateAlmaraTransactionNotificationHistoryV3() {
+    if (window.__almaraTransactionNotificationHistoryV3) return;
+    window.__almaraTransactionNotificationHistoryV3 = true;
 
     const STORAGE_KEY = 'mc_seen_transaction_keys_v1__browser__';
+    const LEGACY_PREFIX = 'mc_seen_transaction_keys_v1_';
     const MAX_KEYS = 2500;
 
-    function readKeys() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            const parsed = JSON.parse(raw || '[]');
-            return new Set(Array.isArray(parsed) ? parsed.map(v => String(v).trim()).filter(Boolean) : []);
-        } catch (error) {
-            console.warn('[NotificationAuthority] gagal membaca dismissed keys:', error);
-            return new Set();
-        }
-    }
-
-    function writeKeys(keys) {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(keys).filter(Boolean).slice(-MAX_KEYS)));
-        } catch (error) {
-            console.warn('[NotificationAuthority] gagal menyimpan dismissed keys:', error);
-        }
-    }
-
-    function transactionKey(value) {
+    function normalize(value) {
         if (!value) return '';
         if (typeof value === 'object') {
             return String(value.itemId || value.id || value.invoiceId || '').trim();
@@ -49,67 +38,36 @@ $patch = @'
         return String(value).trim();
     }
 
-    // Migrate all existing per-user v1 histories into one browser history.
     try {
-        const merged = readKeys();
+        const merged = new Set();
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (Array.isArray(existing)) {
+            existing.forEach(v => {
+                const k = normalize(v);
+                if (k) merged.add(k);
+            });
+        }
+
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (!key || !key.startsWith('mc_seen_transaction_keys_v1_') || key === STORAGE_KEY) continue;
+            if (!key || !key.startsWith(LEGACY_PREFIX) || key === STORAGE_KEY) continue;
             try {
                 const parsed = JSON.parse(localStorage.getItem(key) || '[]');
-                if (Array.isArray(parsed)) parsed.forEach(v => {
-                    const normalized = transactionKey(v);
-                    if (normalized) merged.add(normalized);
-                });
+                if (Array.isArray(parsed)) {
+                    parsed.forEach(v => {
+                        const k = normalize(v);
+                        if (k) merged.add(k);
+                    });
+                }
             } catch (_) {}
         }
-        writeKeys(merged);
-    } catch (_) {}
 
-    // Override the shared helpers used by all three sync variants.
-    window.getTransactionNotifyUserKey = function() {
-        return STORAGE_KEY;
-    };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(merged).slice(-MAX_KEYS)));
+    } catch (error) {
+        console.warn('[NotificationHistoryV3] migrasi riwayat gagal:', error);
+    }
 
-    window.getSeenTransactionKeysForNotification = function() {
-        return readKeys();
-    };
-
-    window.saveSeenTransactionKeysForNotification = function(keys) {
-        writeKeys(keys instanceof Set ? keys : new Set(Array.isArray(keys) ? keys : []));
-    };
-
-    window.getTransactionNotificationDismissedSet = function() {
-        return readKeys();
-    };
-
-    window.markTransactionNotificationSeen = function(key) {
-        const normalized = transactionKey(key);
-        if (!normalized) return;
-        const dismissed = readKeys();
-        dismissed.add(normalized);
-        writeKeys(dismissed);
-        if (typeof window.getTransactionNotificationActiveSet === 'function') {
-            window.getTransactionNotificationActiveSet().delete(normalized);
-        }
-    };
-
-    window.markTransactionNotificationSeenMany = function(keys) {
-        const dismissed = readKeys();
-        (Array.isArray(keys) ? keys : []).forEach(key => {
-            const normalized = transactionKey(key);
-            if (normalized) dismissed.add(normalized);
-        });
-        writeKeys(dismissed);
-    };
-
-    // Existing renderer calls this helper before displaying a transaction.
-    window.__almaraNotificationAlreadyDismissed = function(key) {
-        const normalized = transactionKey(key);
-        return !!normalized && readKeys().has(normalized);
-    };
-
-    console.info('[NotificationAuthority] v2 active; dismissed transaction history is browser-persistent.');
+    console.info('[NotificationHistoryV3] browser-persistent dismissal history ready.');
 })();
 '@
 
@@ -120,17 +78,34 @@ foreach ($file in $files) {
     }
 
     $content = Get-Content -LiteralPath $file -Raw -Encoding UTF8
-    $marker = 'ALMARA - TRANSACTION NOTIFICATION AUTHORITY v2'
-    if ($content.Contains($marker)) {
-        Write-Host "SKIP: patch sudah ada -> $file"
-        continue
+    $original = $content
+
+    $content = [regex]::Replace($content, $legacyAuthorityPattern, '', 1)
+
+    if ([regex]::IsMatch($content, $keyFunctionPattern)) {
+        $content = [regex]::Replace($content, $keyFunctionPattern, [System.Text.RegularExpressions.MatchEvaluator]{ param($m) $keyFunctionReplacement }, 1)
+    } else {
+        throw "getTransactionNotifyUserKey() tidak ditemukan pada $file"
+    }
+
+    $content = [regex]::Replace($content, $clickSeenPattern, '', 1)
+
+    if (-not $content.Contains('ALMARA - TRANSACTION NOTIFICATION HISTORY v3')) {
+        $content = $content.TrimEnd() + [Environment]::NewLine + [Environment]::NewLine + $migration.Trim() + [Environment]::NewLine
     }
 
     $backup = "$file.before-notification-authority.js"
-    Copy-Item -LiteralPath $file -Destination $backup -Force
-    Add-Content -LiteralPath $file -Value $patch -Encoding UTF8
-    Write-Host "PATCHED: $file"
-    Write-Host "BACKUP : $backup"
+    if (-not (Test-Path $backup)) {
+        Copy-Item -LiteralPath $file -Destination $backup -Force
+        Write-Host "BACKUP : $backup"
+    }
+
+    if ($content -ne $original) {
+        Set-Content -LiteralPath $file -Value $content -Encoding UTF8
+        Write-Host "PATCHED: $file"
+    } else {
+        Write-Host "UNCHANGED: $file"
+    }
 }
 
 if (Get-Command node -ErrorAction SilentlyContinue) {
