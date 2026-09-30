@@ -57,6 +57,7 @@ Route::get('/', function () {
     $iso4217Js = '<script defer src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-2') . '"></script>';
     $denominationEditorJs = '<script defer src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
     $denominationFallbackJs = '<script defer src="' . asset('js/modules/24-currency-denomination-ui-fallback.js?v=20260923-1') . '"></script>';
+    $startupOptimizerJs = '<script defer src="' . asset('js/modules/23-startup-optimizer.js?v=20260930-1') . '"></script>';
 
     if (stripos($html, 'currency-master-ui-override.css') === false) {
         $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
@@ -90,6 +91,9 @@ Route::get('/', function () {
     }
     if (stripos($html, '24-currency-denomination-ui-fallback.js') === false) {
         $html = str_ireplace('</body>', $denominationFallbackJs . "\n</body>", $html);
+    }
+    if (stripos($html, '23-startup-optimizer.js') === false) {
+        $html = str_ireplace('</body>', $startupOptimizerJs . "\n</body>", $html);
     }
 
     return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
