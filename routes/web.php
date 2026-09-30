@@ -20,113 +20,99 @@ function decodeDatastorePayload($payload)
     return is_array($decoded) ? $decoded : null;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Dashboard
+|--------------------------------------------------------------------------
+| Keep this route intentionally simple. Do not render the dashboard to a
+| string, rewrite script tags, inject assets, or force defer from the route.
+| The Blade view owns the frontend module order. This prevents route-level
+| HTML manipulation from breaking JavaScript dependencies and navigation.
+*/
 Route::get('/', function () {
     if (auth()->check() && strtolower((string) auth()->user()->role) === 'papan') {
         return redirect('/papan-kurs');
     }
 
-    $html = view('dashboard')->render();
-
-    // Remove legacy navigation tags whose Blade expression leaked into the final HTML.
-    $html = preg_replace(
-        '/<script\b[^>]*src=["\'][^"\']*(?:%7B%7B|\{\{)[^"\']*00-navigation-failsafe[^"\']*["\'][^>]*><\/script>/i',
-        '',
-        $html
-    );
-
-    // All application and third-party scripts are deferred so the HTML can paint
-    // before JavaScript compilation/execution. Execution order of defer scripts is
-    // preserved, so existing dependencies remain deterministic.
-    $html = preg_replace_callback(
-        '/<script\b([^>]*\bsrc=["\'][^"\']+["\'][^>]*)><\/script>/i',
-        function ($m) {
-            $tag = $m[0];
-            if (preg_match('/\b(?:async|defer)\b/i', $tag)) return $tag;
-            return '<script' . $m[1] . ' defer></script>';
-        },
-        $html
-    );
-
-    $currencyMasterCss = '<link rel="stylesheet" href="' . asset('css/currency-master-ui-override.css?v=20260923-3') . '">';
-    $themeCss = '<link rel="stylesheet" href="' . asset('css/mc-theme-engine.css?v=20260924-1') . '">';
-    $posErpCss = '<link rel="stylesheet" href="' . asset('css/pos-erp-ux.css?v=20260926-1') . '">';
-    $ledgerUiCss = '<link rel="stylesheet" href="' . asset('css/mc-ledger-ui.css?v=20260929-1') . '">';
-    $themeJs = '<script defer src="' . asset('js/mc-theme-engine.js?v=20260924-1') . '"></script>';
-    $themeMenuJs = '<script defer src="' . asset('js/modules/25-theme-settings-menu.js?v=20260925-2') . '"></script>';
-    $themeMenuDirectJs = '<script defer src="' . asset('js/modules/26-theme-settings-menu-direct.js?v=20260925-1') . '"></script>';
-    $posErpUxJs = '<script defer src="' . asset('js/modules/27-pos-erp-ux.js?v=20260926-1') . '"></script>';
-    $iso4217Js = '<script defer src="' . asset('js/modules/21-iso4217-currency-dropdown.js?v=20260923-2') . '"></script>';
-    $denominationEditorJs = '<script defer src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
-    $denominationFallbackJs = '<script defer src="' . asset('js/modules/24-currency-denomination-ui-fallback.js?v=20260923-1') . '"></script>';
-
-    if (stripos($html, 'currency-master-ui-override.css') === false) {
-        $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
-    }
-    if (stripos($html, 'mc-theme-engine.css') === false) {
-        $html = str_ireplace('</head>', $themeCss . "\n</head>", $html);
-    }
-    if (stripos($html, 'pos-erp-ux.css') === false) {
-        $html = str_ireplace('</head>', $posErpCss . "\n</head>", $html);
-    }
-    if (stripos($html, 'mc-ledger-ui.css') === false) {
-        $html = str_ireplace('</head>', $ledgerUiCss . "\n</head>", $html);
-    }
-    if (stripos($html, 'mc-theme-engine.js') === false) {
-        $html = str_ireplace('</body>', $themeJs . "\n</body>", $html);
-    }
-    if (stripos($html, '25-theme-settings-menu.js') === false) {
-        $html = str_ireplace('</body>', $themeMenuJs . "\n</body>", $html);
-    }
-    if (stripos($html, '26-theme-settings-menu-direct.js') === false) {
-        $html = str_ireplace('</body>', $themeMenuDirectJs . "\n</body>", $html);
-    }
-    if (stripos($html, '27-pos-erp-ux.js') === false) {
-        $html = str_ireplace('</body>', $posErpUxJs . "\n</body>", $html);
-    }
-    if (stripos($html, '21-iso4217-currency-dropdown.js') === false) {
-        $html = str_ireplace('</body>', $iso4217Js . "\n</body>", $html);
-    }
-    if (stripos($html, '23-currency-denomination-editor.js') === false) {
-        $html = str_ireplace('</body>', $denominationEditorJs . "\n</body>", $html);
-    }
-    if (stripos($html, '24-currency-denomination-ui-fallback.js') === false) {
-        $html = str_ireplace('</body>', $denominationFallbackJs . "\n</body>", $html);
-    }
-
-    return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
+    return view('dashboard');
 })->middleware([DevelopmentBypassAuth::class]);
 
 Route::get('/settings/theme', function () {
     return view('theme-settings');
 })->middleware([DevelopmentBypassAuth::class])->name('settings.theme');
 
-Route::get('/login', function () { return redirect('/'); })->name('login.form');
+Route::get('/login', function () {
+    return redirect('/');
+})->name('login.form');
+
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth', 'single.session'])->name('logout');
-Route::get('/auth/me', [AuthController::class, 'me'])->middleware(['auth', 'single.session']);
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware(['auth', 'single.session'])
+    ->name('logout');
+Route::get('/auth/me', [AuthController::class, 'me'])
+    ->middleware(['auth', 'single.session']);
 
+/* -------------------------------------------------------------------------
+ | ERP Payment
+ |------------------------------------------------------------------------- */
 Route::post('/erp/transactions/{transactionId}/payments', [ErpPaymentController::class, 'store'])
-    ->middleware(DevelopmentBypassAuth::class)->name('erp.transactions.payments.store');
-Route::get('/erp/closing/summary', [ErpCashClosingController::class, 'summary'])
-    ->middleware(DevelopmentBypassAuth::class)->name('erp.closing.summary');
-Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
-    ->middleware([DevelopmentBypassAuth::class, InjectClosingBridge::class])->name('erp.closing.index');
-Route::post('/erp/closing', [ErpCashClosingController::class, 'store'])
-    ->middleware(DevelopmentBypassAuth::class)->name('erp.closing.store');
-Route::get('/erp/gantungan', [ErpCashClosingController::class, 'gantungan'])
-    ->middleware(DevelopmentBypassAuth::class)->name('erp.gantungan.index');
-Route::post('/erp/gantungan', [ErpCashClosingController::class, 'gantunganStore'])
-    ->middleware(DevelopmentBypassAuth::class)->name('erp.gantungan.store');
-Route::post('/erp/gantungan/{gantungan}/return', [ErpCashClosingController::class, 'gantunganReturn'])
-    ->middleware(DevelopmentBypassAuth::class)->name('erp.gantungan.return');
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.transactions.payments.store');
 
+/* -------------------------------------------------------------------------
+ | ERP Cash Closing
+ |------------------------------------------------------------------------- */
+Route::get('/erp/closing/summary', [ErpCashClosingController::class, 'summary'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.closing.summary');
+
+Route::get('/erp/closing', [ErpCashClosingController::class, 'index'])
+    ->middleware([DevelopmentBypassAuth::class, InjectClosingBridge::class])
+    ->name('erp.closing.index');
+
+Route::post('/erp/closing', [ErpCashClosingController::class, 'store'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.closing.store');
+
+/* -------------------------------------------------------------------------
+ | ERP Gantungan
+ |------------------------------------------------------------------------- */
+Route::get('/erp/gantungan', [ErpCashClosingController::class, 'gantungan'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.gantungan.index');
+
+Route::post('/erp/gantungan', [ErpCashClosingController::class, 'gantunganStore'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.gantungan.store');
+
+Route::post('/erp/gantungan/{gantungan}/return', [ErpCashClosingController::class, 'gantunganReturn'])
+    ->middleware(DevelopmentBypassAuth::class)
+    ->name('erp.gantungan.return');
+
+/* -------------------------------------------------------------------------
+ | Papan Kurs
+ |------------------------------------------------------------------------- */
 Route::get('/papan-kurs', function () {
-    $profileData = null; $papanSettings = null;
+    $profileData = null;
+    $papanSettings = null;
+
     try {
         $profileStore = Datastore::where('store_key', 'mc_profile')->first();
-        if ($profileStore) $profileData = decodeDatastorePayload($profileStore->json_data);
+        if ($profileStore) {
+            $profileData = decodeDatastorePayload($profileStore->json_data);
+        }
+
         $settingsStore = Datastore::where('store_key', 'mc_papan_settings')->first();
-        if ($settingsStore) $papanSettings = decodeDatastorePayload($settingsStore->json_data);
-    } catch (\Exception $e) {}
-    return view('papan-kurs', ['profile' => $profileData, 'papanSettings' => $papanSettings]);
+        if ($settingsStore) {
+            $papanSettings = decodeDatastorePayload($settingsStore->json_data);
+        }
+    } catch (\Exception $e) {
+        // Keep the public board available even when optional datastore data
+        // cannot be read.
+    }
+
+    return view('papan-kurs', [
+        'profile' => $profileData,
+        'papanSettings' => $papanSettings,
+    ]);
 })->middleware(['auth', 'single.session']);
