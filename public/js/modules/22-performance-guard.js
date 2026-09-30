@@ -30,8 +30,6 @@
         window.__almaraOriginalServerTransactionsLikeRwt = originalServerTransactions;
         window.getServerTransactionsLikeRwt = async function () {
             if (window.__almaraStartupPhase) {
-                /* Do not touch localStorage here either: a huge JSON cache can
-                 * block the main thread just like a huge API response. */
                 return [];
             }
             return originalServerTransactions.apply(this, arguments);
@@ -112,7 +110,6 @@
         if (armSyncGuard() || attempts >= 80) window.clearInterval(retryTimer);
     }, 50);
 
-    /* Keep startup phase until the initial dashboard render has completed. */
     window.setTimeout(function () {
         window.__almaraStartupPhase = false;
     }, 1500);
@@ -131,6 +128,64 @@
             });
         });
     }
+
+    /*
+     * CRITICAL: sync.js starts a 4-second realtime loop immediately when it is
+     * evaluated. That loop performs four network pulls and can refresh the active
+     * dashboard on every tick. If any response is large, the browser main thread
+     * is repeatedly forced to parse JSON, scan localStorage and rerender tables.
+     * Stop that loop before it can run again, then replace it with a low-frequency
+     * background sync that never rerenders the active page.
+     */
+    if (typeof window.stopAlmaraRealtimeSync === 'function') {
+        window.stopAlmaraRealtimeSync();
+    }
+
+    const legacyStartRealtimeSync = window.startAlmaraRealtimeSync;
+    window.startAlmaraRealtimeSync = function () {
+        if (window.__almaraSafeRealtimeTimer) return;
+        if (typeof legacyStartRealtimeSync !== 'function') return;
+
+        const runBackgroundSync = async function () {
+            if (window.__almaraRealtimeSyncBusy) return;
+            window.__almaraRealtimeSyncBusy = true;
+            try {
+                await syncFromMySQL_Transactions({ pushLocal: false, refreshUi: false, silent: true });
+                await syncFromMySQL_Currencies({ refreshUi: false, silent: true });
+                await syncFromMySQL_Customers({ refreshUi: false, silent: true });
+                await syncUniversalDatastore({ preferRemote: true, refreshUi: false, silent: true });
+            } catch (error) {
+                console.warn('[PerfGuard] background sync failed:', error);
+            } finally {
+                window.__almaraRealtimeSyncBusy = false;
+            }
+        };
+
+        /* Give the dashboard a quiet startup window. */
+        window.__almaraSafeRealtimeTimer = window.setTimeout(function () {
+            window.__almaraSafeRealtimeTimer = window.setInterval(runBackgroundSync, 60000);
+            runBackgroundSync();
+        }, 15000);
+
+        window.__transactionRealtimeSyncStarted = true;
+        window.__globalRealtimeSyncStarted = true;
+        console.info('[PerfGuard] safe realtime sync: first run 15s, interval 60s, no UI refresh.');
+    };
+
+    window.stopAlmaraRealtimeSync = function () {
+        if (window.__almaraSafeRealtimeTimer) {
+            clearTimeout(window.__almaraSafeRealtimeTimer);
+            clearInterval(window.__almaraSafeRealtimeTimer);
+            window.__almaraSafeRealtimeTimer = null;
+        }
+        window.__transactionRealtimeSyncStarted = false;
+        window.__globalRealtimeSyncStarted = false;
+        if (typeof window.__almaraLegacyRealtimeStop === 'function') {
+            window.__almaraLegacyRealtimeStop();
+        }
+    };
+
+    /* The old loop has already been stopped above. Do not start it again here. */
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
