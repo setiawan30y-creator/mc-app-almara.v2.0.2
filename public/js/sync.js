@@ -145,17 +145,41 @@ async function syncFromMySQL_Currencies(options = {}) {
 async function saveToMySQL_Currency(currencyObject) {
     window.__almaraActiveCurrencyPushes = (window.__almaraActiveCurrencyPushes || 0) + 1;
     try {
-        const response = await fetch('api/currencies', {
+        const request = window.authFetch || window.fetch;
+        const buildOptions = () => ({
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(currencyObject)
         });
-        const result = await response.json();
-        console.log("Sinkronisasi MySQL:", result.message);
+
+        let response = await request('api/currencies', buildOptions());
+        let result = await response.json().catch(() => ({}));
+
+        // /api/currencies memakai middleware web + CSRF. Jika token kedaluwarsa,
+        // ambil token terbaru lalu ulangi satu kali.
+        if (response.status === 419 && typeof refreshCsrfTokenFromServer === 'function') {
+            const refreshed = await refreshCsrfTokenFromServer();
+            if (refreshed) {
+                response = await request('api/currencies', buildOptions());
+                result = await response.json().catch(() => ({}));
+            }
+        }
+
+        const ok = response.ok && result.status !== 'error';
+        if (!ok) {
+            const message = result.message || result.error || `HTTP ${response.status}`;
+            console.error("Gagal menyimpan Currency MySQL:", message);
+            return { ok: false, status: response.status, message };
+        }
+
+        console.log("Sinkronisasi MySQL:", result.message || 'Currency tersimpan.');
+        return { ok: true, status: response.status, message: result.message || 'Currency tersimpan.' };
     } catch (error) {
         console.error("Gagal menyimpan ke MySQL:", error);
+        return { ok: false, status: 0, message: error.message || String(error) };
     } finally {
         window.__almaraActiveCurrencyPushes = Math.max(0, (window.__almaraActiveCurrencyPushes || 0) - 1);
     }
