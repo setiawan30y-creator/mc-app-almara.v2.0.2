@@ -4,6 +4,7 @@
   if (!('serviceWorker' in navigator)) return;
 
   var deferredPrompt = null;
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   var installButton = null;
   var updateButton = null;
 
@@ -47,7 +48,7 @@
   window.addEventListener('beforeinstallprompt', function (event) {
     event.preventDefault();
     deferredPrompt = event;
-    if (!window.matchMedia('(display-mode: standalone)').matches) showInstallButton();
+    if (!isStandalone) showInstallButton();
   });
 
   window.addEventListener('appinstalled', function () {
@@ -65,7 +66,7 @@
     });
   });
 
-  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+  navigator.serviceWorker.register('/sw.js?v=1.0.1', { scope: '/' })
     .then(function (registration) {
       registration.addEventListener('updatefound', function () {
         var worker = registration.installing;
