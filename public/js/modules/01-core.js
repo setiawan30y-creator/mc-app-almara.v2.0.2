@@ -830,17 +830,17 @@ window.getFlagHtml = function(code) {
 }
 
 // Save Data
-function saveCurrencies(data) { 
+function saveCurrencies(data) {
     window.__almaraLastLocalCurrencyWriteAt = Date.now();
-    
-    // Deteksi tren naik/turun dengan membandingkan nilai lama di localStorage
+
+    // Deteksi tren naik/turun dengan membandingkan nilai lama di localStorage.
     let oldCurrencies = [];
     try {
         oldCurrencies = JSON.parse(localStorage.getItem('mc_currencies')) || [];
     } catch(e) {
         oldCurrencies = [];
     }
-    
+
     const oldMap = {};
     oldCurrencies.forEach(o => {
         if (o && o.code) {
@@ -871,13 +871,20 @@ function saveCurrencies(data) {
         });
     }
 
-    localStorage.setItem('mc_currencies', JSON.stringify(data)); 
-    
-    // Sinkronsiasi otomatis ke MySQL setiap ada perubahan di master data
-    if(typeof saveToMySQL_Currency === 'function') {
-        data.forEach(c => saveToMySQL_Currency(c)); 
+    localStorage.setItem('mc_currencies', JSON.stringify(data));
+
+    // Sinkronisasi ke MySQL. Return Promise agar form master dapat menunggu
+    // hasil server dan menampilkan pesan gagal yang benar kepada pengguna.
+    if (typeof saveToMySQL_Currency === 'function' && Array.isArray(data)) {
+        const promises = data
+            .filter(c => c && c.code)
+            .map(c => Promise.resolve().then(() => saveToMySQL_Currency(c)));
+        return Promise.allSettled(promises);
     }
+
+    return Promise.resolve([]);
 }
+
 function saveTransactions(data) { 
     // Ambil data lama sebelum ditimpa, untuk mencari mana yang transaksi baru saja ditambahkan
     let oldData = window.safeArrayGet('mc_transactions');
