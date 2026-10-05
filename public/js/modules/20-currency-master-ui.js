@@ -282,11 +282,17 @@ function open(code=null) { const modal=ensureModal();if(!modal)return;const curr
                 }))
             ]
         };
-        const options = () => ({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        const options = () => {
+            const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+            return {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers,
+                body: JSON.stringify(payload)
+            };
+        };
         let response = await request('api/currency-denominations/sync', options());
         let result = await response.json().catch(() => ({}));
         if (response.status === 419 && typeof refreshCsrfTokenFromServer === 'function') {
