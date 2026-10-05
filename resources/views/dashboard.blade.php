@@ -7979,9 +7979,15 @@
     </script>
     <script>
         // INIT FLATPICKR FOR CUSTOMER BIRTH DATE
-        flatpickr("#modalCustBirthDate", {
-            dateFormat: "d M Y",
-            allowInput: true
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof window.flatpickr === 'function') {
+                window.flatpickr("#modalCustBirthDate", {
+                    dateFormat: "d M Y",
+                    allowInput: true
+                });
+            } else {
+                console.warn('[Flatpickr] Library belum tersedia.');
+            }
         });
 
         // RESET FILTER FUNCTIONS
