@@ -25,8 +25,12 @@ mount.innerHTML='<div class="panel"><div class="panel-header" style="display:fle
  if(!existingSection) main.appendChild(section);
  var company=mount.querySelector('#lnCompany'), type=mount.querySelector('#lnType'), format=mount.querySelector('#lnFormat'), digits=mount.querySelector('#lnDigits'), preview=mount.querySelector('#lnPreview'), types=[];
  function refreshSelect(){type.innerHTML=types.map(function(x){return '<option value="'+esc(x.code)+'">'+esc(x.code)+' — '+esc(x.name)+'</option>';}).join('');}
- function renderTypes(){mount.querySelector('#lnTypes').innerHTML='<b>Jenis Surat</b><table class="table" style="margin-top:8px"><thead><tr><th>Kode</th><th>Nama</th><th></th></tr></thead><tbody>'+types.map(function(x,i){return '<tr><td><input class="form-control" data-code="'+i+'" value="'+esc(x.code)+'"></td><td><input class="form-control" data-name="'+i+'" value="'+esc(x.name)+'"></td><td><button class="btn btn-sm btn-outline" data-del="'+i+'"><i class="fa-solid fa-trash"></i></button></td></tr>';}).join('')+'</tbody></table>';
- mount.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){types.splice(+b.dataset.del,1);renderTypes();refreshSelect();};});
+ function renderTypes(){
+   var typeBox=mount.querySelector('#lnTypes');
+   typeBox.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b>Jenis Surat</b><button type="button" class="btn btn-outline btn-sm" id="lnTypesToggle"><i class="fa-solid fa-minus"></i> Minimize</button></div><div id="lnTypesBody"><table class="table" style="margin-top:8px"><thead><tr><th>Kode</th><th>Nama</th><th></th></tr></thead><tbody>'+types.map(function(x,i){return '<tr><td><input class="form-control" data-code="'+i+'" value="'+esc(x.code)+'"></td><td><input class="form-control" data-name="'+i+'" value="'+esc(x.name)+'"></td><td><button class="btn btn-sm btn-outline" data-del="'+i+'"><i class="fa-solid fa-trash"></i></button></td></tr>';}).join('')+'</tbody></table></div>';
+   var toggle=typeBox.querySelector('#lnTypesToggle'),body=typeBox.querySelector('#lnTypesBody');
+   toggle.onclick=function(){var hidden=body.style.display==='none';body.style.display=hidden?'block':'none';toggle.innerHTML=hidden?'<i class="fa-solid fa-minus"></i> Minimize':'<i class="fa-solid fa-plus"></i> Tampilkan';};
+   mount.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){types.splice(+b.dataset.del,1);renderTypes();refreshSelect();};});
  mount.querySelectorAll('[data-code]').forEach(function(i){i.oninput=function(){types[+i.dataset.code].code=i.value.toUpperCase();refreshSelect();};});
  mount.querySelectorAll('[data-name]').forEach(function(i){i.oninput=function(){types[+i.dataset.name].name=i.value;};});
  }
