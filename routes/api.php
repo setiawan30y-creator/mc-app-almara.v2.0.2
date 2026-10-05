@@ -60,6 +60,7 @@ Route::middleware($apiAuthMiddleware)->group(function () {
     // pecahan dapat dipakai kembali oleh Manajemen Kurs, POS, dan Stok Valas.
     Route::get('/currency-denominations', [CurrencyDenominationController::class, 'index']);
     Route::post('/currency-denominations', [CurrencyDenominationController::class, 'store']);
+    Route::post('/currency-denominations/sync', [CurrencyDenominationController::class, 'sync']);
     Route::get('/currency-denominations/{currencyDenomination}', [CurrencyDenominationController::class, 'show']);
     Route::put('/currency-denominations/{currencyDenomination}', [CurrencyDenominationController::class, 'update']);
     Route::patch('/currency-denominations/{currencyDenomination}', [CurrencyDenominationController::class, 'update']);
