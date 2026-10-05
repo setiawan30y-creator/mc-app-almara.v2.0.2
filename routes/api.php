@@ -78,7 +78,10 @@ Route::middleware($apiAuthMiddleware)->group(function () {
 
     Route::get('/letter-numbers/settings', [LetterNumberController::class, 'settings']);
     Route::post('/letter-numbers/settings', [LetterNumberController::class, 'saveSettings']);
+    Route::get('/letter-numbers/records', [LetterNumberController::class, 'index']);
     Route::post('/letter-numbers/next', [LetterNumberController::class, 'next']);
+    Route::get('/letter-numbers/records/{id}', [LetterNumberController::class, 'documents']);
+    Route::post('/letter-numbers/records/{id}/documents', [LetterNumberController::class, 'uploadDocument']);
 });
 
 Route::get('/public/currencies', [App\Http\Controllers\CurrencyController::class, 'index']);
