@@ -77,11 +77,11 @@ Route::get('/', function () {
     if (stripos($html, '20-currency-master-ui.js') === false) {
         $html = str_ireplace('</body>', $currencyMasterJs . "\n</body>", $html);
     }
-    if (stripos($html, '29-letter-archive.js') === false) {
-        $html = str_ireplace('</body>', $letterArchiveJs . "\n</body>", $html);
-    }
     if (stripos($html, '28-letter-number.js') === false) {
         $html = str_ireplace('</body>', $letterNumberJs . "\n</body>", $html);
+    }
+    if (stripos($html, '29-letter-archive.js') === false) {
+        $html = str_ireplace('</body>', $letterArchiveJs . "\n</body>", $html);
     }
 
     // Do not let synchronous third-party/local JavaScript block the initial
