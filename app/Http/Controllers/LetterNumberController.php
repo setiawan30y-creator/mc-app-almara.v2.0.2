@@ -1,118 +1,15 @@
 <?php
-
 namespace App\Http\Controllers;
-
-use App\Models\Datastore;
-use App\Models\LetterNumberCounter;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-
-class LetterNumberController extends Controller
-{
-    private const STORE_KEY = 'mc_letter_number_settings';
-
-    public function settings()
-    {
-        return response()->json(['status'=>'success','data'=>$this->settingsArray()]);
-    }
-
-    public function saveSettings(Request $request)
-    {
-        $validated=$request->validate([
-            'company_code'=>['required','string','max:20'],
-            'format'=>['required','string','max:200'],
-            'digits'=>['required','integer','min:1','max:10'],
-            'month_format'=>[Rule::in(['short','numeric','long'])],
-            'reset_mode'=>[Rule::in(['yearly','never'])],
-            'letter_types'=>['required','array','min:1'],
-            'letter_types.*.code'=>['required','string','max:20'],
-            'letter_types.*.name'=>['required','string','max:100'],
-        ]);
-
-        $validated['company_code']=strtoupper(trim($validated['company_code']));
-        $validated['letter_types']=collect($validated['letter_types'])
-            ->map(fn($row)=>['code'=>strtoupper(trim($row['code'])),'name'=>trim($row['name'])])
-            ->unique('code')->values()->all();
-
-        Datastore::updateOrCreate(['store_key'=>self::STORE_KEY],['json_data'=>$validated]);
-        return response()->json(['status'=>'success','data'=>$validated]);
-    }
-
-    public function next(Request $request)
-    {
-        $validated=$request->validate([
-            'letter_type'=>['required','string','max:20'],
-            'date'=>['nullable','date'],
-        ]);
-
-        $settings=$this->settingsArray();
-        $company=strtoupper(trim($settings['company_code']));
-        $type=strtoupper(trim($validated['letter_type']));
-        $date=isset($validated['date']) ? now()->parse($validated['date']) : now();
-        $year=(int)$date->year;
-
-        $allowed=collect($settings['letter_types'])->pluck('code')->map(fn($v)=>strtoupper($v));
-        if(!$allowed->contains($type)){
-            return response()->json(['status'=>'error','message'=>'Jenis surat belum terdaftar.'],422);
-        }
-
-        $number=DB::transaction(function() use($company,$type,$year){
-            $counter=LetterNumberCounter::query()
-                ->where('company_code',$company)->where('letter_type',$type)->where('year',$year)
-                ->lockForUpdate()->first();
-
-            if(!$counter){
-                $counter=LetterNumberCounter::create([
-                    'company_code'=>$company,'letter_type'=>$type,'year'=>$year,'last_number'=>0
-                ]);
-            }
-
-            $counter->last_number=(int)$counter->last_number+1;
-            $counter->save();
-            return $counter->last_number;
-        });
-
-        return response()->json(['status'=>'success','data'=>[
-            'number'=>$this->formatNumber($number,$company,$type,$date,$settings),
-            'sequence'=>$number,'company_code'=>$company,'letter_type'=>$type,'year'=>$year
-        ]]);
-    }
-
-    private function settingsArray(): array
-    {
-        $store=Datastore::where('store_key',self::STORE_KEY)->first();
-        $settings=$store?->json_data;
-        if(is_string($settings)) $settings=json_decode($settings,true);
-        $settings=is_array($settings)?$settings:[];
-        return $settings+[
-            'company_code'=>'MPV',
-            'format'=>'{NO}/{COMPANY}/{TYPE}/{MONTH}/{YEAR}',
-            'digits'=>4,
-            'month_format'=>'short',
-            'reset_mode'=>'yearly',
-            'letter_types'=>[
-                ['code'=>'SK','name'=>'Surat Keputusan'],
-                ['code'=>'SPK','name'=>'Surat Perjanjian Kerja'],
-                ['code'=>'INV','name'=>'Invoice'],
-                ['code'=>'SKK','name'=>'Surat Keterangan'],
-                ['code'=>'MEMO','name'=>'Memorandum'],
-            ],
-        ];
-    }
-
-    private function formatNumber(int $sequence,string $company,string $type,$date,array $settings): string
-    {
-        $no=str_pad((string)$sequence,max(1,(int)$settings['digits']),'0',STR_PAD_LEFT);
-        $month=match($settings['month_format']){
-            'numeric'=>str_pad((string)$date->month,2,'0',STR_PAD_LEFT),
-            'long'=>strtolower($date->translatedFormat('F')),
-            default=>strtolower($date->translatedFormat('M')),
-        };
-
-        return strtr((string)$settings['format'],[
-            '{NO}'=>$no,'{COMPANY}'=>$company,'{TYPE}'=>$type,
-            '{MONTH}'=>$month,'{YEAR}'=>(string)$date->year
-        ]);
-    }
+use App\Models\Datastore; use App\Models\LetterNumberCounter; use App\Models\LetterRecord; use App\Models\LetterDocument;
+use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Validation\Rule;
+class LetterNumberController extends Controller {
+ private const STORE_KEY='mc_letter_number_settings';
+ public function settings(){return response()->json(['status'=>'success','data'=>$this->settingsArray()]);}
+ public function saveSettings(Request $request){$v=$request->validate(['company_code'=>['required','string','max:20'],'format'=>['required','string','max:200'],'digits'=>['required','integer','min:1','max:10'],'month_format'=>[Rule::in(['short','numeric','long'])],'reset_mode'=>[Rule::in(['yearly','never'])],'letter_types'=>['required','array','min:1'],'letter_types.*.code'=>['required','string','max:20'],'letter_types.*.name'=>['required','string','max:100']]);$v['company_code']=strtoupper(trim($v['company_code']));$v['letter_types']=collect($v['letter_types'])->map(fn($r)=>['code'=>strtoupper(trim($r['code'])),'name'=>trim($r['name'])])->unique('code')->values()->all();Datastore::updateOrCreate(['store_key'=>self::STORE_KEY],['json_data'=>$v]);return response()->json(['status'=>'success','data'=>$v]);}
+ public function index(){return response()->json(['status'=>'success','data'=>LetterRecord::with('documents')->latest('id')->limit(200)->get()]);}
+ public function next(Request $request){$v=$request->validate(['letter_type'=>['required','string','max:20'],'date'=>['nullable','date'],'subject'=>['nullable','string','max:255']]);$s=$this->settingsArray();$company=strtoupper(trim($s['company_code']));$type=strtoupper(trim($v['letter_type']));$date=isset($v['date'])?\Carbon\Carbon::parse($v['date']):now();$year=(int)$date->year;$allowed=collect($s['letter_types'])->pluck('code')->map(fn($x)=>strtoupper($x));if(!$allowed->contains($type))return response()->json(['status'=>'error','message'=>'Jenis surat belum terdaftar.'],422);$result=DB::transaction(function()use($company,$type,$year,$date,$v,$s){$c=LetterNumberCounter::query()->where('company_code',$company)->where('letter_type',$type)->where('year',$year)->lockForUpdate()->first();if(!$c)$c=LetterNumberCounter::create(['company_code'=>$company,'letter_type'=>$type,'year'=>$year,'last_number'=>0]);$c->last_number=(int)$c->last_number+1;$c->save();$number=$this->formatNumber($c->last_number,$company,$type,$date,$s);$record=LetterRecord::create(['letter_number'=>$number,'sequence'=>$c->last_number,'company_code'=>$company,'letter_type'=>$type,'letter_date'=>$date->toDateString(),'subject'=>$v['subject']??null,'status'=>'MENUNGGU DOKUMEN']);return [$number,$c->last_number,$record->id];});return response()->json(['status'=>'success','data'=>['number'=>$result[0],'sequence'=>$result[1],'record_id'=>$result[2],'company_code'=>$company,'letter_type'=>$type,'year'=>$year]]);}
+ public function documents($id){$r=LetterRecord::with('documents')->findOrFail($id);return response()->json(['status'=>'success','data'=>$r]);}
+ public function uploadDocument(Request $request,$id){$r=LetterRecord::findOrFail($id);$v=$request->validate(['data_url'=>['required','string'],'filename'=>['required','string','max:255'],'description'=>['nullable','string','max:255']]);if(!preg_match('/^data:([a-z0-9.+-]+\/[a-z0-9.+-]+);base64,(.+)$/i',$v['data_url'],$m))return response()->json(['status'=>'error','message'=>'Format file tidak valid.'],422);$bin=base64_decode($m[2],true);if($bin===false||strlen($bin)>10*1024*1024)return response()->json(['status'=>'error','message'=>'File tidak valid atau melebihi 10 MB.'],422);$exts=['application/pdf'=>'pdf','image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','application/msword'=>'doc','application/vnd.openxmlformats-officedocument.wordprocessingml.document'=>'docx','application/vnd.ms-excel'=>'xls','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'=>'xlsx'];$mime=strtolower($m[1]);if(!isset($exts[$mime]))return response()->json(['status'=>'error','message'=>'Tipe file tidak didukung.'],422);$safe=\Illuminate\Support\Str::slug(pathinfo($v['filename'],PATHINFO_FILENAME))?:'surat';$name=$safe.'-'.now()->format('YmdHis').'-'.\Illuminate\Support\Str::random(5).'.'.$exts[$mime];$dir=public_path('uploads/company/documents');if(!is_dir($dir))mkdir($dir,0755,true);file_put_contents($dir.DIRECTORY_SEPARATOR.$name,$bin);$doc=LetterDocument::create(['letter_record_id'=>$r->id,'file_name'=>$v['filename'],'file_url'=>'/uploads/company/documents/'.$name,'mime_type'=>$mime,'file_size'=>strlen($bin),'description'=>$v['description']??null]);$r->update(['status'=>'DOKUMEN TERUPLOAD']);return response()->json(['status'=>'success','message'=>'Dokumen berhasil diupload.','data'=>$doc]);}
+ private function settingsArray():array{$store=Datastore::where('store_key',self::STORE_KEY)->first();$s=$store?->json_data;if(is_string($s))$s=json_decode($s,true);$s=is_array($s)?$s:[];return $s+['company_code'=>'APV','format'=>'{NO}/{COMPANY}/{TYPE}/{MONTH}/{YEAR}','digits'=>4,'month_format'=>'short','reset_mode'=>'yearly','letter_types'=>[['code'=>'SK','name'=>'Surat Keputusan'],['code'=>'SPK','name'=>'Surat Perjanjian Kerja'],['code'=>'PKS','name'=>'Perjanjian Kerja Sama'],['code'=>'SP','name'=>'Surat Pernyataan'],['code'=>'SKK','name'=>'Surat Keterangan'],['code'=>'ST','name'=>'Surat Tugas'],['code'=>'SPT','name'=>'Surat Perintah Tugas'],['code'=>'BA','name'=>'Berita Acara'],['code'=>'MEMO','name'=>'Memorandum Internal'],['code'=>'UND','name'=>'Surat Undangan'],['code'=>'INV','name'=>'Invoice'],['code'=>'KW','name'=>'Kwitansi'],['code'=>'SR','name'=>'Surat Referensi'],['code'=>'LAIN','name'=>'Dokumen Lainnya']]];}
+ private function formatNumber(int $seq,string $company,string $type,$date,array $s):string{$no=str_pad((string)$seq,max(1,(int)$s['digits']),'0',STR_PAD_LEFT);$months=['jan','feb','mar','apr','mei','jun','jul','agu','sep','okt','nov','des'];$month=match($s['month_format']){'numeric'=>str_pad((string)$date->month,2,'0',STR_PAD_LEFT),'long'=>['januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember'][$date->month-1],default=>$months[$date->month-1]};return strtr((string)$s['format'],['{NO}'=>$no,'{COMPANY}'=>$company,'{TYPE}'=>$type,'{MONTH}'=>$month,'{YEAR}'=>$date->year]);}
 }
