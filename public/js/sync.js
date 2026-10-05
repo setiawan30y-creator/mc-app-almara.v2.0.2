@@ -146,13 +146,19 @@ async function saveToMySQL_Currency(currencyObject) {
     window.__almaraActiveCurrencyPushes = (window.__almaraActiveCurrencyPushes || 0) + 1;
     try {
         const request = window.authFetch || window.fetch;
-        const buildOptions = () => ({
-            method: 'POST',
-            headers: {
+        const buildOptions = () => {
+            const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
-            },
+            };
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+            return {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers,
             body: JSON.stringify(currencyObject)
+            };
         });
 
         let response = await request('api/currencies', buildOptions());
