@@ -367,17 +367,17 @@ const DEFAULT_MASTER_CURRENCIES = [
 
 const DEFAULT_ROLE_PERMISSIONS = {
     owner: {
-        menus: ['dashboard-view','pos-view','demo-pos-view','customers-view','mutation-view','currency-view','closing-view','harian-view','laporan-posisi-valuta-view','reports-view','audit-view','booking-view','valas-gallery-view','documents-view','ai-chat-view','gantungan-view','old-money-view','expense-view','adjustment-view','investor-view','dtott-view','hris-view','laporan-lku-view','laporan-granular-view','laporan-sipesat-view','laporan-goaml-view','laporan-sipendar-view','laporan-aset-view','laporan-bukubesar-view','laporan-labarugi-view','laporan-neraca-view','laporan-ekuitas-view','laporan-coretax-view','masterdata-view','settings-view'],
+        menus: ['dashboard-view','pos-view','demo-pos-view','customers-view','mutation-view','currency-view','closing-view','letter-number-view','harian-view','laporan-posisi-valuta-view','reports-view','audit-view','booking-view','valas-gallery-view','documents-view','ai-chat-view','gantungan-view','old-money-view','expense-view','adjustment-view','investor-view','dtott-view','hris-view','laporan-lku-view','laporan-granular-view','laporan-sipesat-view','laporan-goaml-view','laporan-sipendar-view','laporan-aset-view','laporan-bukubesar-view','laporan-labarugi-view','laporan-neraca-view','laporan-ekuitas-view','laporan-coretax-view','masterdata-view','settings-view'],
         special: { menuKeuangan: true, menuBi: true, userManagement: true, accessSettings: true, dangerZone: true, customerImportTools: true, transactionLedgerCard: true, oldMoneySupplierManagement: true, closingHistoryReset: true },
         actions: { edit: true, delete: true, export: true, print: true, profit: true, valasProfit: true, trxDate: true, manualInvoice: true, oldMoneyEdit: true, oldMoneyDelete: true }
     },
     superadmin: {
-        menus: ['dashboard-view','pos-view','demo-pos-view','customers-view','mutation-view','currency-view','closing-view','harian-view','laporan-posisi-valuta-view','reports-view','audit-view','booking-view','valas-gallery-view','documents-view','ai-chat-view','gantungan-view','old-money-view','expense-view','adjustment-view','investor-view','dtott-view','hris-view','laporan-lku-view','laporan-granular-view','laporan-sipesat-view','laporan-goaml-view','laporan-sipendar-view','laporan-aset-view','laporan-bukubesar-view','laporan-labarugi-view','laporan-neraca-view','laporan-ekuitas-view','laporan-coretax-view','masterdata-view','settings-view'],
+        menus: ['dashboard-view','pos-view','demo-pos-view','customers-view','mutation-view','currency-view','closing-view','letter-number-view','harian-view','laporan-posisi-valuta-view','reports-view','audit-view','booking-view','valas-gallery-view','documents-view','ai-chat-view','gantungan-view','old-money-view','expense-view','adjustment-view','investor-view','dtott-view','hris-view','laporan-lku-view','laporan-granular-view','laporan-sipesat-view','laporan-goaml-view','laporan-sipendar-view','laporan-aset-view','laporan-bukubesar-view','laporan-labarugi-view','laporan-neraca-view','laporan-ekuitas-view','laporan-coretax-view','masterdata-view','settings-view'],
         special: { menuKeuangan: true, menuBi: true, userManagement: true, accessSettings: true, dangerZone: true, customerImportTools: true, transactionLedgerCard: true, oldMoneySupplierManagement: true, closingHistoryReset: true },
         actions: { edit: true, delete: true, export: true, print: true, profit: true, valasProfit: true, trxDate: true, manualInvoice: true, oldMoneyEdit: true, oldMoneyDelete: true }
     },
     admin: {
-        menus: ['dashboard-view','pos-view','demo-pos-view','customers-view','mutation-view','currency-view','closing-view','harian-view','laporan-posisi-valuta-view','reports-view','audit-view','booking-view','valas-gallery-view','documents-view','ai-chat-view','gantungan-view','old-money-view','expense-view','adjustment-view','investor-view','dtott-view','hris-view','laporan-lku-view','laporan-granular-view','laporan-sipesat-view','laporan-goaml-view','laporan-sipendar-view','laporan-aset-view','laporan-bukubesar-view','laporan-labarugi-view','laporan-neraca-view','laporan-ekuitas-view','laporan-coretax-view','masterdata-view','settings-view'],
+        menus: ['dashboard-view','pos-view','demo-pos-view','customers-view','mutation-view','currency-view','closing-view','letter-number-view','harian-view','laporan-posisi-valuta-view','reports-view','audit-view','booking-view','valas-gallery-view','documents-view','ai-chat-view','gantungan-view','old-money-view','expense-view','adjustment-view','investor-view','dtott-view','hris-view','laporan-lku-view','laporan-granular-view','laporan-sipesat-view','laporan-goaml-view','laporan-sipendar-view','laporan-aset-view','laporan-bukubesar-view','laporan-labarugi-view','laporan-neraca-view','laporan-ekuitas-view','laporan-coretax-view','masterdata-view','settings-view'],
         special: { menuKeuangan: true, menuBi: true, userManagement: false, accessSettings: false, dangerZone: false, customerImportTools: true, transactionLedgerCard: true, oldMoneySupplierManagement: true, closingHistoryReset: false },
         actions: { edit: true, delete: true, export: true, print: true, profit: true, valasProfit: true, trxDate: true, manualInvoice: false, oldMoneyEdit: true, oldMoneyDelete: true }
     },
@@ -571,6 +571,32 @@ function ensureRekapValutaMenuPermission(permissions) {
     return permissions;
 }
 
+// One-time rollout: existing installations receive Nomor Surat in
+// management roles without overwriting any other custom permissions.
+function ensureLetterNumberMenuPermission(permissions) {
+    const migrationKey = 'mc_letter_number_menu_permission_migrated_v1';
+    if (localStorage.getItem(migrationKey) === 'true') return permissions;
+
+    ['owner', 'superadmin', 'admin'].forEach(role => {
+        if (!permissions[role]) permissions[role] = {};
+        if (!Array.isArray(permissions[role].menus)) {
+            permissions[role].menus = [...(DEFAULT_ROLE_PERMISSIONS[role]?.menus || [])];
+        }
+        if (!permissions[role].menus.includes('letter-number-view')) {
+            const currencyIndex = permissions[role].menus.indexOf('currency-view');
+            permissions[role].menus.splice(
+                currencyIndex >= 0 ? currencyIndex + 1 : permissions[role].menus.length,
+                0,
+                'letter-number-view'
+            );
+        }
+    });
+
+    localStorage.setItem('mc_role_permissions', JSON.stringify(permissions));
+    localStorage.setItem(migrationKey, 'true');
+    return permissions;
+}
+
 // One-time default rollout: existing installations receive the demo menu for
 // management roles, then it remains fully editable in Setting Hak Akses.
 function ensureDemoPosMenuPermission(permissions) {
@@ -631,6 +657,14 @@ function initDB() {
     if(!localStorage.getItem('mc_master_citizenships')) localStorage.setItem('mc_master_citizenships', JSON.stringify(DEFAULT_CITIZENS));
     if(!localStorage.getItem('mc_master_currencies')) localStorage.setItem('mc_master_currencies', JSON.stringify(DEFAULT_MASTER_CURRENCIES));
     if(!localStorage.getItem('mc_role_permissions')) localStorage.setItem('mc_role_permissions', JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+    if(localStorage.getItem('mc_letter_number_menu_permission_migrated_v1') !== 'true') {
+        try {
+            const permissions = ensureLetterNumberMenuPermission(JSON.parse(localStorage.getItem('mc_role_permissions')) || DEFAULT_ROLE_PERMISSIONS);
+            localStorage.setItem('mc_role_permissions', JSON.stringify(permissions));
+        } catch(e) {
+            console.warn('Gagal migrasi akses Nomor Surat:', e);
+        }
+    }
     if(localStorage.getItem('mc_rekap_valuta_permission_migrated_v2') !== 'true') {
         try {
             const permissions = ensureRekapValutaMenuPermission(JSON.parse(localStorage.getItem('mc_role_permissions')) || DEFAULT_ROLE_PERMISSIONS);
