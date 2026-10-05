@@ -157,7 +157,7 @@
         modal.innerHTML = `
             <div class="modal-content panel almara-currency-modal">
                 <div class="almara-cm-head">
-                    <div class="almara-cm-title"><div class="almara-cm-title-icon"><i class="fa-solid fa-coins"></i></div><div><h2>Edit/Tambah Valuta</h2><p>Kelola kode valuta, kurs, stok, dan denominasi pecahan uang.</p></div></div>
+                    <div class="almara-cm-title"><div class="almara-cm-title-icon"><i class="fa-solid fa-coins"></i></div><div><h2>Tambah Valuta</h2><p>Tambahkan valuta baru ke Manajemen Kurs.</p></div></div>
                     <button type="button" class="btn btn-outline" onclick="closeCurrencyModal()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="almara-cm-scroll"><div class="almara-cm-body">
