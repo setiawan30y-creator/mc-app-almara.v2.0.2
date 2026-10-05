@@ -301,8 +301,105 @@ function open(code=null) { const modal=ensureModal();if(!modal)return;const curr
         return result;
     }
 
-    window.almaraSaveCurrencyMaster=async function(){const code=String(document.getElementById('modalCurCode')?.value||'').trim().toUpperCase();const currencies=typeof getCurrencies==='function'?getCurrencies():[];const index=currencies.findIndex(c=>String(c.code||'').trim().toUpperCase()===code);const isEditMode=window.__almaraCurrencyMode==='edit';if(code&&index>=0&&!isEditMode){alert('Valuta '+code+' sudah terdaftar di Manajemen Kurs. Gunakan tombol Edit untuk mengubah data atau menambahkan pecahan.');return;}const name=String(document.getElementById('modalCurName')?.value||'').trim(),baseBuy=num(document.getElementById('modalCurBuy')?.value),baseSell=num(document.getElementById('modalCurSell')?.value);if(!code||!name||baseBuy<=0||baseSell<=0)return alert('Kode, Nama Valuta, Base Rate Beli, dan Base Rate Jual wajib diisi.');const old=index>=0?currencies[index]:{},mb=num(document.getElementById('modalMarginBuy')?.value),ms=num(document.getElementById('modalMarginSell')?.value),data={...old,code,name,label:name,numeric_code:String(document.getElementById('modalCurNumeric')?.value||'').trim(),symbol:String(document.getElementById('modalCurSymbol')?.value||'').trim(),decimals:Math.max(0,Math.min(6,num(document.getElementById('modalCurDecimals')?.value,2))),active:!!document.getElementById('modalCurActive')?.checked,base_buy:baseBuy,base_sell:baseSell,buy:baseBuy+mb,sell:baseSell+ms,stock:num(document.getElementById('modalCurStock')?.value),alert:num(document.getElementById('modalCurAlert')?.value,500),margin_buy:mb,margin_sell:ms,denominations:{banknote:[...(window.__almaraCurrencyDraft?.denominations?.banknote||[])],coin:[...(window.__almaraCurrencyDraft?.denominations?.coin||[])]},denomination_updated_at:new Date().toISOString()};const user=typeof getCurrentUser==='function'?getCurrentUser():null;if(index>=0){data.inputBy=old.inputBy||user?.fullName||'Admin Kasir';data.editBy=user?.fullName||'Admin Kasir';currencies[index]=data;}else{data.inputBy=user?.fullName||'Admin Kasir';data.editBy='';currencies.push(data);}if(typeof saveCurrencies!=='function')return alert('Penyimpanan valuta tidak tersedia.');const originalText='Simpan Valuta';const button=document.querySelector('#currencyModal button[onclick*="almaraSaveCurrencyMaster"]');if(button){button.disabled=true;button.dataset.originalText=button.innerHTML;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';}try{const syncResult=await saveCurrencies(currencies);if(Array.isArray(syncResult)&&syncResult.some(item=>item&&item.status==='rejected')){throw new Error('Sebagian data valuta gagal disinkronkan ke database.');}const failed=Array.isArray(syncResult)?syncResult.find(item=>item&&item.value&&item.value.ok===false):null;if(failed)throw new Error(failed.value.message||'Data valuta gagal disimpan ke database.');await syncCurrencyDenominations(code,data);if(typeof closeCurrencyModal==='function')closeCurrencyModal();if(typeof loadCurrencyTable==='function'){try{loadCurrencyTable();}catch(refreshError){console.warn('Tabel valuta gagal direfresh otomatis:',refreshError);}}alert(`Valuta ${code} berhasil disimpan beserta ${data.denominations.banknote.length} banknote dan ${data.denominations.coin.length} koin.`);}catch(error){console.error('Master valuta gagal disimpan:',error);alert('Valuta gagal disimpan ke database: '+(error.message||error));}finally{if(button){button.disabled=false;button.innerHTML=button.dataset.originalText||originalText;}}};
+    window.almaraSaveCurrencyMaster=async function(){
+        const code=String(document.getElementById('modalCurCode')?.value||'').trim().toUpperCase();
+        const currencies=typeof getCurrencies==='function'?getCurrencies():[];
+        const index=currencies.findIndex(c=>String(c.code||'').trim().toUpperCase()===code);
+        const isEditMode=window.__almaraCurrencyMode==='edit';
 
+        if(code&&index>=0&&!isEditMode){
+            alert('Valuta '+code+' sudah terdaftar di Manajemen Kurs. Gunakan tombol Edit untuk mengubah data atau menambahkan pecahan.');
+            return;
+        }
+
+        const name=String(document.getElementById('modalCurName')?.value||'').trim();
+        const baseBuy=num(document.getElementById('modalCurBuy')?.value);
+        const baseSell=num(document.getElementById('modalCurSell')?.value);
+        if(!code||!name||baseBuy<=0||baseSell<=0){
+            alert('Kode, Nama Valuta, Base Rate Beli, dan Base Rate Jual wajib diisi.');
+            return;
+        }
+
+        const old=index>=0?currencies[index]:{};
+        const mb=num(document.getElementById('modalMarginBuy')?.value);
+        const ms=num(document.getElementById('modalMarginSell')?.value);
+        const data={
+            ...old,
+            code,
+            name,
+            label:name,
+            numeric_code:String(document.getElementById('modalCurNumeric')?.value||'').trim(),
+            symbol:String(document.getElementById('modalCurSymbol')?.value||'').trim(),
+            decimals:Math.max(0,Math.min(6,num(document.getElementById('modalCurDecimals')?.value,2))),
+            active:!!document.getElementById('modalCurActive')?.checked,
+            base_buy:baseBuy,
+            base_sell:baseSell,
+            buy:baseBuy+mb,
+            sell:baseSell+ms,
+            stock:num(document.getElementById('modalCurStock')?.value),
+            alert:num(document.getElementById('modalCurAlert')?.value,500),
+            margin_buy:mb,
+            margin_sell:ms,
+            denominations:{
+                banknote:[...(window.__almaraCurrencyDraft?.denominations?.banknote||[])],
+                coin:[...(window.__almaraCurrencyDraft?.denominations?.coin||[])]
+            },
+            denomination_updated_at:new Date().toISOString()
+        };
+
+        const user=typeof getCurrentUser==='function'?getCurrentUser():null;
+        data.inputBy=index>=0?(old.inputBy||user?.fullName||'Admin Kasir'):(user?.fullName||'Admin Kasir');
+        data.editBy=index>=0?(user?.fullName||'Admin Kasir'):'';
+
+        const button=document.querySelector('#currencyModal button[onclick*="almaraSaveCurrencyMaster"]');
+        const originalText=button?.innerHTML||'<i class="fa-solid fa-floppy-disk"></i> Simpan Valuta';
+        if(button){
+            button.disabled=true;
+            button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+        }
+
+        try{
+            // Simpan HANYA valuta yang sedang dibuat/diedit.
+            // Jangan memblokir penyimpanan karena ada valuta lama lain yang gagal sync.
+            if(typeof saveToMySQL_Currency!=='function'){
+                throw new Error('Fungsi penyimpanan Currency ke database tidak tersedia.');
+            }
+
+            const result=await saveToMySQL_Currency(data);
+            if(!result||result.ok!==true){
+                throw new Error(result?.message||'Server menolak penyimpanan valuta.');
+            }
+
+            // Pecahan disinkronkan setelah master valuta berhasil dibuat.
+            await syncCurrencyDenominations(code,data);
+
+            // Update local runtime setelah database sukses.
+            const nextCurrencies=Array.isArray(currencies)?[...currencies]:[];
+            if(index>=0) nextCurrencies[index]=data;
+            else nextCurrencies.push(data);
+            localStorage.setItem('mc_currencies',JSON.stringify(nextCurrencies));
+
+            // Tutup modal SEGERA setelah seluruh penyimpanan sukses.
+            if(typeof closeCurrencyModal==='function') closeCurrencyModal();
+
+            if(typeof renderCurrencies==='function'){
+                try{ renderCurrencies(); }catch(refreshError){ console.warn('Render tabel valuta gagal:',refreshError); }
+            }
+            if(typeof loadCurrencyTable==='function'){
+                try{ loadCurrencyTable(); }catch(refreshError){ console.warn('Refresh tabel valuta gagal:',refreshError); }
+            }
+
+            alert('Valuta '+code+' berhasil disimpan.');
+        }catch(error){
+            console.error('Master valuta gagal disimpan:',error);
+            alert('Valuta gagal disimpan ke database: '+(error?.message||error));
+        }finally{
+            if(button){
+                button.disabled=false;
+                button.innerHTML=originalText;
+            }
+        }
+    };
     window.closeCurrencyModal=function(){const modal=document.getElementById('currencyModal');if(modal)modal.classList.remove('show','almara-currency-master-open');window.__almaraCurrencyDraft=null;window.__almaraCurrencyMode=null;};
     window.openCurrencyModal=open;
     window.almaraCurrencyMasterUI={open,renderDenoms};
