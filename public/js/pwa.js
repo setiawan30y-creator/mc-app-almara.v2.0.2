@@ -66,7 +66,7 @@
     });
   });
 
-  navigator.serviceWorker.register('/sw.js?v=1.0.2', { scope: '/' })
+  navigator.serviceWorker.register('/sw.js?v=1.0.3', { scope: '/' })
     .then(function (registration) {
       registration.addEventListener('updatefound', function () {
         var worker = registration.installing;
