@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Datastore; use App\Models\LetterNumberCounter; use App\Models\LetterRecord; use App\Models\LetterDocument;
-use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Validation\Rule;
+use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Validation\Rule; use Symfony\Component\Process\Process;
 class LetterNumberController extends Controller {
  private const STORE_KEY='mc_letter_number_settings';
  public function settings(){return response()->json(['status'=>'success','data'=>$this->settingsArray()]);}
@@ -13,7 +13,83 @@ class LetterNumberController extends Controller {
   $doc=LetterDocument::with('letter')->findOrFail($documentId);
   $path=public_path(ltrim(parse_url($doc->file_url,PHP_URL_PATH) ?: '', '/'));
   if(!is_file($path)) abort(404,'File surat tidak ditemukan.');
-  return response()->file($path,['Content-Type'=>$doc->mime_type ?: 'application/octet-stream','Content-Disposition'=>'inline; filename="'.basename($doc->file_name).'"']);
+
+  $mime=strtolower((string)($doc->mime_type ?: 'application/octet-stream'));
+  $officeMimes=[
+      'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ];
+
+  // Browser-native preview: PDF dan gambar ditampilkan langsung.
+  if(!in_array($mime,$officeMimes,true)){
+      $inlineName=basename($doc->file_name);
+      return response()->file($path,[
+          'Content-Type'=>$mime,
+          'Content-Disposition'=>'inline; filename="'.addslashes($inlineName).'"'
+      ]);
+  }
+
+  // Word/Excel tidak punya renderer native yang konsisten di browser.
+  // Konversi sekali ke PDF memakai LibreOffice/soffice, lalu tampilkan PDF inline.
+  $previewDir=storage_path('app/letter-previews');
+  if(!is_dir($previewDir)) mkdir($previewDir,0755,true);
+  $previewPath=$previewDir.'/letter-'.$doc->id.'.pdf';
+
+  if(!is_file($previewPath) || filemtime($previewPath)<filemtime($path)){
+      $soffice=$this->findOfficeBinary();
+      if(!$soffice){
+          return response()->json([
+              'status'=>'error',
+              'message'=>'Preview Word/Excel membutuhkan LibreOffice (soffice). File asli tetap dapat di-download.'
+          ],503);
+      }
+
+      $sourceDir=dirname($path);
+      $process=new Process([
+          $soffice,
+          '--headless',
+          '--convert-to','pdf',
+          '--outdir',$previewDir,
+          $path
+      ]);
+      $process->setTimeout(120);
+      $process->run();
+
+      $generated=$previewDir.'/'.pathinfo($path,PATHINFO_FILENAME).'.pdf';
+      if(!$process->isSuccessful() || !is_file($generated)){
+          return response()->json([
+              'status'=>'error',
+              'message'=>'File tidak dapat dikonversi menjadi PDF untuk preview.',
+              'detail'=>trim($process->getErrorOutput() ?: $process->getOutput())
+          ],422);
+      }
+
+      if($generated!==$previewPath){
+          @rename($generated,$previewPath);
+      }
+  }
+
+  return response()->file($previewPath,[
+      'Content-Type'=>'application/pdf',
+      'Content-Disposition'=>'inline; filename="'.addslashes(pathinfo($doc->file_name,PATHINFO_FILENAME).'.pdf').'"'
+  ]);
+ }
+
+ private function findOfficeBinary(): ?string {
+  $candidates=[
+      env('LIBREOFFICE_PATH'),
+      'soffice',
+      'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+      'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
+      '/usr/bin/soffice',
+      '/usr/local/bin/soffice',
+  ];
+  foreach($candidates as $candidate){
+      if(!$candidate) continue;
+      if($candidate==='soffice') return $candidate;
+      if(is_file($candidate) && is_executable($candidate)) return $candidate;
+  }
+  return null;
  }
  public function downloadDocument($documentId){
   $doc=LetterDocument::with('letter')->findOrFail($documentId);
