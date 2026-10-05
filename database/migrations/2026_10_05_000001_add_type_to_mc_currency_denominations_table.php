@@ -12,8 +12,8 @@ return new class extends Migration
             $table->string('type', 20)->default('banknote')->after('denomination');
         });
 
+        // Keep the existing unique index because an existing foreign key depends on it.
         Schema::table('mc_currency_denominations', function (Blueprint $table) {
-            $table->dropUnique('mc_currency_denoms_code_denom_unique');
             $table->unique(
                 ['currency_code', 'type', 'denomination'],
                 'mc_currency_denoms_code_type_denom_unique'
@@ -25,10 +25,6 @@ return new class extends Migration
     {
         Schema::table('mc_currency_denominations', function (Blueprint $table) {
             $table->dropUnique('mc_currency_denoms_code_type_denom_unique');
-            $table->unique(
-                ['currency_code', 'denomination'],
-                'mc_currency_denoms_code_denom_unique'
-            );
             $table->dropColumn('type');
         });
     }
