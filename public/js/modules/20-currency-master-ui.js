@@ -18,10 +18,11 @@
         const style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = `
-            #currencyModal .almara-currency-modal { width:min(1180px,96vw); height:min(92vh,900px); max-height:92vh; overflow:hidden; padding:0; border-radius:18px; display:flex; flex-direction:column; }
-            #currencyModal .almara-cm-head { position:sticky; top:0; z-index:5; background:inherit; flex:0 0 auto; }
-            #currencyModal .almara-cm-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
-            #currencyModal .almara-cm-footer { position:sticky; bottom:0; z-index:5; background:inherit; flex:0 0 auto; }
+            #currencyModal { overflow:hidden !important; box-sizing:border-box !important; }
+            #currencyModal .almara-currency-modal { width:min(1180px,96vw) !important; height:92vh !important; max-height:92vh !important; min-height:0 !important; overflow:hidden !important; padding:0 !important; border-radius:18px; display:block !important; box-sizing:border-box !important; }
+            #currencyModal .almara-cm-head { position:relative; z-index:5; background:inherit; height:82px; box-sizing:border-box; }
+            #currencyModal .almara-cm-scroll { display:block !important; height:calc(92vh - 164px) !important; max-height:calc(92vh - 164px) !important; min-height:0 !important; overflow-y:scroll !important; overflow-x:hidden !important; overscroll-behavior:contain; scrollbar-width:auto; scrollbar-gutter:stable; box-sizing:border-box; }
+            #currencyModal .almara-cm-footer { position:relative; z-index:5; background:inherit; height:82px; box-sizing:border-box; }
             .almara-cm-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 24px; border-bottom:1px solid rgba(148,163,184,.22); }
             .almara-cm-title { display:flex; align-items:center; gap:14px; }
             .almara-cm-title-icon { width:46px; height:46px; border-radius:13px; display:grid; place-items:center; background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#fff; font-size:22px; box-shadow:0 8px 20px rgba(245,158,11,.22); }
@@ -52,7 +53,7 @@
             .almara-cm-denom-toolbar button { border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; background:#fff; color:#334155; font-weight:700; cursor:pointer; }
             .almara-cm-denom-toolbar button.primary { background:#16a34a; border-color:#16a34a; color:#fff; }
             .almara-cm-denom-toolbar button.preset { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
-            .almara-cm-denom-scroll { max-height:270px; overflow-y:auto; scrollbar-width:thin; }
+             .almara-cm-denom-scroll { max-height:270px; min-height:90px; overflow-y:auto !important; scrollbar-width:auto; scrollbar-gutter:stable; }
             .almara-cm-denom-input { width:100%; box-sizing:border-box; border:1px solid #cbd5e1; border-radius:7px; padding:7px 8px; background:#fff; font-weight:700; }
             .almara-cm-denom-help { padding:8px 12px; color:#64748b; font-size:.72rem; background:#f8fafc; border-top:1px solid #eef2f7; }
             .almara-cm-denom-head { padding:11px 13px; font-weight:800; background:#f8fafc; display:flex; justify-content:space-between; align-items:center; }
