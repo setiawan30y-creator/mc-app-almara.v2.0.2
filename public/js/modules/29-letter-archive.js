@@ -99,11 +99,15 @@ async function render(view){
      target.innerHTML='<div class="text-muted" style="padding:24px;text-align:center">Tidak ada nomor surat yang sesuai dengan pencarian/filter.</div>';
      return;
    }
-   target.innerHTML='<table class="table"><thead><tr><th>No</th><th>Nomor</th><th>Jenis</th><th>Tanggal</th><th>Perihal</th><th>Status</th><th>File</th><th>Aksi</th></tr></thead><tbody>'+
+   target.innerHTML='<table class="table"><thead><tr><th>No</th><th>Nomor</th><th>Jenis</th><th>Tanggal</th><th>Perihal</th><th>Status</th><th>File / Dokumen</th><th>Aksi</th></tr></thead><tbody>'+
      filtered.map((x,i)=>{
        const docs=Array.isArray(x.documents)?x.documents:[];
        const fileNames=docs.length
-         ? '<div style="max-width:220px">'+docs.map(d=>'<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc(d.file_name||'')+'"><i class="fa-solid fa-paperclip"></i> '+esc(d.file_name||'File')+'</div>').join('')+'</div>'
+         ? '<div style="max-width:330px">'+docs.map(d=>{
+             const id=encodeURIComponent(d.id);
+             const name=esc(d.file_name||'File');
+             return '<div style="display:flex;align-items:center;gap:5px;margin:3px 0;flex-wrap:wrap"><span style="min-width:0;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+name+'"><i class="fa-solid fa-paperclip"></i> '+name+'</span><a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="'+API+'/documents/'+id+'/preview"><i class="fa-solid fa-eye"></i> Preview</a><a class="btn btn-sm btn-outline" href="'+API+'/documents/'+id+'/download"><i class="fa-solid fa-download"></i> Download</a></div>';
+           }).join('')+'</div>'
          : '<span class="text-muted">0 file</span>';
        return '<tr><td>'+(i+1)+'</td><td><b>'+esc(x.letter_number)+'</b></td><td>'+esc(x.letter_type)+'</td><td>'+esc(x.letter_date)+'</td><td>'+esc(x.subject||'-')+'</td><td>'+esc(x.status)+'</td><td>'+docs.length+' file'+(docs.length?'<div style="margin-top:4px">'+fileNames+'</div>':'')+'</td><td style="white-space:nowrap"><button type="button" class="btn btn-sm btn-outline" data-letter-upload="'+x.id+'"><i class="fa-solid fa-paperclip"></i> Upload File</button></td></tr>';
      }).join('')+'</tbody></table>';
