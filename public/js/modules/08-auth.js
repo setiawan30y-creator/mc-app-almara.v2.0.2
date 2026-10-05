@@ -454,6 +454,7 @@ const ROLE_ACCESS_MENU_GROUPS = [
             { key: 'demo-pos-view', label: 'Demo Transaksi' },
             { key: 'customers-view', label: 'Data Nasabah' },
             { key: 'currency-view', label: 'Manajemen Kurs' },
+            { key: 'letter-number-view', label: 'Nomor Surat' },
             { key: 'closing-view', label: 'Closing Harian' },
             { key: 'harian-view', label: 'Laporan Harian' },
             { key: 'laporan-posisi-valuta-view', label: 'Rekap Valuta' },
