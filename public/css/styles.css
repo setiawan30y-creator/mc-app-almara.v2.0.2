@@ -2671,3 +2671,62 @@ body.mobile-mode #pos-view .pos-cart-panel { padding: 8px !important; }
 @media (max-width: 340px) {
     body.mobile-mode .stats-grid { grid-template-columns: 1fr !important; }
 }
+
+
+/* Master Kurs & Valuta modal: canonical scroll layout */
+#currencyModal.show.almara-currency-master-open {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    padding: 20px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+#currencyModal.show.almara-currency-master-open > .almara-currency-modal {
+    width: min(1180px, calc(100vw - 40px)) !important;
+    height: min(900px, calc(100vh - 40px)) !important;
+    max-width: none !important;
+    max-height: calc(100vh - 40px) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+}
+#currencyModal.show.almara-currency-master-open .almara-cm-scroll {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: auto !important;
+    scrollbar-gutter: stable !important;
+}
+#currencyModal.show.almara-currency-master-open .almara-cm-body {
+    min-height: max-content !important;
+}
+#currencyModal.show.almara-currency-master-open .almara-cm-footer,
+#currencyModal.show.almara-currency-master-open .almara-cm-head {
+    flex: none !important;
+}
+@media (max-width: 700px) {
+    #currencyModal.show.almara-currency-master-open {
+        padding: 8px !important;
+    }
+    #currencyModal.show.almara-currency-master-open > .almara-currency-modal {
+        width: 100% !important;
+        height: calc(100vh - 16px) !important;
+        max-height: calc(100vh - 16px) !important;
+    }
+}
