@@ -80,6 +80,8 @@ Route::middleware($apiAuthMiddleware)->group(function () {
     Route::post('/letter-numbers/settings', [LetterNumberController::class, 'saveSettings']);
     Route::get('/letter-numbers/records', [LetterNumberController::class, 'index']);
     Route::post('/letter-numbers/next', [LetterNumberController::class, 'next']);
+    Route::get('/letter-numbers/documents/{documentId}/preview', [LetterNumberController::class, 'previewDocument']);
+    Route::get('/letter-numbers/documents/{documentId}/download', [LetterNumberController::class, 'downloadDocument']);
     Route::get('/letter-numbers/records/{id}', [LetterNumberController::class, 'documents']);
     Route::post('/letter-numbers/records/{id}/documents', [LetterNumberController::class, 'uploadDocument']);
 });
