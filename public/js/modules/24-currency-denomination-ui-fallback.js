@@ -128,6 +128,9 @@
     function addEditor() {
         const modal = document.getElementById('currencyModal');
         if (!modal) return null;
+        // Master UI baru sudah memiliki editor denominasi sendiri.
+        // Jangan inject fallback kedua karena dapat mengacaukan scroll dan proses simpan.
+        if (modal.querySelector('.almara-currency-modal')) return null;
         let editor = document.getElementById(EDITOR_ID);
         if (editor) return editor;
 
@@ -172,7 +175,7 @@
 
     function bindSave() {
         const modal = document.getElementById('currencyModal');
-        if (!modal || modal.dataset.denomFallbackSave === '1') return;
+        if (!modal || modal.querySelector('.almara-currency-modal') || modal.dataset.denomFallbackSave === '1') return;
         modal.dataset.denomFallbackSave = '1';
         modal.addEventListener('click', e => {
             const button = e.target.closest('button, input[type=submit]');
