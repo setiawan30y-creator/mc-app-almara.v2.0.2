@@ -38,8 +38,8 @@ Route::get('/', function () {
     $denominationEditorJs = '<script src="' . asset('js/modules/23-currency-denomination-editor.js?v=20260923-1') . '"></script>';
     $denominationFallbackJs = '<script src="' . asset('js/modules/24-currency-denomination-ui-fallback.js?v=20260923-1') . '"></script>';
     $currencyMasterJs = '<script src="' . asset('js/modules/20-currency-master-ui.js?v=20261005-4') . '"></script>';
-    $letterNumberJs = '<script src="' . asset('js/modules/28-letter-number.js?v=20261005-2') . '"></script>';
-    $letterArchiveJs = '<script src="' . asset('js/modules/29-letter-archive.js?v=20261005-1') . '"></script>';
+    $letterNumberJs = '<script src="' . asset('js/modules/28-letter-number.js?v=20261005-3') . '"></script>';
+    $letterArchiveJs = '<script src="' . asset('js/modules/29-letter-archive.js?v=20261005-2') . '"></script>';
 
     if (stripos($html, 'currency-master-ui-override.css') === false) {
         $html = str_ireplace('</head>', $currencyMasterCss . "\n</head>", $html);
