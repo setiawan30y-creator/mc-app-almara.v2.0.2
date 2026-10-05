@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'mc-almara-pwa-v1.0.1';
+const CACHE_VERSION = 'mc-almara-pwa-v1.0.2';
 const OFFLINE_URL = '/offline.html';
 
 self.addEventListener('install', (event) => {
