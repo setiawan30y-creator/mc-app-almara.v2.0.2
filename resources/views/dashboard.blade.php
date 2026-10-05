@@ -435,7 +435,7 @@
                         <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="dashboard">
-                    <a href="#" class="nav-item" data-target="dashboard-view" data-sidebar-group="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                    <a href="#" class="nav-item active" data-target="dashboard-view" data-sidebar-group="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
                     </div>
                 </section>
 
