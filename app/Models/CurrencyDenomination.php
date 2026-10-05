@@ -15,6 +15,7 @@ class CurrencyDenomination extends Model
     protected $fillable = [
         'currency_code',
         'denomination',
+        'type',
         'buy',
         'sell',
         'margin_buy',
