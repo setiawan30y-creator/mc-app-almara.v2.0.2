@@ -159,7 +159,7 @@ async function saveToMySQL_Currency(currencyObject) {
             headers,
             body: JSON.stringify(currencyObject)
             };
-        });
+        };
 
         let response = await request('api/currencies', buildOptions());
         let result = await response.json().catch(() => ({}));
