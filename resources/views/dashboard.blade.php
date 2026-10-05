@@ -447,26 +447,25 @@
                     <div class="sidebar-group-items" data-sidebar-group-items="transaksi">
                     <a href="#" class="nav-item" data-target="pos-view" data-sidebar-group="transaksi" id="navPosReal"><i class="fa-solid fa-cash-register"></i> Transaksi / POS</a>
                     <a href="#" class="nav-item" data-target="demo-pos-view" data-sidebar-group="transaksi"><i class="fa-solid fa-flask"></i> Demo Transaksi</a>
-                    <a href="#" class="nav-item" data-target="kurs-hari-ini-view" data-sidebar-group="transaksi"><i class="fa-solid fa-money-bill-trend-up" style="color:#38bdf8;""></i> Kurs Hari Ini</a>
-                    <a href="#" class="nav-item" data-target="booking-view" data-sidebar-group="transaksi"><i class="fa-solid fa-book-bookmark" style="color:#FBBF24;""></i> Daftar Booking</a>
-                    <a href="#" class="nav-item" data-target="waiting-list-view" data-sidebar-group="transaksi"><i class="fa-solid fa-hourglass-half" style="color:#EC4899;""></i> Permintaan Valas</a>
-                    <a href="#" class="nav-item" data-target="pickup-view" data-sidebar-group="transaksi"><i class="fa-solid fa-motorcycle" style="color:#F97316;""></i> Serah Terima / Pickup</a>
-                    <a href="#" class="nav-item" data-target="gantungan-view" data-sidebar-group="transaksi"><i class="fa-solid fa-hand-holding-dollar" style="color:#FBBF24;""></i> Catatan Gantungan</a>
+                    <a href="#" class="nav-item" data-target="kurs-hari-ini-view" data-sidebar-group="transaksi"><i class="fa-solid fa-money-bill-trend-up"></i> Kurs Hari Ini</a>
+                    <a href="#" class="nav-item" data-target="booking-view" data-sidebar-group="transaksi"><i class="fa-solid fa-book-bookmark"></i> Daftar Booking</a>
+                    <a href="#" class="nav-item" data-target="pickup-view" data-sidebar-group="transaksi"><i class="fa-solid fa-motorcycle"></i> Serah Terima / Pickup</a>
                     <a href="#" class="nav-item" data-target="closing-view" data-sidebar-group="transaksi"><i class="fa-solid fa-box-archive"></i> Closing Harian</a>
                     <a href="#" class="nav-item" data-target="mutation-view" data-sidebar-group="transaksi"><i class="fa-solid fa-building-columns"></i> Mutasi Bank</a>
+                    <a href="#" class="nav-item" data-target="old-money-view" data-sidebar-group="transaksi"><i class="fa-solid fa-coins"></i> Koin & Uang Lama</a>
+                    <a href="#" class="nav-item" data-target="valas-gallery-view" data-sidebar-group="transaksi"><i class="fa-solid fa-images"></i> Galeri Valas</a>
+                    <a href="#" class="nav-item" data-target="waiting-list-view" data-sidebar-group="transaksi"><i class="fa-solid fa-hourglass-half"></i> Permintaan Valas</a>
                     </div>
                 </section>
 
                 <section class="sidebar-menu-group" data-sidebar-group-section="nasabah">
                     <button type="button" class="sidebar-group-toggle" data-sidebar-group-toggle="nasabah" aria-expanded="true">
-                        <span class="sidebar-group-label"><i class="fa-solid fa-users-shield"></i><span>Nasabah, Kepatuhan & Berkas</span></span>
+                        <span class="sidebar-group-label"><i class="fa-solid fa-users-shield"></i><span>Nasabah</span></span>
                         <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="nasabah">
                     <a href="#" class="nav-item" data-target="customers-view" data-sidebar-group="nasabah"><i class="fa-solid fa-users"></i> Data Nasabah</a>
                     <a href="#" class="nav-item" data-target="dtott-view" data-sidebar-group="nasabah"><i class="fa-solid fa-user-shield"></i> DTTOT</a>
-                    <a href="#" class="nav-item" data-target="documents-view" data-sidebar-group="nasabah"><i class="fa-solid fa-folder-open" style="color:#FBBF24;""></i> Penyimpanan Berkas</a>
-                    <a href="#" class="nav-item" data-target="letter-number-view" data-sidebar-group="nasabah"><i class="fa-solid fa-file-signature" style="color:#FBBF24;""></i> Nomor Surat</a>
                     </div>
                 </section>
 
@@ -477,8 +476,6 @@
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="master">
                     <a href="#" class="nav-item" data-target="currency-view" data-sidebar-group="master"><i class="fa-solid fa-money-bill-transfer"></i> Manajemen Kurs</a>
-                    <a href="#" class="nav-item" data-target="old-money-view" data-sidebar-group="master"><i class="fa-solid fa-coins" style="color:#FBBF24;""></i> Koin & Uang Lama</a>
-                    <a href="#" class="nav-item" data-target="valas-gallery-view" data-sidebar-group="master"><i class="fa-solid fa-images" style="color:#FBBF24;""></i> Galeri Valas</a>
                     <a href="#" class="nav-item" data-target="masterdata-view" data-sidebar-group="master"><i class="fa-solid fa-database"></i> Master Data</a>
                     <a href="/papan-kurs" target="_blank" class="nav-item" data-sidebar-group="master" style="color:#10B981;"><i class="fa-solid fa-desktop" style="color:#10B981;"></i> Monitor Papan Kurs <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:.75rem;margin-left:5px;opacity:.7;"></i></a>
                     </div>
@@ -486,19 +483,19 @@
 
                 <section class="sidebar-menu-group" data-sidebar-group-section="keuangan">
                     <button type="button" class="sidebar-group-toggle" data-sidebar-group-toggle="keuangan" aria-expanded="true">
-                        <span class="sidebar-group-label"><i class="fa-solid fa-coins"></i><span>Keuangan & Akuntansi</span></span>
+                        <span class="sidebar-group-label"><i class="fa-solid fa-coins"></i><span>Keuangan</span></span>
                         <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="keuangan">
                     <a href="#" class="nav-item" data-target="expense-view" data-sidebar-group="keuangan"><i class="fa-solid fa-receipt"></i> Pengeluaran & Pendapatan</a>
-                    <a href="#" class="nav-item" data-target="adjustment-view" data-sidebar-group="keuangan"><i class="fa-solid fa-scale-unbalanced"></i> Ekuitas & Kewajiban</a>
-                    <a href="#" class="nav-item" data-target="investor-view" data-sidebar-group="keuangan"><i class="fa-solid fa-hand-holding-dollar" style="color:#10b981;""></i> Penanam Saham</a>
+                    <a href="#" class="nav-item" data-target="gantungan-view" data-sidebar-group="keuangan"><i class="fa-solid fa-hand-holding-dollar"></i> Gantungan</a>
+                    <a href="#" class="nav-item" data-target="investor-view" data-sidebar-group="keuangan"><i class="fa-solid fa-hand-holding-dollar"></i> Penanam Saham</a>
                     </div>
                 </section>
 
                 <section class="sidebar-menu-group" data-sidebar-group-section="laporan">
                     <button type="button" class="sidebar-group-toggle" data-sidebar-group-toggle="laporan" aria-expanded="true">
-                        <span class="sidebar-group-label"><i class="fa-solid fa-chart-column"></i><span>Pelaporan & Audit</span></span>
+                        <span class="sidebar-group-label"><i class="fa-solid fa-chart-column"></i><span>Pelaporan Akuntansi</span></span>
                         <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="laporan">
@@ -510,8 +507,8 @@
                     <a href="#" class="nav-item" data-target="laporan-bukubesar-view" data-sidebar-group="laporan"><i class="fa-solid fa-book"></i> Buku Besar</a>
                     <a href="#" class="nav-item" data-target="laporan-labarugi-view" data-sidebar-group="laporan"><i class="fa-solid fa-chart-line"></i> Laba / Rugi</a>
                     <a href="#" class="nav-item" data-target="laporan-neraca-view" data-sidebar-group="laporan"><i class="fa-solid fa-scale-balanced"></i> Neraca</a>
-                    <a href="#" class="nav-item" data-target="laporan-ekuitas-view" data-sidebar-group="laporan"><i class="fa-solid fa-money-bill-trend-up"></i> Ekuitas</a>
-                    <a href="#" class="nav-item" data-target="laporan-coretax-view" data-sidebar-group="laporan"><i class="fa-solid fa-file-invoice-dollar"></i> Pajak CoreTax</a>
+                    <a href="#" class="nav-item" data-target="adjustment-view" data-sidebar-group="laporan"><i class="fa-solid fa-scale-unbalanced"></i> Ekuitas & Kewajiban</a>
+                    <a href="#" class="nav-item" data-target="laporan-coretax-view" data-sidebar-group="laporan"><i class="fa-solid fa-file-invoice-dollar"></i> CoreTax</a>
                     </div>
                 </section>
 
@@ -521,6 +518,7 @@
                         <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="bi">
+                    <a href="#" class="nav-item" data-target="laporan-ekuitas-view" data-sidebar-group="bi"><i class="fa-solid fa-money-bill-trend-up"></i> Ekuitas</a>
                     <a href="#" class="nav-item" data-target="laporan-lku-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> LKU</a>
                     <a href="#" class="nav-item" data-target="laporan-granular-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> Granular</a>
                     <a href="#" class="nav-item" data-target="laporan-sipesat-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> Sipesat</a>
@@ -535,20 +533,32 @@
                         <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="tools">
-                    <a href="#" class="nav-item" data-target="ai-chat-view" data-sidebar-group="tools"><i class="fa-solid fa-robot" style="color:#EC4899;""></i> Tanya AI / Deteksi Valas</a>
-                    <a href="#" class="nav-item" data-target="translator-view" data-sidebar-group="tools"><i class="fa-solid fa-language" style="color:#38bdf8;""></i> Penerjemah Bahasa</a>
-                    <a href="#" class="nav-item" data-target="user-chat-view" data-sidebar-group="tools"><i class="fa-solid fa-comments" style="color:#EC4899;""></i> Chat</a>
+                    <a href="#" class="nav-item" data-target="ai-chat-view" data-sidebar-group="tools"><i class="fa-solid fa-robot"></i> Tanya AI / Deteksi Valas</a>
+                    <a href="#" class="nav-item" data-target="translator-view" data-sidebar-group="tools"><i class="fa-solid fa-language"></i> Penerjemah Bahasa</a>
+                    <a href="#" class="nav-item" data-target="user-chat-view" data-sidebar-group="tools"><i class="fa-solid fa-comments"></i> Chat</a>
                     </div>
                 </section>
 
                 <section class="sidebar-menu-group" data-sidebar-group-section="administrasi">
                     <button type="button" class="sidebar-group-toggle" data-sidebar-group-toggle="administrasi" aria-expanded="true">
-                        <span class="sidebar-group-label"><i class="fa-solid fa-sliders"></i><span>Administrasi & Sistem</span></span>
+                        <span class="sidebar-group-label"><i class="fa-solid fa-folder-tree"></i><span>Administrasi & Berkas</span></span>
                         <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="administrasi">
-                    <a href="#" class="nav-item" data-target="hris-view" data-sidebar-group="administrasi"><i class="fa-solid fa-users-gear" style="color:#6366f1;""></i> HRIS / Karyawan</a>
-                    <a href="#" class="nav-item" data-target="settings-view" data-sidebar-group="administrasi"><i class="fa-solid fa-gear"></i> Pengaturan</a>
+                    <a href="#" class="nav-item" data-target="hris-view" data-sidebar-group="administrasi"><i class="fa-solid fa-users-gear"></i> HRIS / Karyawan</a>
+                    <a href="#" class="nav-item" data-target="documents-view" data-sidebar-group="administrasi"><i class="fa-solid fa-folder-open"></i> Penyimpanan Berkas</a>
+                    <a href="#" class="nav-item" data-target="letter-number-view" data-sidebar-group="administrasi"><i class="fa-solid fa-file-signature"></i> Nomor Surat</a>
+                    </div>
+                </section>
+
+                <section class="sidebar-menu-group" data-sidebar-group-section="pengaturan">
+                    <button type="button" class="sidebar-group-toggle" data-sidebar-group-toggle="pengaturan" aria-expanded="true">
+                        <span class="sidebar-group-label"><i class="fa-solid fa-sliders"></i><span>Pengaturan Sistem</span></span>
+                        <i class="fa-solid fa-chevron-down sidebar-group-chevron"></i>
+                    </button>
+                    <div class="sidebar-group-items" data-sidebar-group-items="pengaturan">
+                    <a href="#" class="nav-item" data-sidebar-group="pengaturan" data-sidebar-action="theme"><i class="fa-solid fa-palette"></i> Tema & Tampilan</a>
+                    <a href="#" class="nav-item" data-target="settings-view" data-sidebar-group="pengaturan"><i class="fa-solid fa-gear"></i> Pengaturan</a>
                     </div>
                 </section>
             </nav>
@@ -8198,7 +8208,7 @@ window.resetAuditFilter = function() {
     <script>
     (function(){
         var STORAGE='mc_sidebar_groups_v1';
-        var defaults={dashboard:true,transaksi:true,nasabah:true,master:true,keuangan:true,laporan:true,bi:false,tools:true,administrasi:true};
+        var defaults={dashboard:true,transaksi:true,nasabah:true,master:true,keuangan:true,laporan:true,bi:true,tools:true,administrasi:true,pengaturan:true};
 
         function readState(){
             try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(STORAGE)||'{}'));}catch(e){return Object.assign({},defaults);}
@@ -8245,9 +8255,15 @@ window.resetAuditFilter = function() {
             Object.keys(state).forEach(function(id){setGroup(id,state[id],false);});
 
             document.querySelectorAll('.sidebar-group-items .nav-item').forEach(function(item){
-                item.addEventListener('click',function(){
+                item.addEventListener('click',function(e){
                     var section=item.closest('[data-sidebar-group-section]');
                     if(section)setGroup(section.getAttribute('data-sidebar-group-section'),true,true);
+                    if(item.getAttribute('data-sidebar-action')==='theme'){
+                        e.preventDefault();
+                        if(typeof window.toggleThemePanel==='function'){
+                            window.toggleThemePanel();
+                        }
+                    }
                 },true);
             });
 
