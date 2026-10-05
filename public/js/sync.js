@@ -142,7 +142,7 @@ async function syncFromMySQL_Currencies(options = {}) {
 }
 
 // Fungsi untuk mengirim 1 mata uang ke MySQL
-async async function saveToMySQL_Currency(currencyObject) {
+async function saveToMySQL_Currency(currencyObject) {
     window.__almaraActiveCurrencyPushes = (window.__almaraActiveCurrencyPushes || 0) + 1;
     try {
         const request = window.authFetch || window.fetch;
