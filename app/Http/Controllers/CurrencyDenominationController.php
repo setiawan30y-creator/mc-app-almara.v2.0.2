@@ -26,6 +26,7 @@ class CurrencyDenominationController extends Controller
             'status' => 'success',
             'data' => $query
                 ->orderBy('currency_code')
+                ->orderBy('type')
                 ->orderBy('denomination')
                 ->get(),
         ]);
@@ -36,6 +37,7 @@ class CurrencyDenominationController extends Controller
         $validated = $request->validate([
             'currency_code' => ['required', 'string', 'max:10'],
             'denomination' => ['required', 'numeric', 'gt:0'],
+            'type' => ['nullable', 'string', 'in:banknote,coin'],
             'buy' => ['nullable', 'numeric', 'min:0'],
             'sell' => ['nullable', 'numeric', 'min:0'],
             'margin_buy' => ['nullable', 'numeric'],
@@ -60,6 +62,7 @@ class CurrencyDenominationController extends Controller
                 [
                     'currency_code' => $currencyCode,
                     'denomination' => $validated['denomination'],
+                    'type' => $validated['type'] ?? 'banknote',
                 ],
                 [
                     'buy' => $validated['buy'] ?? 0,
@@ -119,12 +122,14 @@ class CurrencyDenominationController extends Controller
         $normalized = [];
         foreach ($rows as $row) {
             $denom = (float) $row['denomination'];
-            $key = number_format($denom, 4, '.', '');
+            $type = ($row['type'] ?? 'banknote') === 'coin' ? 'coin' : 'banknote';
+            $key = $type . ':' . number_format($denom, 4, '.', '');
             if (isset($seen[$key])) continue;
             $seen[$key] = true;
             $normalized[] = [
                 'currency_code' => $currencyCode,
                 'denomination' => $denom,
+                'type' => $type,
                 'buy' => $row['buy'] ?? 0,
                 'sell' => $row['sell'] ?? 0,
                 'margin_buy' => $row['margin_buy'] ?? 0,
@@ -170,6 +175,7 @@ class CurrencyDenominationController extends Controller
         $validated = $request->validate([
             'currency_code' => ['sometimes', 'required', 'string', 'max:10'],
             'denomination' => ['sometimes', 'required', 'numeric', 'gt:0'],
+            'type' => ['sometimes', 'nullable', 'string', 'in:banknote,coin'],
             'buy' => ['nullable', 'numeric', 'min:0'],
             'sell' => ['nullable', 'numeric', 'min:0'],
             'margin_buy' => ['nullable', 'numeric'],
@@ -191,6 +197,7 @@ class CurrencyDenominationController extends Controller
         $currencyDenomination->fill([
             'currency_code' => $currencyCode,
             'denomination' => $validated['denomination'] ?? $currencyDenomination->denomination,
+            'type' => $validated['type'] ?? $currencyDenomination->type,
             'buy' => $validated['buy'] ?? $currencyDenomination->buy,
             'sell' => $validated['sell'] ?? $currencyDenomination->sell,
             'margin_buy' => $validated['margin_buy'] ?? $currencyDenomination->margin_buy,
