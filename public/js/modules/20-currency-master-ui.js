@@ -18,11 +18,76 @@
         const style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = `
-            #currencyModal { overflow:hidden !important; box-sizing:border-box !important; }
-            #currencyModal .almara-currency-modal { width:min(1180px,96vw) !important; height:92vh !important; max-height:92vh !important; min-height:0 !important; overflow:hidden !important; padding:0 !important; border-radius:18px; display:block !important; box-sizing:border-box !important; }
-            #currencyModal .almara-cm-head { position:relative; z-index:5; background:inherit; height:82px; box-sizing:border-box; }
-            #currencyModal .almara-cm-scroll { display:block !important; height:calc(92vh - 164px) !important; max-height:calc(92vh - 164px) !important; min-height:0 !important; overflow-y:scroll !important; overflow-x:hidden !important; overscroll-behavior:contain; scrollbar-width:auto; scrollbar-gutter:stable; box-sizing:border-box; }
-            #currencyModal .almara-cm-footer { position:relative; z-index:5; background:inherit; height:82px; box-sizing:border-box; }
+            /* Master Kurs: modal overlay + dedicated scroll viewport */
+            #currencyModal.almara-currency-master-open,
+            #currencyModal.show.almara-currency-master-open {
+                position:fixed !important;
+                inset:0 !important;
+                z-index:9999 !important;
+                width:100vw !important;
+                height:100vh !important;
+                max-width:none !important;
+                max-height:none !important;
+                padding:20px !important;
+                box-sizing:border-box !important;
+                overflow:hidden !important;
+                display:flex !important;
+                align-items:center !important;
+                justify-content:center !important;
+            }
+            #currencyModal .almara-currency-modal {
+                width:min(1180px, calc(100vw - 40px)) !important;
+                height:min(900px, calc(100vh - 40px)) !important;
+                max-height:calc(100vh - 40px) !important;
+                min-height:0 !important;
+                overflow:hidden !important;
+                padding:0 !important;
+                margin:0 !important;
+                border-radius:18px;
+                display:grid !important;
+                grid-template-rows:auto minmax(0,1fr) auto !important;
+                box-sizing:border-box !important;
+            }
+            #currencyModal .almara-cm-head {
+                position:relative;
+                z-index:5;
+                background:inherit;
+                min-height:82px;
+                box-sizing:border-box;
+            }
+            #currencyModal .almara-cm-scroll {
+                min-height:0 !important;
+                height:auto !important;
+                max-height:none !important;
+                overflow-y:auto !important;
+                overflow-x:hidden !important;
+                overscroll-behavior:contain;
+                -webkit-overflow-scrolling:touch;
+                scrollbar-width:thin;
+                scrollbar-gutter:stable;
+                box-sizing:border-box;
+            }
+            #currencyModal .almara-cm-body {
+                min-height:max-content !important;
+            }
+            #currencyModal .almara-cm-footer {
+                position:relative;
+                z-index:5;
+                background:inherit;
+                min-height:82px;
+                box-sizing:border-box;
+            }
+            @media(max-width:700px){
+                #currencyModal.almara-currency-master-open,
+                #currencyModal.show.almara-currency-master-open {
+                    padding:8px !important;
+                }
+                #currencyModal .almara-currency-modal {
+                    width:100% !important;
+                    height:calc(100vh - 16px) !important;
+                    max-height:calc(100vh - 16px) !important;
+                }
+            }
             .almara-cm-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 24px; border-bottom:1px solid rgba(148,163,184,.22); }
             .almara-cm-title { display:flex; align-items:center; gap:14px; }
             .almara-cm-title-icon { width:46px; height:46px; border-radius:13px; display:grid; place-items:center; background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#fff; font-size:22px; box-shadow:0 8px 20px rgba(245,158,11,.22); }
@@ -178,7 +243,7 @@
         c=c||{}; const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';}; set('modalCurCode',c.code||''); set('modalCurName',c.name||c.label||''); set('modalCurNumeric',c.numeric_code||''); set('modalCurSymbol',c.symbol||''); set('modalCurDecimals',c.decimals??2); set('modalCurBuy',c.base_buy??c.buy??''); set('modalCurSell',c.base_sell??c.sell??''); set('modalCurStock',c.stock??''); set('modalCurAlert',c.alert??''); set('modalMarginBuy',c.margin_buy??''); set('modalMarginSell',c.margin_sell??''); const active=document.getElementById('modalCurActive');if(active)active.checked=c.active!==false; window.__almaraCurrencyDraft={denominations:normalizeDenoms(c)}; renderDenoms(); ['modalCurCode','modalCurName'].forEach(id=>document.getElementById(id)?.addEventListener('input',renderDenoms)); if(typeof window.calculateCurrencyHasil==='function')window.calculateCurrencyHasil();
     }
 
-    function open(code=null) { const modal=ensureModal();if(!modal)return;const currencies=typeof getCurrencies==='function'?getCurrencies():[];const c=code?currencies.find(x=>String(x.code||'').toUpperCase()===String(code).toUpperCase()):null;fill(c||{code:'',name:'',active:true,denominations:seedDenoms('')});const input=document.getElementById('modalCurCode');if(input)input.disabled=!!code;modal.classList.add('show'); }
+    function open(code=null) { const modal=ensureModal();if(!modal)return;const currencies=typeof getCurrencies==='function'?getCurrencies():[];const c=code?currencies.find(x=>String(x.code||'').toUpperCase()===String(code).toUpperCase()):null;fill(c||{code:'',name:'',active:true,denominations:seedDenoms('')});const input=document.getElementById('modalCurCode');if(input)input.disabled=!!code;modal.classList.add('show','almara-currency-master-open'); }
 
     window.almaraAddDenom=function(type){const v=prompt(type==='coin'?'Masukkan nilai pecahan koin:':'Masukkan nilai pecahan uang kertas:');if(v===null)return;const n=num(String(v).replace(/,/g,''));if(n<=0)return alert('Pecahan harus lebih besar dari 0.');const arr=window.__almaraCurrencyDraft.denominations[type]||(window.__almaraCurrencyDraft.denominations[type]=[]);if(arr.includes(n))return alert('Pecahan tersebut sudah ada.');arr.push(n);arr.sort((a,b)=>b-a);renderDenoms();};
     window.almaraBulkAddDenom=function(type){const id=type==='banknote'?'cmBanknoteBulk':'cmCoinBulk';const input=document.getElementById(id);if(!input||!window.__almaraCurrencyDraft)return;const raw=String(input.value||'').trim();if(!raw)return;const values=raw.split(/[\\s,;|\\/]+/).map(v=>num(String(v).replace(/,/g,''))).filter(v=>v>0);const arr=window.__almaraCurrencyDraft.denominations[type]||(window.__almaraCurrencyDraft.denominations[type]=[]);let added=0;values.forEach(v=>{if(!arr.includes(v)){arr.push(v);added++;}});arr.sort((a,b)=>b-a);input.value='';renderDenoms();if(!added&&values.length)alert('Semua pecahan yang dimasukkan sudah ada.');};
@@ -236,7 +301,7 @@
 
     window.almaraSaveCurrencyMaster=async function(){const code=String(document.getElementById('modalCurCode')?.value||'').trim().toUpperCase(),name=String(document.getElementById('modalCurName')?.value||'').trim(),baseBuy=num(document.getElementById('modalCurBuy')?.value),baseSell=num(document.getElementById('modalCurSell')?.value);if(!code||!name||baseBuy<=0||baseSell<=0)return alert('Kode, Nama Valuta, Base Rate Beli, dan Base Rate Jual wajib diisi.');const currencies=typeof getCurrencies==='function'?getCurrencies():[],index=currencies.findIndex(c=>String(c.code||'').toUpperCase()===code),old=index>=0?currencies[index]:{},mb=num(document.getElementById('modalMarginBuy')?.value),ms=num(document.getElementById('modalMarginSell')?.value),data={...old,code,name,label:name,numeric_code:String(document.getElementById('modalCurNumeric')?.value||'').trim(),symbol:String(document.getElementById('modalCurSymbol')?.value||'').trim(),decimals:Math.max(0,Math.min(6,num(document.getElementById('modalCurDecimals')?.value,2))),active:!!document.getElementById('modalCurActive')?.checked,base_buy:baseBuy,base_sell:baseSell,buy:baseBuy+mb,sell:baseSell+ms,stock:num(document.getElementById('modalCurStock')?.value),alert:num(document.getElementById('modalCurAlert')?.value,500),margin_buy:mb,margin_sell:ms,denominations:{banknote:[...(window.__almaraCurrencyDraft?.denominations?.banknote||[])],coin:[...(window.__almaraCurrencyDraft?.denominations?.coin||[])]},denomination_updated_at:new Date().toISOString()};const user=typeof getCurrentUser==='function'?getCurrentUser():null;if(index>=0){data.inputBy=old.inputBy||user?.fullName||'Admin Kasir';data.editBy=user?.fullName||'Admin Kasir';currencies[index]=data;}else{data.inputBy=user?.fullName||'Admin Kasir';data.editBy='';currencies.push(data);}if(typeof saveCurrencies!=='function')return alert('Penyimpanan valuta tidak tersedia.');const originalText='Simpan Valuta';const button=document.querySelector('#currencyModal button[onclick*="almaraSaveCurrencyMaster"]');if(button){button.disabled=true;button.dataset.originalText=button.innerHTML;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';}try{const syncResult=await saveCurrencies(currencies);if(Array.isArray(syncResult)&&syncResult.some(item=>item&&item.status==='rejected')){throw new Error('Sebagian data valuta gagal disinkronkan ke database.');}const failed=Array.isArray(syncResult)?syncResult.find(item=>item&&item.value&&item.value.ok===false):null;if(failed)throw new Error(failed.value.message||'Data valuta gagal disimpan ke database.');await syncCurrencyDenominations(code,data);if(typeof loadCurrencyTable==='function')loadCurrencyTable();if(typeof closeCurrencyModal==='function')closeCurrencyModal();alert(`Valuta ${code} berhasil disimpan beserta ${data.denominations.banknote.length} banknote dan ${data.denominations.coin.length} koin.`);}catch(error){console.error('Master valuta gagal disimpan:',error);alert('Valuta gagal disimpan ke database: '+(error.message||error));}finally{if(button){button.disabled=false;button.innerHTML=button.dataset.originalText||originalText;}}};
 
-    window.closeCurrencyModal=function(){const modal=document.getElementById('currencyModal');if(modal)modal.classList.remove('show');window.__almaraCurrencyDraft=null;};
+    window.closeCurrencyModal=function(){const modal=document.getElementById('currencyModal');if(modal)modal.classList.remove('show','almara-currency-master-open');window.__almaraCurrencyDraft=null;};
     window.openCurrencyModal=open;
     window.almaraCurrencyMasterUI={open,renderDenoms};
 })();
