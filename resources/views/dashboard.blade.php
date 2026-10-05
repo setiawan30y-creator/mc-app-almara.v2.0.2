@@ -434,6 +434,7 @@
                 <a href="#" class="nav-item" data-target="demo-pos-view"><i class="fa-solid fa-flask"></i> Demo Transaksi</a>
                 <a href="#" class="nav-item" data-target="kurs-hari-ini-view"><i class="fa-solid fa-money-bill-trend-up" style="color: #38bdf8;"></i> Kurs Hari Ini</a>
                 <a href="#" class="nav-item" data-target="currency-view"><i class="fa-solid fa-money-bill-transfer"></i> Manajemen Kurs</a>
+                <a href="#" class="nav-item" data-target="letter-number-view"><i class="fa-solid fa-file-signature" style="color: #FBBF24;"></i> Nomor Surat</a>
                 <a href="#" class="nav-item" data-target="mutation-view"><i class="fa-solid fa-building-columns"></i> Mutasi Bank</a>
                 <a href="#" class="nav-item" data-target="closing-view"><i class="fa-solid fa-box-archive"></i> Closing Harian</a>
                 <a href="#" class="nav-item" data-target="customers-view"><i class="fa-solid fa-users"></i> Data Nasabah</a>
@@ -1878,6 +1879,13 @@
                             <small class="text-muted mt-2 d-block">*Data diambil secara live dari Open ExchangeRate-API (Mid-Market Rate). Gunakan ini hanya sebagai acuan tren nilai tukar dunia hari ini.</small>
                         </div>
                     </div>
+                </section>
+
+<section id="letter-number-view" class="view-section hidden">
+                    <div class="panel header-panel flex-between" style="border-left:4px solid #FBBF24;">
+                        <div><h2><i class="fa-solid fa-file-signature"></i> Nomor Surat</h2><p class="text-muted mt-2">Pembuatan nomor surat, riwayat nomor, dan arsip dokumen.</p></div>
+                    </div>
+                    <div id="letter-number-module-root"></div>
                 </section>
 
                 <!-- Old Money View -->
@@ -8120,6 +8128,8 @@ window.resetAuditFilter = function() {
         }
     })();
     </script>
+    <script src="{{ asset('js/modules/29-letter-archive.js?v=20261005-2') }}"></script>
+    <script src="{{ asset('js/modules/28-letter-number.js?v=20261005-3') }}"></script>
     <script src="{{ asset('js/pwa.js?v=1.0.0') }}"></script>
 </body>
 
