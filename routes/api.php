@@ -11,6 +11,7 @@ use App\Http\Controllers\UploadController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\UserChatController;
 use App\Http\Controllers\OcrController;
+use App\Http\Controllers\LetterNumberController;
 use App\Http\Controllers\WhatsAppGatewayController;
 use App\Http\Middleware\DevelopmentBypassAuth;
 use Illuminate\Support\Facades\Route;
