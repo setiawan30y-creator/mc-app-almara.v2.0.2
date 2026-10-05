@@ -75,6 +75,10 @@ Route::middleware($apiAuthMiddleware)->group(function () {
     Route::get('/datastore', [DatastoreController::class, 'index']);
     Route::post('/datastore', [DatastoreController::class, 'store']);
     Route::delete('/datastore', [DatastoreController::class, 'destroy']);
+
+    Route::get('/letter-numbers/settings', [LetterNumberController::class, 'settings']);
+    Route::post('/letter-numbers/settings', [LetterNumberController::class, 'saveSettings']);
+    Route::post('/letter-numbers/next', [LetterNumberController::class, 'next']);
 });
 
 Route::get('/public/currencies', [App\Http\Controllers\CurrencyController::class, 'index']);
