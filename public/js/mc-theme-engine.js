@@ -78,6 +78,49 @@ body.apv-theme .stat-card:nth-child(n) { border-top-color: var(--mc-primary) !im
 body.apv-theme .stat-icon { background: color-mix(in srgb, var(--mc-primary) 12%, transparent) !important; color: var(--mc-primary) !important; }
 body.apv-theme .stat-icon.text-green { background: color-mix(in srgb, var(--mc-buy) 12%, transparent) !important; color: var(--mc-buy) !important; }
 body.apv-theme .stat-icon.text-red { background: color-mix(in srgb, var(--mc-sell) 12%, transparent) !important; color: var(--mc-sell) !important; }
+
+/* Dashboard semantic surfaces: page background must NOT leak into controls. */
+html[data-mc-theme] body #dashboard-view .form-control,
+html[data-mc-theme] body #dashboard-view select,
+html[data-mc-theme] body #dashboard-view textarea {
+  background: var(--mc-input-bg) !important;
+  color: var(--mc-text) !important;
+  border-color: var(--mc-input-border) !important;
+}
+html[data-mc-theme] body #dashboard-view .table thead th {
+  background: var(--mc-card-bg) !important;
+  color: var(--mc-text-muted) !important;
+  border-color: var(--mc-border) !important;
+}
+html[data-mc-theme] body #dashboard-view .table tbody td {
+  background: transparent !important;
+  color: var(--mc-text) !important;
+  border-color: var(--mc-border) !important;
+}
+html[data-mc-theme] body #dashboard-view .stock-item {
+  background: var(--mc-card-bg) !important;
+  color: var(--mc-text) !important;
+  border-color: var(--mc-border) !important;
+}
+html[data-mc-theme] body #dashboard-view .stock-code,
+html[data-mc-theme] body #dashboard-view .stock-amount {
+  color: var(--mc-text) !important;
+}
+html[data-mc-theme] body #dashboard-view .stock-name,
+html[data-mc-theme] body #dashboard-view .stock-rate-chip span {
+  color: var(--mc-text-muted) !important;
+}
+html[data-mc-theme] body #dashboard-view .chart-range-btn {
+  background: var(--mc-card-bg) !important;
+  color: var(--mc-text-muted) !important;
+  border-color: var(--mc-border) !important;
+}
+html[data-mc-theme] body #dashboard-view .chart-range-btn:hover,
+html[data-mc-theme] body #dashboard-view .chart-range-btn.active {
+  background: var(--mc-primary) !important;
+  color: var(--mc-button-text) !important;
+  border-color: var(--mc-primary) !important;
+}
 `;
         document.head.appendChild(style);
     }
