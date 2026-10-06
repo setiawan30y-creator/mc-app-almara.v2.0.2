@@ -5968,6 +5968,110 @@
             font-size: 0.82rem;
             line-height: 1.45;
         }
+        /* ============================================================
+           CUSTOMER MODAL — GLOBAL THEME BRIDGE
+           Theme & Appearance is the single source of truth.
+           ============================================================ */
+        html[data-mc-theme] body.apv-theme #customerModal .modal-content {
+            background: var(--mc-card-bg) !important;
+            color: var(--mc-text) !important;
+            border-color: var(--mc-border) !important;
+            box-shadow: var(--mc-shadow) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .modal-header,
+        html[data-mc-theme] body.apv-theme #customerModal .customer-modal-title,
+        html[data-mc-theme] body.apv-theme #customerModal .customer-modal-subtitle,
+        html[data-mc-theme] body.apv-theme #customerModal .customer-panel,
+        html[data-mc-theme] body.apv-theme #customerModal label {
+            color: var(--mc-text) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-modal-subtitle,
+        html[data-mc-theme] body.apv-theme #customerModal .customer-photo-placeholder small,
+        html[data-mc-theme] body.apv-theme #customerModal label {
+            color: var(--mc-text-muted) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .close-modal {
+            background: var(--mc-input-bg) !important;
+            color: var(--mc-text-muted) !important;
+            border-color: var(--mc-border) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-panel {
+            background: color-mix(in srgb, var(--mc-card-bg) 92%, var(--mc-page-bg)) !important;
+            border-color: var(--mc-border) !important;
+            box-shadow: none !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-photo-drop {
+            background: var(--mc-input-bg) !important;
+            border-color: color-mix(in srgb, var(--mc-primary) 55%, var(--mc-border)) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-photo-placeholder {
+            color: var(--mc-text) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-photo-placeholder i {
+            color: var(--mc-text-muted) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .form-control,
+        html[data-mc-theme] body.apv-theme #customerModal .select2-container--default .select2-selection--single {
+            background: var(--mc-input-bg) !important;
+            color: var(--mc-text) !important;
+            border-color: var(--mc-input-border) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .form-control::placeholder {
+            color: var(--mc-text-muted) !important;
+            opacity: .75 !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .entity-toggle-btn {
+            background: var(--mc-input-bg) !important;
+            color: var(--mc-text-muted) !important;
+            border-color: var(--mc-border) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .entity-toggle-btn i {
+            color: var(--mc-text-muted) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .entity-toggle-btn:has(input:checked) {
+            background: color-mix(in srgb, var(--mc-primary) 18%, var(--mc-card-bg)) !important;
+            border-color: var(--mc-primary) !important;
+            color: var(--mc-text) !important;
+            box-shadow: 0 0 0 1px color-mix(in srgb, var(--mc-primary) 30%, transparent) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .entity-toggle-btn:has(input:checked)::after {
+            background: var(--mc-primary) !important;
+            color: var(--mc-button-text) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-system-section {
+            background: color-mix(in srgb, var(--mc-primary) 7%, var(--mc-card-bg)) !important;
+            border-color: color-mix(in srgb, var(--mc-primary) 38%, var(--mc-border)) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-info-note {
+            color: var(--mc-text-muted) !important;
+            background: color-mix(in srgb, var(--mc-primary) 8%, var(--mc-card-bg)) !important;
+            border-color: color-mix(in srgb, var(--mc-primary) 28%, var(--mc-border)) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-info-note i {
+            color: var(--mc-primary) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-modal-footer {
+            background: var(--mc-card-bg) !important;
+            border-color: var(--mc-border) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-modal-icon {
+            background: var(--mc-button-bg) !important;
+            color: var(--mc-button-text) !important;
+            box-shadow: var(--mc-shadow) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-photo-actions .btn-primary,
+        html[data-mc-theme] body.apv-theme #customerModal .customer-modal-footer .btn-primary {
+            background: var(--mc-button-bg) !important;
+            border-color: var(--mc-button-bg) !important;
+            color: var(--mc-button-text) !important;
+        }
+        html[data-mc-theme] body.apv-theme #customerModal .customer-photo-actions .btn-secondary,
+        html[data-mc-theme] body.apv-theme #customerModal .customer-modal-footer .btn-secondary {
+            background: var(--mc-input-bg) !important;
+            border-color: var(--mc-border) !important;
+            color: var(--mc-text) !important;
+        }
+
         .pos-customer-layout {
             display: grid;
             grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
