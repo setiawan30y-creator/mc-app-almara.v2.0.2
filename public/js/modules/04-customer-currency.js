@@ -2596,7 +2596,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
 
     // 2. Clear & Reset ALL fields first to avoid data contamination
     const fields = [
-        'modalCustId', 'modalCustType', 'modalCustName', 'modalCustIdPjk', 'modalCustBusinessType',
+        'modalCustId', 'modalCustType', 'modalCustName', 'modalCustIdPjk', 'modalCustBusinessType', 'modalCustNib',
         'modalCustBirthPlace', 'modalCustBirthDate', 'modalCustAddress', 'modalCustIdType',
         'modalCustGender', 'modalCustCitizen', 'modalCustJob',
         'modalCustNik', 'modalCustIdNo', 'modalCustPhone', 'modalCustBankAcc',
@@ -2701,6 +2701,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
 
             fill('modalCustIdPjk', c.idpjk);
             fill('modalCustBusinessType', c.jenis_badan_usaha || '');
+            fill('modalCustNib', c.nib || '');
             window.updateCustomerBusinessTypeUI();
             fill('modalCustName', c.nama);
             fill('modalCustBirthPlace', c.tempat_lahir);
@@ -2823,6 +2824,8 @@ window.updateCustomerBusinessTypeUI = function() {
 
     const group = document.getElementById('modalCustBusinessTypeGroup');
     const select = document.getElementById('modalCustBusinessType');
+    const nibGroup = document.getElementById('modalCustNibGroup');
+    const nibInput = document.getElementById('modalCustNib');
 
     if (selected === '2') {
         if (group) {
@@ -2832,6 +2835,13 @@ window.updateCustomerBusinessTypeUI = function() {
         if (select) {
             select.disabled = false;
         }
+        if (nibGroup) {
+            nibGroup.style.display = 'block';
+            nibGroup.hidden = false;
+        }
+        if (nibInput) {
+            nibInput.disabled = false;
+        }
     } else {
         if (select) {
             select.value = '';
@@ -2840,6 +2850,14 @@ window.updateCustomerBusinessTypeUI = function() {
         if (group) {
             group.style.display = 'none';
             group.hidden = true;
+        }
+        if (nibInput) {
+            nibInput.value = '';
+            nibInput.disabled = true;
+        }
+        if (nibGroup) {
+            nibGroup.style.display = 'none';
+            nibGroup.hidden = true;
         }
     }
 
@@ -2893,6 +2911,9 @@ async function saveCustomer() {
     const idPjk = document.getElementById('modalCustIdPjk').value;
     const businessType = typeKn === '2'
         ? String(document.getElementById('modalCustBusinessType')?.value || '').trim().toUpperCase()
+        : '';
+    const nib = typeKn === '2'
+        ? String(document.getElementById('modalCustNib')?.value || '').trim()
         : '';
 
     if (typeKn === '2' && !businessType) {
@@ -2994,6 +3015,7 @@ async function saveCustomer() {
         idpjk: idPjk || (getProfile().idpjk || '-'),
         kn: typeKn,
         jenis_badan_usaha: businessType || null,
+        nib: nib || null,
         no_hp: phone || '-',
         nama: name,
         tempat_lahir: birthPlace || '-',
