@@ -75,6 +75,7 @@ class CustomerController extends Controller
             'registration_date' => $registrationDate,
             'customer_type' => $input['kn'],
             'jenis_badan_usaha' => $input['jenis_badan_usaha'] ?? null,
+'nib' => $input['nib'] ?? null,
             'raw_json' => json_encode($input)
         ];
 
@@ -157,6 +158,7 @@ class CustomerController extends Controller
                     'registration_date' => $registrationDate,
                     'customer_type' => $input['kn'],
                     'jenis_badan_usaha' => $input['jenis_badan_usaha'] ?? null,
+'nib' => $input['nib'] ?? null,
                     'raw_json' => json_encode($input)
                 ];
 
