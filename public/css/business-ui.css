@@ -346,33 +346,40 @@ body.apv-theme #floating-multi-calculator .calc-tabs-bar { min-height: 40px; fle
 body.apv-theme #floating-multi-calculator #calc-tabs-list { min-width: 0; flex: 1 1 auto; overflow-x: auto; }
 body.apv-theme #floating-multi-calculator:not(.is-minimized) #calc-expandable-content { display: flex !important; }
 
-/* APV dashboard: a calm warm-grey workspace prevents large white areas from
-   feeling harsh while retaining enough separation for operational data. */
+/* APV dashboard: use the global Theme & Appearance variables.
+   Dashboard must not have a private hard-coded background palette. */
 body.apv-theme #dashboard-view {
-  --dashboard-bg: #e9efec;
-  --dashboard-surface: #f7f9f7;
-  --dashboard-surface-muted: #f0f4f1;
-  --dashboard-border: #d3dfd8;
+  --dashboard-bg: var(--mc-page-bg);
+  --dashboard-surface: var(--mc-card-bg);
+  --dashboard-surface-muted: var(--mc-card-bg);
+  --dashboard-border: var(--mc-border);
 }
 body.apv-theme .main-content:has(#dashboard-view.active),
 body.apv-theme .view-container:has(#dashboard-view.active) {
-  background: #d3efe8 !important;
+  background: var(--mc-page-bg) !important;
 }
 body.apv-theme #dashboard-view :is(.panel, .stat-card, .summary-box, .stock-item) {
-  background: var(--dashboard-surface) !important;
-  border-color: var(--dashboard-border) !important;
-  box-shadow: 0 2px 8px rgba(31, 54, 46, .055) !important;
+  background: var(--mc-card-bg) !important;
+  border-color: var(--mc-border) !important;
+  box-shadow: var(--mc-shadow) !important;
 }
 body.apv-theme #dashboard-view .table-responsive,
 body.apv-theme #dashboard-view .stock-item,
 body.apv-theme #dashboard-view .stock-search .form-control,
 body.apv-theme #dashboard-view .chart-range-tabs {
-  background: var(--dashboard-surface-muted) !important;
-  border-color: var(--dashboard-border) !important;
+  background: var(--mc-card-bg) !important;
+  border-color: var(--mc-border) !important;
 }
-body.apv-theme #dashboard-view .chart-range-btn:not(.active) { background: #e7eeea !important; color: #50645d !important; }
+body.apv-theme #dashboard-view .chart-range-btn:not(.active) {
+  background: var(--mc-card-bg) !important;
+  color: var(--mc-text-muted) !important;
+  border-color: var(--mc-border) !important;
+}
 body.apv-theme #dashboard-view .stat-card:hover,
-body.apv-theme #dashboard-view .stock-item:hover { background: #fbfcfa !important; border-color: #bccfc5 !important; }
+body.apv-theme #dashboard-view .stock-item:hover {
+  background: var(--mc-card-bg) !important;
+  border-color: var(--mc-border) !important;
+}
 @media (max-width: 768px) {
   body.apv-theme .top-header { height: 56px !important; padding: 0 14px !important; }
   body.apv-theme .view-container { padding: 12px !important; }
