@@ -33,8 +33,17 @@
         style.id = 'mc-dashboard-theme-bridge';
         style.textContent = `
 /* MC-Almara global theme bridge for legacy Dashboard/APV CSS. */
-body.apv-theme .main-content,
-body.apv-theme .view-container { background: var(--mc-page-bg) !important; color: var(--mc-text) !important; }
+html[data-mc-theme] body .main-content,
+html[data-mc-theme] body .view-container,
+html[data-mc-theme] body #appContainer { background: var(--mc-page-bg) !important; color: var(--mc-text) !important; }
+html[data-mc-theme] body #dashboard-view { background: transparent !important; color: var(--mc-text) !important; }
+html[data-mc-theme] body #dashboard-view > *,
+html[data-mc-theme] body #dashboard-view .dashboard-content,
+html[data-mc-theme] body #dashboard-view .panel,
+html[data-mc-theme] body #dashboard-view .stat-card,
+html[data-mc-theme] body #dashboard-view .chart-panel,
+html[data-mc-theme] body #dashboard-view .stock-panel,
+html[data-mc-theme] body #dashboard-view .summary-box { background-color: var(--mc-card-bg) !important; color: var(--mc-text) !important; border-color: var(--mc-border) !important; }
 body.apv-theme .panel,
 body.apv-theme .stat-card,
 body.apv-theme .card,
