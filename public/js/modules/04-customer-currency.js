@@ -2640,6 +2640,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
     
     const radiosKn = document.getElementsByName('modalCustTypeGroup');
     for(let r of radiosKn) r.checked = false;
+    window.updateCustomerBusinessTypeUI();
     
     const idTypeSelect = document.getElementById('modalCustIdType');
     if (idTypeSelect) {
