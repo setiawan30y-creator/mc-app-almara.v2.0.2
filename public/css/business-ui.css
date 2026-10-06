@@ -358,8 +358,20 @@ body.apv-theme .main-content:has(#dashboard-view.active),
 body.apv-theme .view-container:has(#dashboard-view.active) {
   background: var(--mc-page-bg) !important;
 }
-body.apv-theme #dashboard-view :is(.panel, .stat-card, .summary-box, .stock-item) {
+/* Dashboard visual hierarchy:
+   - page = Theme & Appearance / Background Halaman
+   - stat cards = Background Kartu
+   - large panels = subtle blend of card + page
+   - inner stock/table surfaces = slightly stronger blend for separation
+*/
+body.apv-theme #dashboard-view :is(.stat-card, .summary-box) {
   background: var(--mc-card-bg) !important;
+  border-color: var(--mc-border) !important;
+  box-shadow: var(--mc-shadow) !important;
+}
+body.apv-theme #dashboard-view .dashboard-content > .panel,
+body.apv-theme #dashboard-view > .panel.mt-4 {
+  background: color-mix(in srgb, var(--mc-card-bg) 88%, var(--mc-page-bg)) !important;
   border-color: var(--mc-border) !important;
   box-shadow: var(--mc-shadow) !important;
 }
@@ -367,17 +379,17 @@ body.apv-theme #dashboard-view .table-responsive,
 body.apv-theme #dashboard-view .stock-item,
 body.apv-theme #dashboard-view .stock-search .form-control,
 body.apv-theme #dashboard-view .chart-range-tabs {
-  background: var(--mc-card-bg) !important;
+  background: color-mix(in srgb, var(--mc-card-bg) 78%, var(--mc-page-bg)) !important;
   border-color: var(--mc-border) !important;
 }
 body.apv-theme #dashboard-view .chart-range-btn:not(.active) {
-  background: var(--mc-card-bg) !important;
+  background: color-mix(in srgb, var(--mc-card-bg) 82%, var(--mc-page-bg)) !important;
   color: var(--mc-text-muted) !important;
   border-color: var(--mc-border) !important;
 }
 body.apv-theme #dashboard-view .stat-card:hover,
 body.apv-theme #dashboard-view .stock-item:hover {
-  background: var(--mc-card-bg) !important;
+  background: color-mix(in srgb, var(--mc-card-bg) 94%, var(--mc-page-bg)) !important;
   border-color: var(--mc-border) !important;
 }
 @media (max-width: 768px) {
