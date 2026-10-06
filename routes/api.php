@@ -13,6 +13,7 @@ use App\Http\Controllers\UserChatController;
 use App\Http\Controllers\OcrController;
 use App\Http\Controllers\LetterNumberController;
 use App\Http\Controllers\WhatsAppGatewayController;
+use App\Http\Controllers\BackupController;
 use App\Http\Middleware\DevelopmentBypassAuth;
 use Illuminate\Support\Facades\Route;
 
@@ -76,6 +77,12 @@ Route::middleware($apiAuthMiddleware)->group(function () {
     Route::get('/datastore', [DatastoreController::class, 'index']);
     Route::post('/datastore', [DatastoreController::class, 'store']);
     Route::delete('/datastore', [DatastoreController::class, 'destroy']);
+
+    Route::get('/backups/settings', [BackupController::class, 'settings'])->middleware('role:owner,superadmin,admin,supervisor');
+    Route::post('/backups/settings', [BackupController::class, 'saveSettings'])->middleware('role:owner,superadmin,admin,supervisor');
+    Route::get('/backups', [BackupController::class, 'index'])->middleware('role:owner,superadmin,admin,supervisor');
+    Route::post('/backups/run', [BackupController::class, 'run'])->middleware('role:owner,superadmin,admin,supervisor');
+    Route::get('/backups/{backupLog}/download', [BackupController::class, 'download'])->middleware('role:owner,superadmin,admin,supervisor');
 
     Route::get('/letter-numbers/settings', [LetterNumberController::class, 'settings']);
     Route::post('/letter-numbers/settings', [LetterNumberController::class, 'saveSettings']);
