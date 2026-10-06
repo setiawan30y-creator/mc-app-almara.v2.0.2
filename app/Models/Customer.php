@@ -19,6 +19,6 @@ class Customer extends Model
         'identity_type', 'identity_number', 'selain_ktp',
         'address', 'tempat_lahir', 'tanggal_lahir', 'npwp',
         'local_id', 'jenis_kelamin', 'warga_negara', 'pekerjaan',
-        'no_rekening', 'registration_date', 'customer_type', 'jenis_badan_usaha', 'raw_json'
+        'no_rekening', 'registration_date', 'customer_type', 'jenis_badan_usaha', 'nib', 'raw_json'
     ];
 }
