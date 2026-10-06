@@ -369,6 +369,22 @@ body.apv-theme #dashboard-view :is(.stat-card, .summary-box) {
   border-color: var(--mc-border) !important;
   box-shadow: var(--mc-shadow) !important;
 }
+/* The gaps between cards are part of the page, never part of the card.
+   This makes the selected Background Halaman visibly frame every card. */
+body.apv-theme #dashboard-view .stats-grid {
+  background: var(--mc-page-bg) !important;
+  column-gap: 14px !important;
+  row-gap: 14px !important;
+}
+body.apv-theme #dashboard-view .dashboard-content {
+  background: var(--mc-page-bg) !important;
+  column-gap: 14px !important;
+  row-gap: 14px !important;
+}
+body.apv-theme #dashboard-view > .panel.mt-4 {
+  margin-top: 14px !important;
+}
+
 body.apv-theme #dashboard-view .dashboard-content > .panel,
 body.apv-theme #dashboard-view > .panel.mt-4 {
   background: color-mix(in srgb, var(--mc-card-bg) 88%, var(--mc-page-bg)) !important;
