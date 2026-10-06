@@ -6317,6 +6317,12 @@
                             </select>
                     </div>
 
+                    <!-- NIB: hanya tampil jika KN = Perusahaan -->
+                    <div class="form-group field-full" id="modalCustNibGroup" style="display: none;">
+                            <label>NIB <span style="font-weight: normal; opacity: .75;">(opsional)</span></label>
+                            <input type="text" id="modalCustNib" class="form-control" placeholder="Nomor Induk Berusaha">
+                    </div>
+
                     <!-- Row 2: Nama & No Tlp -->
                     <div class="form-group">
                             <label id="modalCustNameLabel">Nama Lengkap <span class="required-mark">*</span></label>
