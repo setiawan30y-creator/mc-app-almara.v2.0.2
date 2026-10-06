@@ -37,13 +37,25 @@ html[data-mc-theme] body .main-content,
 html[data-mc-theme] body .view-container,
 html[data-mc-theme] body #appContainer { background: var(--mc-page-bg) !important; color: var(--mc-text) !important; }
 html[data-mc-theme] body #dashboard-view { background: transparent !important; color: var(--mc-text) !important; }
-html[data-mc-theme] body #dashboard-view > *,
-html[data-mc-theme] body #dashboard-view .dashboard-content,
+/* Only real surfaces are cards. Layout wrappers keep the page background so gaps remain visible. */
+html[data-mc-theme] body #dashboard-view > .mb-4,
+html[data-mc-theme] body #dashboard-view .stats-grid > .stat-card,
+html[data-mc-theme] body #dashboard-view .dashboard-content > .panel,
+html[data-mc-theme] body #dashboard-view > .panel.mt-4,
 html[data-mc-theme] body #dashboard-view .panel,
 html[data-mc-theme] body #dashboard-view .stat-card,
 html[data-mc-theme] body #dashboard-view .chart-panel,
 html[data-mc-theme] body #dashboard-view .stock-panel,
-html[data-mc-theme] body #dashboard-view .summary-box { background-color: var(--mc-card-bg) !important; color: var(--mc-text) !important; border-color: var(--mc-border) !important; }
+html[data-mc-theme] body #dashboard-view .summary-box {
+  background-color: var(--mc-card-bg) !important;
+  color: var(--mc-text) !important;
+  border-color: var(--mc-border) !important;
+}
+html[data-mc-theme] body #dashboard-view > .stats-grid,
+html[data-mc-theme] body #dashboard-view > .dashboard-content {
+  background-color: var(--mc-page-bg) !important;
+  color: var(--mc-text) !important;
+}
 body.apv-theme .panel,
 body.apv-theme .stat-card,
 body.apv-theme .card,
