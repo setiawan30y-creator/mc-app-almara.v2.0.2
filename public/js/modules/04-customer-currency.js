@@ -2825,18 +2825,55 @@ window.updateCustomerBusinessTypeUI = function() {
     const select = document.getElementById('modalCustBusinessType');
 
     if (selected === '2') {
-        if (group) group.style.display = '';
-        if (select) select.disabled = false;
+        if (group) {
+            group.style.display = 'block';
+            group.hidden = false;
+        }
+        if (select) {
+            select.disabled = false;
+        }
     } else {
         if (select) {
             select.value = '';
             select.disabled = true;
         }
-        if (group) group.style.display = 'none';
+        if (group) {
+            group.style.display = 'none';
+            group.hidden = true;
+        }
     }
 
     window.updateCustomerNameLabel();
 };
+
+// toggleEntitas() sebelumnya dipanggil langsung dari HTML form, tetapi fungsi
+// tersebut tidak ada pada modul aktif. Buat satu sumber handler yang pasti.
+window.toggleEntitas = function() {
+    const checked = document.querySelector('input[name="modalCustTypeGroup"]:checked');
+    const typeEl = document.getElementById('modalCustType');
+    const type = String(checked?.value || '').trim();
+
+    if (typeEl) typeEl.value = type;
+    window.updateCustomerBusinessTypeUI();
+};
+
+// Pasang listener langsung ke radio agar tetap bekerja walaupun inline
+// onchange lama/handler lain tidak tersedia.
+function bindCustomerEntityTypeEvents() {
+    document.querySelectorAll('input[name="modalCustTypeGroup"]').forEach(function(radio) {
+        if (radio.dataset.customerEntityBound === '1') return;
+        radio.dataset.customerEntityBound = '1';
+        radio.addEventListener('change', window.toggleEntitas);
+    });
+
+    window.updateCustomerBusinessTypeUI();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindCustomerEntityTypeEvents, { once: true });
+} else {
+    bindCustomerEntityTypeEvents();
+}
 
 async function saveCustomer() {
     const idElem = document.getElementById('modalCustId');
