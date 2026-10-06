@@ -550,6 +550,7 @@
                     <a href="#" class="nav-item" data-target="hris-view" data-sidebar-group="administrasi"><i class="fa-solid fa-users-gear"></i> HRIS / Karyawan</a>
                     <a href="#" class="nav-item" data-target="documents-view" data-sidebar-group="administrasi"><i class="fa-solid fa-folder-open"></i> Penyimpanan Berkas</a>
                     <a href="#" class="nav-item" data-target="letter-number-view" data-sidebar-group="administrasi"><i class="fa-solid fa-file-signature"></i> Nomor Surat</a>
+                    <a href="#" class="nav-item" data-target="backup-view" data-sidebar-group="administrasi"><i class="fa-solid fa-database"></i> Backup & Restore</a>
                     </div>
                 </section>
 
@@ -1943,6 +1944,10 @@
                         </div>
                     </div>
                 </section>
+
+<section id="backup-view" class="view-section hidden">
+    <div id="backup-module-root"></div>
+</section>
 
 <section id="letter-number-view" class="view-section hidden">
                     <div class="panel header-panel flex-between" style="border-left:4px solid #FBBF24;">
@@ -8113,6 +8118,7 @@
             '19-userchat.js',
             '20-mobilemode.js',
             '21-demo-pos.js',
+            '22-backup.js',
         ];
     @endphp
     <script src="{{ asset('js/sync.js') }}?v={{ time() }}"></script>
