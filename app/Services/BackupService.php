@@ -120,15 +120,39 @@ class BackupService
 
         $tz = $settings->timezone ?: 'Asia/Jakarta';
         $now = now($tz);
-        $target = $now->format('Y-m-d').' '.$settings->run_at;
-
-        if ($now->format('Y-m-d H:i') !== $target) {
+        [$targetHour, $targetMinute] = array_map('intval', explode(':', $settings->run_at));
+        if ((int) $now->minute !== $targetMinute) {
             return false;
         }
 
+        $frequency = $settings->frequency ?: 'daily';
+        $due = match ($frequency) {
+            'hourly' => true,
+            '2hours' => $now->hour % 2 === $targetHour % 2,
+            '4hours' => $now->hour % 4 === $targetHour % 4,
+            '6hours' => $now->hour % 6 === $targetHour % 6,
+            '12hours' => $now->hour % 12 === $targetHour % 12,
+            'weekly' => $now->isMonday() && $now->hour === $targetHour,
+            default => $now->hour === $targetHour,
+        };
+
+        if (!$due) {
+            return false;
+        }
+
+        $windowStart = match ($frequency) {
+            'hourly' => $now->copy()->startOfHour(),
+            '2hours' => $now->copy()->subHours(1)->startOfHour(),
+            '4hours' => $now->copy()->subHours(3)->startOfHour(),
+            '6hours' => $now->copy()->subHours(5)->startOfHour(),
+            '12hours' => $now->copy()->subHours(11)->startOfHour(),
+            'weekly' => $now->copy()->startOfDay(),
+            default => $now->copy()->startOfDay(),
+        };
+
         return !BackupLog::where('type', 'automatic')
             ->where('status', 'success')
-            ->whereDate('created_at', $now->toDateString())
+            ->whereBetween('created_at', [$windowStart->copy()->setTimezone('UTC'), $now->copy()->setTimezone('UTC')])
             ->exists();
     }
 
