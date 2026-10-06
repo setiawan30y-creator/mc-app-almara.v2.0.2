@@ -6362,12 +6362,6 @@
                             </select>
                     </div>
 
-                    <!-- NIB: hanya tampil jika KN = Perusahaan -->
-                    <div class="form-group field-full" id="modalCustNibGroup" style="display: none;">
-                            <label>NIB <span style="font-weight: normal; opacity: .75;">(opsional)</span></label>
-                            <input type="text" id="modalCustNib" class="form-control" placeholder="Nomor Induk Berusaha">
-                    </div>
-
                     <!-- Row 2: Nama & No Tlp -->
                     <div class="form-group">
                             <label id="modalCustNameLabel">Nama Lengkap <span class="required-mark">*</span></label>
@@ -6443,14 +6437,20 @@
                         </div>
                         <div class="form-group">
                             <label style="color: #60A5FA; font-weight: bold;">No. CIF (Reporting)</label>
-                            <input type="text" id="modalCustCif" class="form-control" placeholder="Otomatis (AMR-0001 / P-0001)">
+                            <input type="text" id="modalCustCif" class="form-control" placeholder="Otomatis (AMR-0001 / P-0001)" readonly>
                             <small class="text-muted">Nomor unik nasabah untuk laporan mutasi.</small>
                         </div>
                     </div>
 
+                    <!-- NIB: hanya tampil jika KN = Perusahaan -->
+                    <div class="form-group field-full" id="modalCustNibGroup" style="display: none;">
+                            <label>NIB <span style="font-weight: normal; opacity: .75;">(opsional)</span></label>
+                            <input type="text" id="modalCustNib" class="form-control" placeholder="Nomor Induk Berusaha">
+                    </div>
+
                     <!-- Row 8: NPWP, Local ID, Rekening -->
                     <div class="form-group">
-                            <label>NPWP (Jika ada)</label>
+                            <label>NPWP</label>
                             <input type="text" id="modalCustNpwp" class="form-control" placeholder="No NPWP">
                     </div>
                     <div class="form-group">
