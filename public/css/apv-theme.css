@@ -1143,3 +1143,103 @@ body.apv-theme.mobile-mode .btn-xs { min-height: 36px !important; }
   body.apv-theme.mobile-mode .panel-header,
   body.apv-theme.mobile-mode .header-panel { padding: 12px !important; }
 }
+
+
+/* =====================================================================
+   DASHBOARD THEME BRIDGE
+   Keep Dashboard on the same runtime theme variables as Theme & Appearance.
+   Dashboard previously had hard-coded APV colors in both CSS and inline HTML.
+   These final overrides intentionally use the active CSS variables so a
+   custom theme change is reflected on Dashboard immediately.
+   ===================================================================== */
+body.apv-theme #dashboard-view {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+body.apv-theme #dashboard-view .dashboard-content,
+body.apv-theme #dashboard-view .panel,
+body.apv-theme #dashboard-view .stat-card,
+body.apv-theme #dashboard-view .chart-panel,
+body.apv-theme #dashboard-view .stock-panel,
+body.apv-theme #dashboard-view .summary-box,
+body.apv-theme #dashboard-view .table-responsive {
+  background: var(--panel-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--panel-border) !important;
+}
+body.apv-theme #dashboard-view > .mb-4 {
+  background: var(--panel-bg) !important;
+  border-color: var(--panel-border) !important;
+  border-left-color: var(--accent-blue) !important;
+  color: var(--text-primary) !important;
+}
+body.apv-theme #dashboard-view > .mb-4 > div:first-child,
+body.apv-theme #dashboard-view h3,
+body.apv-theme #dashboard-view .panel-header,
+body.apv-theme #dashboard-view label,
+body.apv-theme #dashboard-view .stat-details h3 {
+  color: var(--text-primary) !important;
+}
+body.apv-theme #dashboard-view .stat-card .stat-value {
+  color: var(--text-primary) !important;
+}
+body.apv-theme #dashboard-view .stat-card .stat-value.text-green,
+body.apv-theme #dashboard-view .text-green { color: var(--accent-green) !important; }
+body.apv-theme #dashboard-view .stat-card .stat-value.text-red,
+body.apv-theme #dashboard-view .text-red { color: var(--accent-red) !important; }
+body.apv-theme #dashboard-view .text-muted,
+body.apv-theme #dashboard-view small { color: var(--text-muted) !important; }
+body.apv-theme #dashboard-view .form-control,
+body.apv-theme #dashboard-view select.form-control {
+  background: var(--bg-dark) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--panel-border) !important;
+}
+body.apv-theme #dashboard-view .table thead th {
+  background: var(--bg-dark) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--panel-border) !important;
+}
+body.apv-theme #dashboard-view .table tbody td {
+  color: var(--text-primary) !important;
+  border-color: var(--panel-border) !important;
+}
+body.apv-theme #dashboard-view .table tbody tr:hover,
+body.apv-theme #dashboard-view .table-hover tbody tr:hover {
+  background: color-mix(in srgb, var(--accent-green) 8%, var(--panel-bg)) !important;
+}
+body.apv-theme #dashboard-view .stock-item {
+  background: var(--bg-dark) !important;
+  border-color: var(--panel-border) !important;
+  color: var(--text-primary) !important;
+}
+body.apv-theme #dashboard-view .stock-code,
+body.apv-theme #dashboard-view .stock-amount,
+body.apv-theme #dashboard-view .stock-name {
+  color: var(--text-primary) !important;
+}
+body.apv-theme #dashboard-view .stock-name,
+body.apv-theme #dashboard-view .stock-rate-chip span { color: var(--text-muted) !important; }
+body.apv-theme #dashboard-view .chart-range-btn {
+  background: var(--bg-dark) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--panel-border) !important;
+}
+body.apv-theme #dashboard-view .chart-range-btn:hover,
+body.apv-theme #dashboard-view .chart-range-btn.active {
+  background: var(--accent-blue) !important;
+  color: #fff !important;
+  border-color: var(--accent-blue) !important;
+}
+body.apv-theme #dashboard-view .stat-icon {
+  background: color-mix(in srgb, var(--accent-blue) 12%, var(--panel-bg)) !important;
+  color: var(--accent-blue) !important;
+}
+body.apv-theme #dashboard-view .stat-icon.text-green {
+  background: color-mix(in srgb, var(--accent-green) 12%, var(--panel-bg)) !important;
+  color: var(--accent-green) !important;
+}
+body.apv-theme #dashboard-view .stat-icon.text-red {
+  background: color-mix(in srgb, var(--accent-red) 12%, var(--panel-bg)) !important;
+  color: var(--accent-red) !important;
+}
