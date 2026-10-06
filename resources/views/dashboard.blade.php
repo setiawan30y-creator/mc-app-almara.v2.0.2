@@ -8379,7 +8379,13 @@ window.resetAuditFilter = function() {
         .sidebar-group-items .nav-item{margin:2px 0;}
         .sidebar-nav-grouped .nav-item{font-size:.82rem;}
         /* Sidebar typography standard: seluruh teks menu +2px */
-        .sidebar-nav-grouped .nav-item{font-size:calc(.82rem + 2px);}
+        .sidebar-nav-grouped .nav-item{font-size:calc(.82rem + 2px) !important;}
+        .sidebar-nav-grouped .sidebar-group-toggle{font-size:calc(.70rem + 2px) !important;}
+        body.apv-theme .sidebar-nav-grouped .nav-item{font-size:14.5px !important;}
+        body.apv-theme .sidebar-nav-grouped .sidebar-group-toggle{font-size:11.5px !important;}
+        body.apv-theme .sidebar-nav-grouped .nav-item small{font-size:inherit !important;}
+        body:not(.apv-theme) .sidebar-nav-grouped .nav-item{font-size:14.5px !important;}
+        body:not(.apv-theme) .sidebar-nav-grouped .sidebar-group-toggle{font-size:11.5px !important;}
         .sidebar-nav-grouped .sidebar-group-toggle{font-size:calc(.70rem + 2px);}
         .sidebar-nav-grouped .sidebar-group-label{font-size:inherit;}
         .sidebar-nav-grouped .nav-item small{font-size:calc(0.75em + 2px);}
