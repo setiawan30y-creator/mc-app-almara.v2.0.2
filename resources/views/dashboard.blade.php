@@ -8381,8 +8381,8 @@ window.resetAuditFilter = function() {
         /* Sidebar typography standard: seluruh teks menu +2px */
         .sidebar-nav-grouped .nav-item{font-size:calc(.82rem + 2px) !important;}
         .sidebar-nav-grouped .sidebar-group-toggle{font-size:calc(.70rem + 2px) !important;}
-        body.apv-theme .sidebar-nav-grouped .nav-item{font-size:14.5px !important;}
-        body.apv-theme .sidebar-nav-grouped .sidebar-group-toggle{font-size:11.5px !important;}
+        body.apv-theme .sidebar-nav-grouped .nav-item{font-size:16.5px !important;}
+        body.apv-theme .sidebar-nav-grouped .sidebar-group-toggle{font-size:13.5px !important;}
         body.apv-theme .sidebar-nav-grouped .nav-item small{font-size:inherit !important;}
         body:not(.apv-theme) .sidebar-nav-grouped .nav-item{font-size:14.5px !important;}
         body:not(.apv-theme) .sidebar-nav-grouped .sidebar-group-toggle{font-size:11.5px !important;}
