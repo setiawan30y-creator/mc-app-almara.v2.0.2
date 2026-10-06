@@ -2596,7 +2596,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
 
     // 2. Clear & Reset ALL fields first to avoid data contamination
     const fields = [
-        'modalCustId', 'modalCustType', 'modalCustName', 'modalCustIdPjk',
+        'modalCustId', 'modalCustType', 'modalCustName', 'modalCustIdPjk', 'modalCustBusinessType',
         'modalCustBirthPlace', 'modalCustBirthDate', 'modalCustAddress', 'modalCustIdType',
         'modalCustGender', 'modalCustCitizen', 'modalCustJob',
         'modalCustNik', 'modalCustIdNo', 'modalCustPhone', 'modalCustBankAcc',
@@ -2699,6 +2699,8 @@ window.triggerCustomerEditDirect = function(targetId = null) {
             };
 
             fill('modalCustIdPjk', c.idpjk);
+            fill('modalCustBusinessType', c.jenis_badan_usaha || '');
+            window.updateCustomerBusinessTypeUI();
             fill('modalCustName', c.nama);
             fill('modalCustBirthPlace', c.tempat_lahir);
             fill('modalCustBirthDate', c.tanggal_lahir);
@@ -2788,6 +2790,53 @@ function closeCustomerModal() {
     document.getElementById('customerModal').classList.remove('show');
 }
 
+const CUSTOMER_BUSINESS_TYPE_LABELS = {
+    'KUPVA': 'Nama KUPVA',
+    'BANK': 'Nama Bank',
+    'YAYASAN': 'Nama Yayasan',
+    'PENDIDIKAN': 'Nama Lembaga Pendidikan',
+    'BADAN USAHA': 'Nama Badan Usaha'
+};
+
+window.updateCustomerNameLabel = function() {
+    const typeEl = document.getElementById('modalCustBusinessType');
+    const labelEl = document.getElementById('modalCustNameLabel');
+    const nameEl = document.getElementById('modalCustName');
+    const type = String(typeEl?.value || '').trim().toUpperCase();
+    const label = CUSTOMER_BUSINESS_TYPE_LABELS[type] || 'Nama Lengkap';
+
+    if (labelEl) {
+        labelEl.innerHTML = label + ' <span class="required-mark">*</span>';
+    }
+    if (nameEl) {
+        nameEl.placeholder = type ? label : 'Sesuai Identitas';
+    }
+};
+
+window.updateCustomerBusinessTypeUI = function() {
+    const selected = String(
+        document.querySelector('input[name="modalCustTypeGroup"]:checked')?.value ||
+        document.getElementById('modalCustType')?.value ||
+        ''
+    ).trim();
+
+    const group = document.getElementById('modalCustBusinessTypeGroup');
+    const select = document.getElementById('modalCustBusinessType');
+
+    if (selected === '2') {
+        if (group) group.style.display = '';
+        if (select) select.disabled = false;
+    } else {
+        if (select) {
+            select.value = '';
+            select.disabled = true;
+        }
+        if (group) group.style.display = 'none';
+    }
+
+    window.updateCustomerNameLabel();
+};
+
 async function saveCustomer() {
     const idElem = document.getElementById('modalCustId');
     const internalIdElem = document.getElementById('modalCustInternalId');
@@ -2804,6 +2853,14 @@ async function saveCustomer() {
     document.getElementById('modalCustType').value = typeKn;
     const name = document.getElementById('modalCustName').value;
     const idPjk = document.getElementById('modalCustIdPjk').value;
+    const businessType = typeKn === '2'
+        ? String(document.getElementById('modalCustBusinessType')?.value || '').trim().toUpperCase()
+        : '';
+
+    if (typeKn === '2' && !businessType) {
+        alert('Pilih Jenis Badan Usaha: KUPVA, BANK, YAYASAN, PENDIDIKAN, atau BADAN USAHA.');
+        return;
+    }
     const birthPlace = document.getElementById('modalCustBirthPlace').value;
     const birthDate = document.getElementById('modalCustBirthDate').value;
     const address = document.getElementById('modalCustAddress').value;
@@ -2898,6 +2955,7 @@ async function saveCustomer() {
         id_nasabah: generatedId,
         idpjk: idPjk || (getProfile().idpjk || '-'),
         kn: typeKn,
+        jenis_badan_usaha: businessType || null,
         no_hp: phone || '-',
         nama: name,
         tempat_lahir: birthPlace || '-',
