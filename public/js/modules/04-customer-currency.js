@@ -2596,7 +2596,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
 
     // 2. Clear & Reset ALL fields first to avoid data contamination
     const fields = [
-        'modalCustId', 'modalCustType', 'modalCustName', 'modalCustIdPjk', 'modalCustBusinessType', 'modalCustNib',
+        'modalCustId', 'modalCustType', 'modalCustName', 'modalCustIdPjk', 'modalCustBusinessType', 'modalCustBusinessField', 'modalCustNib',
         'modalCustBirthPlace', 'modalCustBirthDate', 'modalCustAddress', 'modalCustIdType',
         'modalCustGender', 'modalCustCitizen', 'modalCustJob',
         'modalCustNik', 'modalCustIdNo', 'modalCustPhone', 'modalCustBankAcc',
@@ -2701,6 +2701,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
 
             fill('modalCustIdPjk', c.idpjk);
             fill('modalCustBusinessType', c.jenis_badan_usaha || '');
+            fill('modalCustBusinessField', c.bidang_usaha || '');
             fill('modalCustNib', c.nib || '');
             window.updateCustomerBusinessTypeUI();
             fill('modalCustName', c.nama);
@@ -2797,7 +2798,8 @@ const CUSTOMER_BUSINESS_TYPE_LABELS = {
     'BANK': 'Nama Bank',
     'YAYASAN': 'Nama Yayasan',
     'PENDIDIKAN': 'Nama Lembaga Pendidikan',
-    'BADAN USAHA': 'Nama Badan Usaha'
+    'BADAN USAHA PT': 'Nama Badan Usaha PT',
+    'BADAN USAHA CV': 'Nama Badan Usaha CV'
 };
 
 window.updateCustomerNameLabel = function() {
@@ -2824,6 +2826,8 @@ window.updateCustomerBusinessTypeUI = function() {
 
     const group = document.getElementById('modalCustBusinessTypeGroup');
     const select = document.getElementById('modalCustBusinessType');
+    const businessFieldGroup = document.getElementById('modalCustBusinessFieldGroup');
+    const businessField = document.getElementById('modalCustBusinessField');
     const nibGroup = document.getElementById('modalCustNibGroup');
     const nibInput = document.getElementById('modalCustNib');
 
@@ -2834,6 +2838,13 @@ window.updateCustomerBusinessTypeUI = function() {
         }
         if (select) {
             select.disabled = false;
+        }
+        if (businessFieldGroup) {
+            businessFieldGroup.style.display = 'block';
+            businessFieldGroup.hidden = false;
+        }
+        if (businessField) {
+            businessField.disabled = false;
         }
         if (nibGroup) {
             nibGroup.style.display = 'block';
@@ -2846,6 +2857,14 @@ window.updateCustomerBusinessTypeUI = function() {
         if (select) {
             select.value = '';
             select.disabled = true;
+        }
+        if (businessField) {
+            businessField.value = '';
+            businessField.disabled = true;
+        }
+        if (businessFieldGroup) {
+            businessFieldGroup.style.display = 'none';
+            businessFieldGroup.hidden = true;
         }
         if (group) {
             group.style.display = 'none';
@@ -2915,9 +2934,16 @@ async function saveCustomer() {
     const nib = typeKn === '2'
         ? String(document.getElementById('modalCustNib')?.value || '').trim()
         : '';
+    const businessField = typeKn === '2'
+        ? String(document.getElementById('modalCustBusinessField')?.value || '').trim()
+        : '';
 
     if (typeKn === '2' && !businessType) {
-        alert('Pilih Jenis Badan Usaha: KUPVA, BANK, YAYASAN, PENDIDIKAN, atau BADAN USAHA.');
+        alert('Pilih Jenis Badan Usaha: KUPVA, BANK, YAYASAN, BADAN USAHA PT, atau BADAN USAHA CV.');
+        return;
+    }
+    if (typeKn === '2' && !businessField) {
+        alert('Pilih Bidang Usaha.');
         return;
     }
     const birthPlace = document.getElementById('modalCustBirthPlace').value;
@@ -3015,6 +3041,7 @@ async function saveCustomer() {
         idpjk: idPjk || (getProfile().idpjk || '-'),
         kn: typeKn,
         jenis_badan_usaha: businessType || null,
+        bidang_usaha: businessField || null,
         nib: nib || null,
         no_hp: phone || '-',
         nama: name,
