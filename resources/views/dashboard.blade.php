@@ -6304,9 +6304,22 @@
                             <input type="hidden" id="modalCustIdPjk">
                     </div>
 
+                    <!-- Jenis Badan Usaha: hanya tampil jika KN = Perusahaan -->
+                    <div class="form-group field-full" id="modalCustBusinessTypeGroup" style="display: none;">
+                            <label>Jenis Badan Usaha <span class="required-mark">*</span></label>
+                            <select id="modalCustBusinessType" class="form-control" onchange="window.updateCustomerNameLabel()">
+                                <option value="">Pilih Jenis Badan Usaha</option>
+                                <option value="KUPVA">KUPVA</option>
+                                <option value="BANK">BANK</option>
+                                <option value="YAYASAN">YAYASAN</option>
+                                <option value="PENDIDIKAN">PENDIDIKAN</option>
+                                <option value="BADAN USAHA">BADAN USAHA</option>
+                            </select>
+                    </div>
+
                     <!-- Row 2: Nama & No Tlp -->
                     <div class="form-group">
-                            <label>Nama Lengkap <span class="required-mark">*</span></label>
+                            <label id="modalCustNameLabel">Nama Lengkap <span class="required-mark">*</span></label>
                             <input type="text" id="modalCustName" class="form-control" placeholder="Sesuai Identitas">
                     </div>
                     <div class="form-group">
