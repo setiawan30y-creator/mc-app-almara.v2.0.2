@@ -8378,6 +8378,11 @@ window.resetAuditFilter = function() {
         .sidebar-group-items{padding:2px 4px 5px;}
         .sidebar-group-items .nav-item{margin:2px 0;}
         .sidebar-nav-grouped .nav-item{font-size:.82rem;}
+        /* Sidebar typography standard: seluruh teks menu +2px */
+        .sidebar-nav-grouped .nav-item{font-size:calc(.82rem + 2px);}
+        .sidebar-nav-grouped .sidebar-group-toggle{font-size:calc(.70rem + 2px);}
+        .sidebar-nav-grouped .sidebar-group-label{font-size:inherit;}
+        .sidebar-nav-grouped .nav-item small{font-size:calc(0.75em + 2px);}
         .sidebar-nav-grouped .nav-item i:first-child{width:19px;text-align:center;}
         @media (max-width:700px){.sidebar-menu-group{margin-bottom:6px}.sidebar-group-toggle{padding:9px 10px}.sidebar-group-items .nav-item{padding-top:9px;padding-bottom:9px;}}
     </style>
