@@ -6292,7 +6292,7 @@
                             <label style="margin-bottom: 12px; display: block;">Tipe Entitas / KN (tipe) <span class="required-mark">*</span></label>
                             <div class="entity-toggle-group">
                                 <label class="entity-toggle-btn" title="Klik untuk mendaftarkan orang pribadi">
-                                    <input type="radio" name="modalCustTypeGroup" value="1" onchange="toggleEntitas()">
+                                    <input type="radio" name="modalCustTypeGroup" value="1" onchange="if(typeof toggleEntitas==='function') toggleEntitas(); window.updateCustomerBusinessTypeUI();">
                                     <span><i class="fas fa-user" style="margin-right: 5px;"></i> Perorangan (1)</span>
                                 </label>
                                 <label class="entity-toggle-btn" title="Klik untuk mendaftarkan institusi/korporasi">
