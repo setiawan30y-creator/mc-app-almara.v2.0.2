@@ -15,6 +15,7 @@ use App\Http\Controllers\LetterNumberController;
 use App\Http\Controllers\WhatsAppGatewayController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\GoamlComplianceController;
+use App\Http\Controllers\DashboardAnalyticsController;
 use App\Http\Middleware\DevelopmentBypassAuth;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,7 @@ Route::middleware($apiAuthMiddleware)->group(function () {
     Route::get('/user-chats/users', [UserChatController::class, 'getChatUsers']);
     Route::get('/user-chats/poll', [UserChatController::class, 'pollNewMessages']);
 
+    Route::get('/dashboard/analytics', [DashboardAnalyticsController::class, 'index']);
     Route::get('/transactions', [TransactionController::class, 'index']);
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::post('/transactions/bulk', [TransactionController::class, 'bulkStore']);
