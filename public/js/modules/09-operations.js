@@ -1621,6 +1621,21 @@ function printOldMoneyReceiptRaw(trxId) {
         (sum, item) => sum + (parseFloat(item.totalIdr) || 0), 0
     ));
 
+    const inferredCategory = (() => {
+        const direct = trx.category || (Array.isArray(trx.items) && trx.items.find(item => item && item.category)?.category);
+        if (direct) return normalizeOldMoneyCategory(direct);
+        const stock = getOldMoneyStock();
+        const categories = (Array.isArray(trx.items) ? trx.items : [])
+            .map(item => {
+                const master = stock.find(row => String(row.id || '') === String(item.itemId || ''));
+                return master ? master.category : null;
+            })
+            .filter(Boolean);
+        if (categories.some(category => normalizeOldMoneyCategory(category) === 'KOIN')) return 'KOIN';
+        if (categories.length) return normalizeOldMoneyCategory(categories[0]);
+        return normalizeOldMoneyCategory(window.oldMoneyActiveFormCategory || 'KOIN');
+    })();
+
     const summary = {
         receiptId: trx.id,
         paymentMethod: 'CASH',
@@ -1629,6 +1644,7 @@ function printOldMoneyReceiptRaw(trxId) {
         payTransfer: 0,
         customerId: trx.customerId || null,
         receiverId: trx.customerId || null,
+        oldMoneyCategory: inferredCategory,
         receiverManualName: trx.supplier || 'Nasabah Walk-In',
         timestamp: trx.date || Date.now(),
         kasir: (() => {
