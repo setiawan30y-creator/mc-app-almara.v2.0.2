@@ -419,6 +419,19 @@
         .almara-sidebar-subtitle{font-size:.54rem!important}
     }
 </style>
+<style id="mc-dashboard-analytics-style">
+.mc-dashboard-analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.mc-analytics-card{min-width:0}
+.mc-analytics-card .panel-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mc-analytics-badge{font-size:.72rem;padding:4px 8px;border-radius:999px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);color:#6ee7b7;white-space:nowrap}
+.mc-chart-wrap{height:250px;position:relative}
+.mc-chart-wrap-short{height:220px}
+.mc-analytics-wide{grid-column:1/-1}
+.mc-compliance-mini{display:grid;grid-template-columns:1fr;gap:9px;margin:12px 0 16px}
+.mc-compliance-mini div{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:8px;background:rgba(148,163,184,.06);border:1px solid rgba(148,163,184,.10)}
+.mc-compliance-mini span{font-size:.82rem;color:#94a3b8}.mc-compliance-mini strong{font-size:1rem;color:#e2e8f0}
+@media(max-width:900px){.mc-dashboard-analytics-grid{grid-template-columns:1fr}.mc-analytics-wide{grid-column:auto}}
+</style>
 </head>
 
 <body>
@@ -861,6 +874,39 @@
                                 <p class="stat-value" style="color: #8B5CF6;" id="dashTotalSelisih">Rp 0</p>
                                 <small id="dashTotalSelisihHint" class="text-muted" style="display:block; margin-top: 2px;">Belum ada closing</small>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Analytics -->
+                    <div class="mc-dashboard-analytics-grid mt-4" id="mcDashboardAnalytics">
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-map-location-dot"></i> Wilayah Nasabah</h3><span class="mc-analytics-badge" id="dashRegionTotal">0 nasabah</span></div>
+                            <div class="mc-chart-wrap"><canvas id="dashRegionChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-money-bill-transfer"></i> Transaksi Mata Uang</h3><span class="mc-analytics-badge" id="dashCurrencyTotal">Rp 0</span></div>
+                            <div class="mc-chart-wrap"><canvas id="dashCurrencyChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-right-left"></i> Beli vs Jual</h3><span class="mc-analytics-badge" id="dashBuySellTotal">0 transaksi</span></div>
+                            <div class="mc-chart-wrap mc-chart-wrap-short"><canvas id="dashBuySellChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card mc-analytics-wide">
+                            <div class="panel-header"><h3><i class="fa-solid fa-chart-area"></i> Trend Nilai Transaksi</h3><span class="mc-analytics-badge" id="dashTrendTotal">Rp 0</span></div>
+                            <div class="mc-chart-wrap"><canvas id="dashTrendChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-users"></i> Nasabah Aktif</h3><span class="mc-analytics-badge" id="dashCustomerTotal">0 aktif</span></div>
+                            <div class="mc-chart-wrap mc-chart-wrap-short"><canvas id="dashCustomerChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-shield-halved"></i> Ringkasan Compliance</h3><span class="mc-analytics-badge">GoAML</span></div>
+                            <div class="mc-compliance-mini">
+                                <div><span>Transaksi diperiksa</span><strong id="dashComplianceTrx">0</strong></div>
+                                <div><span>Nasabah aktif</span><strong id="dashComplianceCustomer">0</strong></div>
+                                <div><span>Wilayah terdata</span><strong id="dashComplianceRegion">0</strong></div>
+                            </div>
+                            <small class="text-muted">Ringkasan analitik dashboard. Detail alert tetap di menu BI & Regulasi → GoAML.</small>
                         </div>
                     </div>
 
@@ -8817,6 +8863,7 @@ window.resetAuditFilter = function() {
     <script src="{{ asset('js/modules/29-letter-archive.js?v=20261005-2') }}"></script>
     <script src="{{ asset('js/modules/28-letter-number.js?v=20261005-3') }}"></script>
     <script src="{{ asset('js/pwa.js?v=1.0.0') }}"></script>
+<script src="{{ asset('js/modules/30-dashboard-analytics.js?v=20261008-1') }}"></script>
 </body>
 
 </html>
