@@ -12,7 +12,7 @@
         .wide{grid-column:span 2}.actions{display:flex;gap:8px;align-items:end}.btn{height:38px;border:0;border-radius:8px;padding:0 14px;font-weight:700;cursor:pointer}.primary{background:#1677ff;color:#fff}.muted{background:#eef1f5;color:#344054}
         table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:11px 9px;border-bottom:1px solid #edf0f3;text-align:left;vertical-align:top}th{font-size:11px;text-transform:uppercase;color:#667085;background:#fafbfc}
         .pill{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.green{background:#e8f7ed;color:#16733a}.orange{background:#fff3db;color:#9a5b00}.gray{background:#eef1f5;color:#667085}
-        .alert{padding:12px;border-radius:9px;margin-bottom:12px}.ok{background:#eaf8ef;color:#176b37}.err{background:#fff0f0;color:#a32121}.note{font-size:12px;color:#667085}
+        .alert{padding:12px;border-radius:9px;margin-bottom:12px}.ok{background:#eaf8ef;color:#176b37}.err{background:#fff0f0;color:#a32121}.note{font-size:12px;color:#667085}.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal.show{display:flex}.modalbox{background:#fff;border-radius:14px;max-width:1050px;width:100%;max-height:90vh;overflow:auto;padding:22px}.detailgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.stat{background:#f7f9fb;border:1px solid #e6eaf0;border-radius:10px;padding:10px}.stat b{display:block;font-size:16px}.smallbtn{height:32px;border:0;border-radius:7px;padding:0 10px;font-weight:700;cursor:pointer}.reviewbtn{background:#fff3db;color:#8a5200}.secondary{background:#eef1f5;color:#344054}
         @media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.wide{grid-column:span 2}} @media(max-width:600px){.grid{grid-template-columns:1fr}.wide{grid-column:span 1}}
     </style>
 </head>
@@ -53,6 +53,16 @@
         <h3 style="margin-top:0">Alert Compliance Terbaru</h3>
         <div id="alerts">Memuat...</div>
     </div>
+
+    <div id="detailModal" class="modal" onclick="if(event.target===this)closeDetail()">
+        <div class="modalbox">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+                <div><h2 id="detailTitle" style="margin:0">Detail Alert</h2><div id="detailSub" class="sub"></div></div>
+                <button class="smallbtn secondary" onclick="closeDetail()">Tutup</button>
+            </div>
+            <div id="detailBody" style="margin-top:18px"></div>
+        </div>
+    </div>
 </div>
 <script>
 const api = (p,o={}) => fetch('/api'+p,{headers:{'Content-Type':'application/json'},...o}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.message||'HTTP '+r.status);return j});
@@ -65,7 +75,23 @@ async function loadRules(){
 async function loadAlerts(){
  const j=await api('/goaml/alerts'); const rows=j;
  if(!rows.length){document.getElementById('alerts').innerHTML='<div class="note">Belum ada alert.</div>';return}
- document.getElementById('alerts').innerHTML='<table><thead><tr><th>Alert</th><th>Customer</th><th>Rule</th><th>Transaksi</th><th>Total</th><th>Status</th><th>Periode</th></tr></thead><tbody>'+rows.map(a=>'<tr><td><b>'+esc(a.alert_no)+'</b><br><span class="note">'+esc(a.severity)+'</span></td><td>'+esc(a.customer_name)+'<br><span class="note">'+esc(a.customer_id)+'</span></td><td>'+esc(a.rule?.name||'—')+'</td><td>'+esc(a.transaction_count)+'</td><td>Rp '+Number(a.total_amount_idr||0).toLocaleString('id-ID')+'</td><td><span class="pill orange">'+esc(a.status)+'</span></td><td>'+esc(a.period_start)+' — '+esc(a.period_end)+'</td></tr>').join('')+'</tbody></table>';
+ document.getElementById('alerts').innerHTML='<table><thead><tr><th>Alert</th><th>Customer</th><th>Rule</th><th>Transaksi</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+rows.map(a=>'<tr><td><b>'+esc(a.alert_no)+'</b><br><span class="note">'+esc(a.severity)+'</span></td><td>'+esc(a.customer_name)+'<br><span class="note">'+esc(a.customer_id)+'</span></td><td>'+esc(a.rule?.name||'—')+'</td><td>'+esc(a.transaction_count)+'</td><td>Rp '+Number(a.total_amount_idr||0).toLocaleString('id-ID')+'</td><td><span class="pill '+(a.status==='OPEN'?'orange':'gray')+'">'+esc(a.status)+'</span></td><td><button class="smallbtn secondary" onclick="showDetail(undefined)">Detail</button> <button class="smallbtn reviewbtn" onclick="reviewAlert(undefined)">Review</button></td></tr>').join('')+'</tbody></table>';
+}
+function closeDetail(){document.getElementById('detailModal').classList.remove('show')}
+async function showDetail(id){
+ try{
+  const rows=await api('/goaml/alerts'); const a=rows.find(x=>Number(x.id)===Number(id)); if(!a)return;
+  document.getElementById('detailTitle').textContent=a.alert_no;
+  document.getElementById('detailSub').textContent=(a.customer_name||'—')+' · '+(a.customer_id||'—');
+  const tx=(a.transactions||[]).map(x=>x.transaction||{});
+  document.getElementById('detailBody').innerHTML='<div class="detailgrid"><div class="stat"><span class="note">Status</span><b>'+esc(a.status)+'</b></div><div class="stat"><span class="note">Transaksi</span><b>'+esc(a.transaction_count)+'</b></div><div class="stat"><span class="note">Total</span><b>Rp '+Number(a.total_amount_idr||0).toLocaleString('id-ID')+'</b></div><div class="stat"><span class="note">Severity</span><b>'+esc(a.severity)+'</b></div></div><p><b>Rule:</b> '+esc(a.rule?.name||'—')+'</p><p><b>Alasan:</b> '+esc(a.reason||'—')+'</p><table><thead><tr><th>Invoice</th><th>Tanggal</th><th>Valuta</th><th>Nominal</th><th>Total IDR</th></tr></thead><tbody>'+tx.map(t=>'<tr><td>'+esc(t.id)+'</td><td>'+esc(t.timestamp)+'</td><td>'+esc(t.valuta)+'</td><td>'+Number(t.nominal||0).toLocaleString('id-ID')+'</td><td>Rp '+Number(t.total||0).toLocaleString('id-ID')+'</td></tr>').join('')+'</tbody></table><div style="margin-top:16px"><b>Catatan Review</b><div class="note" style="margin-top:5px">'+esc(a.review_note||'Belum ada review')+'</div></div>';
+  document.getElementById('detailModal').classList.add('show');
+ }catch(e){show('err',e.message)}
+}
+async function reviewAlert(id){
+ const status=prompt('Status review: IN_REVIEW / APPROVED / REJECTED / ESCALATED','IN_REVIEW'); if(!status)return;
+ const note=prompt('Catatan Compliance (opsional):','');
+ try{await api('/goaml/alerts/'+id+'/review',{method:'POST',body:JSON.stringify({status,review_note:note||null})});show('ok','Review alert berhasil disimpan');loadAlerts();}catch(e){show('err',e.message)}
 }
 async function saveRule(){
  try{
