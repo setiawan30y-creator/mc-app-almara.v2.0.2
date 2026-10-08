@@ -2337,6 +2337,19 @@ function printReceipt(cart, summary) {
 
         itemsHtml += beliCart.map(item => {
             totalBeli += item.totalIdr;
+            if (summary.oldMoneyCategory === 'KOIN') {
+                const denom = Number(item.denom || 0);
+                const qty = Number(item.qty || 0);
+                const valasTotal = Number(item.amount || 0);
+                const desc = item.oldMoneyDesc || item.curCode || 'KOIN';
+                return `
+                <div style="display:grid; grid-template-columns: 1.35fr 1.45fr 1.35fr 1fr; gap:4px; align-items:baseline; font-size:14px; margin-bottom:4px; line-height:1.15;">
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${desc}</span>
+                    <span style="white-space:nowrap;">${denom.toLocaleString('id-ID')} × ${qty.toLocaleString('id-ID')} kpg</span>
+                    <span style="white-space:nowrap; text-align:right;">${valasTotal.toLocaleString('id-ID', {minimumFractionDigits: denom < 1 ? 2 : 0, maximumFractionDigits: 3})} @ ${formatPrintRate(item.rate, item.curCode)}</span>
+                    <span style="text-align:right; font-weight:bold; white-space:nowrap;">${almaraUtils.formatIdr(item.totalIdr)}</span>
+                </div>`;
+            }
             return `
             <div style="display: flex; justify-content: space-between; flex-wrap: wrap; font-size: 17px; margin-bottom: 5px; line-height: 1.2;">
                 <span style="flex-shrink: 0; margin-right: 10px;">${item.curCode} ${item.amount.toLocaleString('id-ID')} @ ${formatPrintRate(item.rate, item.curCode)}</span>
@@ -2362,8 +2375,21 @@ function printReceipt(cart, summary) {
     if (jualCart.length > 0) {
         itemsHtml += '<div style="font-weight:bold; margin:3px 0 4px; font-size:17px; border-bottom:1px dashed #000;">JUAL</div>';
 
-        itemsHtml += jualCart.map(item => {
+        itemsHtml += beliCart.map(item => {
             totalJual += item.totalIdr;
+            if (summary.oldMoneyCategory === 'KOIN') {
+                const denom = Number(item.denom || 0);
+                const qty = Number(item.qty || 0);
+                const valasTotal = Number(item.amount || 0);
+                const desc = item.oldMoneyDesc || item.curCode || 'KOIN';
+                return `
+                <div style="display:grid; grid-template-columns: 1.35fr 1.45fr 1.35fr 1fr; gap:4px; align-items:baseline; font-size:14px; margin-bottom:4px; line-height:1.15;">
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${desc}</span>
+                    <span style="white-space:nowrap;">${denom.toLocaleString('id-ID')} × ${qty.toLocaleString('id-ID')} kpg</span>
+                    <span style="white-space:nowrap; text-align:right;">${valasTotal.toLocaleString('id-ID', {minimumFractionDigits: denom < 1 ? 2 : 0, maximumFractionDigits: 3})} @ ${formatPrintRate(item.rate, item.curCode)}</span>
+                    <span style="text-align:right; font-weight:bold; white-space:nowrap;">${almaraUtils.formatIdr(item.totalIdr)}</span>
+                </div>`;
+            }
             return `
             <div style="display: flex; justify-content: space-between; flex-wrap: wrap; font-size: 17px; margin-bottom: 5px; line-height: 1.2;">
                 <span style="flex-shrink: 0; margin-right: 10px;">${item.curCode} ${item.amount.toLocaleString('id-ID')} @ ${formatPrintRate(item.rate, item.curCode)}</span>
@@ -2372,11 +2398,11 @@ function printReceipt(cart, summary) {
             `;
         }).join('');
 
-        if (isMixed || jualCart.length > 1) {
+        if (isMixed || beliCart.length > 1) {
             itemsHtml += `
                 <div class="row" style="font-weight:bold;">
                     <span>Total Jual</span>
-                    <span>${almaraUtils.formatIdr(totalJual)}</span>
+                    <span>${almaraUtils.formatIdr(totalBeli)}</span>
                 </div>
             `;
         }
