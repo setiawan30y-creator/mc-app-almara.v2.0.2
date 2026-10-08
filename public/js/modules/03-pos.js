@@ -2375,7 +2375,7 @@ function printReceipt(cart, summary) {
     if (jualCart.length > 0) {
         itemsHtml += '<div style="font-weight:bold; margin:3px 0 4px; font-size:17px; border-bottom:1px dashed #000;">JUAL</div>';
 
-        itemsHtml += beliCart.map(item => {
+        itemsHtml += jualCart.map(item => {
             totalJual += item.totalIdr;
             if (summary.oldMoneyCategory === 'KOIN') {
                 const denom = Number(item.denom || 0);
@@ -2398,11 +2398,11 @@ function printReceipt(cart, summary) {
             `;
         }).join('');
 
-        if (isMixed || beliCart.length > 1) {
+        if (isMixed || jualCart.length > 1) {
             itemsHtml += `
                 <div class="row" style="font-weight:bold;">
                     <span>Total Jual</span>
-                    <span>${almaraUtils.formatIdr(totalBeli)}</span>
+                    <span>${almaraUtils.formatIdr(totalJual)}</span>
                 </div>
             `;
         }
