@@ -7,7 +7,6 @@ use App\Models\GoamlRule;
 use App\Models\Transaction;
 use App\Services\GoamlComplianceService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class GoamlComplianceController extends Controller
 {
@@ -24,16 +23,23 @@ class GoamlComplianceController extends Controller
             'name' => ['required','string','max:180'],
             'code' => ['required','string','max:80'],
             'rule_type' => ['required','string','max:40'],
+            'regulation_source' => ['nullable','string','max:80'],
+            'regulation_no' => ['nullable','string','max:120'],
+            'regulation_article' => ['nullable','string','max:120'],
+            'effective_from' => ['nullable','date'],
+            'effective_until' => ['nullable','date','after_or_equal:effective_from'],
             'target' => ['required','string','max:40'],
             'classification' => ['nullable','string','max:20'],
             'severity' => ['required','string','max:20'],
             'action' => ['required','string','max:30'],
+            'result_type' => ['required','string','max:40'],
             'min_transactions' => ['nullable','integer','min:1'],
             'period_days' => ['nullable','integer','min:1'],
             'total_amount_idr' => ['nullable','numeric','min:0'],
             'amount_operator' => ['nullable','in:>,>=,=,<,<='],
             'payment_method' => ['nullable','string','max:50'],
             'conditions' => ['nullable','array'],
+            'internal_note' => ['nullable','string','max:5000'],
             'is_active' => ['nullable','boolean'],
             'priority' => ['nullable','integer','min:1'],
         ]);
@@ -54,15 +60,24 @@ class GoamlComplianceController extends Controller
         $data = $request->validate([
             'name' => ['sometimes','string','max:180'],
             'code' => ['sometimes','string','max:80'],
+            'rule_type' => ['sometimes','string','max:40'],
+            'regulation_source' => ['nullable','string','max:80'],
+            'regulation_no' => ['nullable','string','max:120'],
+            'regulation_article' => ['nullable','string','max:120'],
+            'effective_from' => ['nullable','date'],
+            'effective_until' => ['nullable','date','after_or_equal:effective_from'],
+            'target' => ['sometimes','string','max:40'],
             'classification' => ['nullable','string','max:20'],
             'severity' => ['sometimes','string','max:20'],
             'action' => ['sometimes','string','max:30'],
+            'result_type' => ['sometimes','string','max:40'],
             'min_transactions' => ['nullable','integer','min:1'],
             'period_days' => ['nullable','integer','min:1'],
             'total_amount_idr' => ['nullable','numeric','min:0'],
             'amount_operator' => ['nullable','in:>,>=,=,<,<='],
             'payment_method' => ['nullable','string','max:50'],
             'conditions' => ['nullable','array'],
+            'internal_note' => ['nullable','string','max:5000'],
             'is_active' => ['nullable','boolean'],
             'priority' => ['nullable','integer','min:1'],
         ]);
