@@ -96,6 +96,10 @@ Route::get('/', function () {
     return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
 })->middleware([DevelopmentBypassAuth::class]);
 
+Route::get('/goaml/compliance-rules', function () {
+    return view('goaml.compliance-rules');
+})->middleware([DevelopmentBypassAuth::class])->name('goaml.compliance-rules');
+
 Route::get('/settings/theme', function () {
     return view('theme-settings');
 })->middleware([DevelopmentBypassAuth::class])->name('settings.theme');
