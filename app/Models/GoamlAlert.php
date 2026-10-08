@@ -9,8 +9,8 @@ class GoamlAlert extends Model
     protected $table = 'goaml_alerts';
 
     protected $fillable = [
-        'rule_id','alert_no','rule_type','classification','severity','status',
-        'customer_id','customer_name','total_amount_idr','transaction_count',
+        'rule_id','alert_no','rule_type','result_type','classification','severity','status',
+        'customer_id','customer_name','total_amount_idr','transaction_count','invoice_summary',
         'period_start','period_end','reason','snapshot','reviewed_by',
         'reviewed_at','review_note',
     ];
