@@ -5172,9 +5172,14 @@
                     </div>
                 </section>
                 <section id="laporan-goaml-view" class="view-section hidden">
-                    <div class="panel header-panel">
-                        <h2>Laporan GoAML (PPATK)</h2>
-                        <p class="text-muted mt-2">Anti Money Laundering / Pencegahan Pencucian Uang untuk disetor ke sistem GoAML.</p>
+                    <div class="panel" style="padding:0; overflow:hidden; border-radius:14px;">
+                        <iframe
+                            id="goamlComplianceFrame"
+                            src="/goaml/compliance-rules"
+                            title="GoAML Compliance Rule Center"
+                            style="display:block; width:100%; min-height:calc(100vh - 150px); height:900px; border:0; background:#f4f6f8;"
+                            loading="eager">
+                        </iframe>
                     </div>
                 </section>
                 <section id="laporan-sipendar-view" class="view-section hidden">
