@@ -52,6 +52,12 @@ class GoamlComplianceService
                 $query->where('paymentMethod', $rule->payment_method);
             }
 
+            $conditions = is_array($rule->conditions) ? $rule->conditions : [];
+            $transactionType = strtoupper(trim((string) ($conditions['transaction_type'] ?? '')));
+            if ($transactionType !== '') {
+                $query->whereRaw('UPPER(tipe) = ?', [$transactionType]);
+            }
+
             $matched = $query
                 ->orderBy('timestamp')
                 ->orderBy('itemId')
