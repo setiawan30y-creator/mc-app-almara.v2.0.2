@@ -20,4 +20,9 @@ class GoamlAlertTransaction extends Model
     {
         return $this->belongsTo(GoamlAlert::class, 'alert_id');
     }
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class, 'transaction_item_id', 'itemId');
+    }
 }
