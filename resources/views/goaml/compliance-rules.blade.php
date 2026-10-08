@@ -83,7 +83,10 @@
     </div>
 </div>
 <script>
-const api=(p,o={})=>fetch('/api'+p,{headers:{'Content-Type':'application/json'},...o}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.message||'HTTP '+r.status);return j});
+(function(){
+'use strict';
+const api=(p,o={})=>fetch('/api'+p,{credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json','Content-Type':'application/json',...(o.headers||{})},...o}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.message||'HTTP '+r.status);return j});
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const el=id=>document.getElementById(id);
 function show(type,text){el('msg').innerHTML='<div class="alert '+(type==='ok'?'ok':'err')+'">'+esc(text)+'</div>';setTimeout(()=>el('msg').innerHTML='',4000)}
@@ -135,7 +138,22 @@ async function saveRule(){
   await api(id?'/goaml/rules/'+id:'/goaml/rules',{method:id?'PUT':'POST',body:JSON.stringify(body)});show('ok',id?'Rule diperbarui dan versinya dinaikkan':'Rule berhasil disimpan');resetForm();loadRules();
  }catch(e){show('err',e.message)}
 }
-resetForm();loadRules();loadAlerts();setInterval(loadAlerts,15000);
+function setLoading(id,text){const node=el(id);if(node)node.innerHTML='<div class="note">'+esc(text)+'</div>'}
+function renderError(id,label,error,fn){
+ const node=el(id); if(!node)return;
+ node.innerHTML='<div class="alert err"><b>'+esc(label)+'</b><br>'+esc(error?.message||error||'Terjadi kesalahan')+'<br><button class="smallbtn secondary" style="margin-top:8px" onclick="'+fn+'()">Coba Lagi</button></div>';
+}
+async function boot(){
+ try{resetForm();setLoading('rules','Memuat rule compliance...');setLoading('alerts','Memuat temuan compliance...');}
+ catch(e){console.error('[GOAML] init error',e)}
+ try{await loadRules();}catch(e){console.error('[GOAML] loadRules failed',e);renderError('rules','Gagal memuat Rule Compliance',e,'loadRules')}
+ try{await loadAlerts();}catch(e){console.error('[GOAML] loadAlerts failed',e);renderError('alerts','Gagal memuat Temuan Compliance',e,'loadAlerts')}
+}
+window.addEventListener('error',function(e){console.error('[GOAML] JavaScript error',e.error||e.message)});
+window.addEventListener('unhandledrejection',function(e){console.error('[GOAML] Promise error',e.reason)});
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',boot,{once:true})}else{boot()}
+setInterval(function(){loadAlerts().catch(e=>console.error('[GOAML] refresh alerts failed',e))},15000);
+})(); 
 </script>
 </body>
 </html>
