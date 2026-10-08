@@ -79,7 +79,7 @@ class GoamlComplianceController extends Controller
 
     public function alerts(Request $request)
     {
-        $query = GoamlAlert::with('rule')
+        $query = GoamlAlert::with(['rule', 'transactions.transaction'])
             ->orderByDesc('created_at');
 
         if ($request->filled('status')) {
@@ -117,8 +117,7 @@ class GoamlComplianceController extends Controller
             'review_note' => $data['review_note'] ?? null,
             'reviewed_by' => $request->user()?->name
                 ?? $request->user()?->username
-                ?? $request->attributes->get('dev_user')['username']
-                ?? 'SYSTEM',
+                ?? ($request->attributes->get('dev_user')['username'] ?? 'SYSTEM'),
             'reviewed_at' => now(),
         ]);
 
