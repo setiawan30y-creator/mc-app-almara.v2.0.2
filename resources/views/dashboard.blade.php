@@ -4865,26 +4865,53 @@
 
     <div id="lkbu-panel-b0002" class="lkbu-panel">
         <div class="panel header-panel">
-            <h2>Keuangan Neraca <span class="lkbu-code">B0002</span></h2>
-            <p class="text-muted mt-2">Tab B0002 untuk penyusunan dan pemeriksaan laporan keuangan neraca.</p>
-            <div class="lkbu-empty text-muted">Modul B0002 siap dikembangkan pada tahap berikutnya.</div>
+            <div class="flex-between"><div><h2>Keuangan Neraca <span class="lkbu-code">B0002</span></h2><p class="text-muted mt-2">Format akun mengikuti template sumber 20250002.xls.</p></div><button class="btn btn-secondary" type="button" onclick="window.print()"><i class="fa-solid fa-print"></i> Cetak</button></div>
+        </div>
+        <div class="panel mt-4 lkbu-source-table">
+            <div class="table-responsive"><table class="table table-bordered table-sm">
+                <thead><tr><th style="width:80px">Kode</th><th>Aktiva</th><th class="text-end">Nilai</th></tr></thead>
+                <tbody>
+                    <tr class="lkbu-group"><th colspan="3">Aktiva</th></tr>
+                    <tr><td>101</td><td>Kas dalam Rupiah</td><td class="text-end">0</td></tr>
+                    <tr><td>102</td><td>Bank dalam Rupiah</td><td class="text-end">0</td></tr>
+                    <tr><td>103</td><td>Kas dalam UKA</td><td class="text-end">0</td></tr>
+                    <tr><td>104</td><td>Bank dalam UKA</td><td class="text-end">0</td></tr>
+                    <tr><td>105</td><td>Piutang TC</td><td class="text-end">0</td></tr>
+                    <tr><td>106</td><td>Piutang Lain-Lain</td><td class="text-end">0</td></tr>
+                    <tr><td>107</td><td>Sewa dibayar Di Muka</td><td class="text-end">0</td></tr>
+                    <tr><td>108</td><td>Asuransi dibayar Di Muka</td><td class="text-end">0</td></tr>
+                    <tr><td>109</td><td>Aset Tetap-harga perolehan</td><td class="text-end">0</td></tr>
+                    <tr><td>110</td><td>Akumulasi Penyusutan Aset Tetap (-/-)</td><td class="text-end">0</td></tr>
+                    <tr><td>111</td><td>Aset Lain-lain</td><td class="text-end">0</td></tr>
+                    <tr class="fw-bold"><td></td><td>Jumlah Aset</td><td class="text-end">0</td></tr>
+                    <tr class="fw-bold"><td></td><td>Neraca Seimbang</td><td class="text-end">0</td></tr>
+                    <tr class="lkbu-group"><th colspan="3">Pasiva</th></tr>
+                    <tr><td>201</td><td>Pinjaman dalam Rupiah</td><td class="text-end">0</td></tr>
+                    <tr><td>202</td><td>Pinjaman dalam UKA</td><td class="text-end">0</td></tr>
+                    <tr><td>203</td><td>Hutang Sewa</td><td class="text-end">0</td></tr>
+                    <tr><td>204</td><td>Kewajiban Pengiriman Uang</td><td class="text-end">0</td></tr>
+                    <tr><td>205</td><td>Kewajiban Lain-lain</td><td class="text-end">0</td></tr>
+                    <tr><td>206</td><td>Modal Disetor</td><td class="text-end">0</td></tr>
+                    <tr><td>207</td><td>Laba Ditahan</td><td class="text-end">0</td></tr>
+                    <tr><td>290</td><td>Akumulasi Rugi (-/-)</td><td class="text-end">0</td></tr>
+                    <tr class="fw-bold"><td></td><td>Jumlah Kewajiban dan Ekuitas</td><td class="text-end">0</td></tr>
+                </tbody>
+            </table></div>
         </div>
     </div>
 
     <div id="lkbu-panel-b0003" class="lkbu-panel">
-        <div class="panel header-panel">
-            <h2>Keuangan Laba/Rugi <span class="lkbu-code">B0003</span></h2>
-            <p class="text-muted mt-2">Tab B0003 untuk laporan pendapatan, beban, dan laba/rugi.</p>
-            <div class="lkbu-empty text-muted">Modul B0003 siap dikembangkan pada tahap berikutnya.</div>
-        </div>
+        <div class="panel header-panel"><h2>Keuangan Laba/Rugi <span class="lkbu-code">B0003</span></h2><p class="text-muted mt-2">Format akun mengikuti template sumber 20250003.xls.</p></div>
+        <div class="panel mt-4 lkbu-source-table"><div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr><th style="width:80px">Kode</th><th>Akun</th><th class="text-end">Nilai</th></tr></thead><tbody><tr class=""><td>01</td><td>Penjualan UKA</td><td class="text-end">0</td></tr><tr class=""><td>02</td><td>Pencairan TC</td><td class="text-end">0</td></tr><tr class=""><td>03</td><td>Saldo Awal UKA dan TC</td><td class="text-end">0</td></tr><tr class=""><td>04</td><td>Pembelian UKA dan TC</td><td class="text-end">0</td></tr><tr class=""><td>05</td><td>Saldo Akhir UKA dan TC</td><td class="text-end">0</td></tr><tr class="lkbu-total"><td></td><td>Pendapatan/(Rugi) Operasional Kotor UKA-TC</td><td class="text-end">0</td></tr><tr class=""><td>06</td><td>Pendapatan Pengiriman Uang</td><td class="text-end">0</td></tr><tr class="lkbu-total"><td></td><td>Pendapatan/(Rugi) Operasional Kotor</td><td class="text-end">0</td></tr><tr class=""><td>07</td><td>Beban Gaji, Upah dan Tunjangan</td><td class="text-end">0</td></tr><tr class=""><td>08</td><td>Beban Sewa</td><td class="text-end">0</td></tr><tr class=""><td>09</td><td>Beban Iklan dan promosi</td><td class="text-end">0</td></tr><tr class=""><td>10</td><td>Beban Air, Listrik dan Telepon</td><td class="text-end">0</td></tr><tr class=""><td>11</td><td>Beban Transportasi dan perjalanan</td><td class="text-end">0</td></tr><tr class=""><td>12</td><td>Beban Pemeliharaan kendaraan</td><td class="text-end">0</td></tr><tr class=""><td>13</td><td>Penyusutan Aset Tetap</td><td class="text-end">0</td></tr><tr class=""><td>14</td><td>Beban Asuransi</td><td class="text-end">0</td></tr><tr class=""><td>15</td><td>Beban Lain-Lain (Operasional)</td><td class="text-end">0</td></tr><tr class="lkbu-total"><td></td><td>Pendapatan/(Rugi) Operasional Bersih</td><td class="text-end">0</td></tr><tr class=""><td>16</td><td>Pendapatan Bunga bank</td><td class="text-end">0</td></tr><tr class=""><td>17</td><td>Beban Administrasi Bank</td><td class="text-end">0</td></tr><tr class=""><td>18</td><td>Beban Bunga Pinjaman</td><td class="text-end">0</td></tr><tr class=""><td>19</td><td>Laba Penjualan Aset Tetap</td><td class="text-end">0</td></tr><tr class=""><td>20</td><td>Rugi Penjualan Aset Tetap</td><td class="text-end">0</td></tr><tr class=""><td>21</td><td>Laba Selisih Kurs</td><td class="text-end">0</td></tr><tr class=""><td>22</td><td>Rugi Selisih Kurs</td><td class="text-end">0</td></tr><tr class=""><td>23</td><td>Pendapatan Lain-Lain</td><td class="text-end">0</td></tr><tr class=""><td>24</td><td>Beban Lain-Lain (Non Operasional)</td><td class="text-end">0</td></tr><tr class="lkbu-total"><td></td><td>Laba/(Rugi) Sebelum Pajak Penghasilan</td><td class="text-end">0</td></tr><tr class=""><td>25</td><td>Pajak Penghasilan</td><td class="text-end">0</td></tr><tr class="lkbu-total"><td></td><td>Laba/(Rugi) Bersih</td><td class="text-end">0</td></tr></tbody></table></div></div>
     </div>
 
     <div id="lkbu-panel-b0004" class="lkbu-panel">
-        <div class="panel header-panel">
-            <h2>Perubahan Ekuitas <span class="lkbu-code">B0004</span></h2>
-            <p class="text-muted mt-2">Tab B0004 untuk perubahan modal dan ekuitas.</p>
-            <div class="lkbu-empty text-muted">Modul B0004 siap dikembangkan pada tahap berikutnya.</div>
-        </div>
+        <div class="panel header-panel"><h2>Perubahan Ekuitas <span class="lkbu-code">B0004</span></h2><p class="text-muted mt-2">Format kolom mengikuti template sumber 20250004.xls.</p></div>
+        <div class="panel mt-4 lkbu-source-table"><div class="table-responsive"><table class="table table-bordered table-sm"><thead><tr><th>Keterangan</th><th class="text-end">01-Saldo Positif</th><th class="text-end">02-Saldo Negatif</th><th class="text-end">03-Laba periode berjalan (net)</th><th class="text-end">04-Rugi periode berjalan (-/-)</th><th class="text-end">05-Pembagian Dividen(-/-)</th><th class="text-end">06-Menambah ekuitas (net)</th><th class="text-end">07-Mengurangi ekuitas (-/-)</th><th class="text-end">Jumlah</th></tr></thead><tbody>
+        <tr><td>Modal Disetor</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td></tr>
+        <tr><td>Laba Ditahan/Akumulasi Rugi</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td></tr>
+        <tr class="lkbu-total"><td>Jumlah</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td><td class="text-end">0</td></tr>
+        </tbody></table></div></div>
     </div>
 
     <div id="lkbu-panel-b0005" class="lkbu-panel">
