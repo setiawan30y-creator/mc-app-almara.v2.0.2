@@ -744,6 +744,26 @@
                                 <i class="fa-solid fa-crown" style="width:16px;color:#C9F36A;"></i> APV Theme
                                 <i class="fa-solid fa-check" id="checkApv" style="margin-left:auto;color:#3b82f6;display:none;"></i>
                             </button>
+                            <div class="mc-theme-divider"></div>
+                            <div class="mc-sidebar-group-color-title">
+                                <i class="fa-solid fa-font"></i>
+                                <span>Warna Teks Grup Sidebar</span>
+                            </div>
+                            <div id="mcSidebarGroupColors" class="mc-sidebar-group-colors">
+                                <label><span>Ringkasan</span><input type="color" data-sidebar-color="dashboard" value="#94A3B8"></label>
+                                <label><span>Transaksi & Operasional</span><input type="color" data-sidebar-color="transaksi" value="#94A3B8"></label>
+                                <label><span>Nasabah</span><input type="color" data-sidebar-color="nasabah" value="#94A3B8"></label>
+                                <label><span>Master Data & Valuta</span><input type="color" data-sidebar-color="master" value="#94A3B8"></label>
+                                <label><span>Keuangan</span><input type="color" data-sidebar-color="keuangan" value="#94A3B8"></label>
+                                <label><span>Pelaporan Akuntansi</span><input type="color" data-sidebar-color="laporan" value="#94A3B8"></label>
+                                <label><span>BI & Regulasi</span><input type="color" data-sidebar-color="bi" value="#94A3B8"></label>
+                                <label><span>Tools</span><input type="color" data-sidebar-color="tools" value="#94A3B8"></label>
+                                <label><span>Administrasi & Berkas</span><input type="color" data-sidebar-color="administrasi" value="#94A3B8"></label>
+                                <label><span>Pengaturan Sistem</span><input type="color" data-sidebar-color="pengaturan" value="#94A3B8"></label>
+                            </div>
+                            <button type="button" id="resetSidebarGroupColors" class="mc-sidebar-group-reset">
+                                <i class="fa-solid fa-rotate-left"></i> Kembalikan warna standar
+                            </button>
                         </div>
                     </div>
                     <div class="header-calculator" style="cursor: pointer; margin-left: 20px; font-size: 1.2rem; color: #94A3B8;" onclick="toggleMultiCalculator()" title="Kalkulator Multi-Baris">
@@ -8532,6 +8552,61 @@ window.resetAuditFilter = function() {
          ============================================================ -->
     <script>
     (function() {
+        var SIDEBAR_GROUP_COLOR_KEY = 'mc_sidebar_group_colors_v1';
+        var SIDEBAR_GROUP_COLOR_DEFAULTS = {
+            dashboard:'#94A3B8', transaksi:'#94A3B8', nasabah:'#94A3B8',
+            master:'#94A3B8', keuangan:'#94A3B8', laporan:'#94A3B8',
+            bi:'#94A3B8', tools:'#94A3B8', administrasi:'#94A3B8', pengaturan:'#94A3B8'
+        };
+        function loadSidebarGroupColors(){
+            try{
+                var saved=JSON.parse(localStorage.getItem(SIDEBAR_GROUP_COLOR_KEY)||'{}');
+                return Object.assign({}, SIDEBAR_GROUP_COLOR_DEFAULTS, saved||{});
+            }catch(e){ return Object.assign({}, SIDEBAR_GROUP_COLOR_DEFAULTS); }
+        }
+        function applySidebarGroupColors(colors, persist){
+            colors=Object.assign({}, SIDEBAR_GROUP_COLOR_DEFAULTS, colors||{});
+            var root=document.documentElement;
+            Object.keys(colors).forEach(function(group){
+                root.style.setProperty('--mc-sidebar-group-'+group+'-color', colors[group]);
+                document.querySelectorAll('.sidebar-menu-group[data-sidebar-group-section="'+group+'"] .sidebar-group-toggle')
+                    .forEach(function(el){ el.style.color=colors[group]; });
+            });
+            document.querySelectorAll('#mcSidebarGroupColors input[data-sidebar-color]').forEach(function(input){
+                var group=input.getAttribute('data-sidebar-color');
+                if(colors[group]) input.value=colors[group];
+            });
+            if(persist){
+                try{ localStorage.setItem(SIDEBAR_GROUP_COLOR_KEY, JSON.stringify(colors)); }catch(e){}
+            }
+        }
+        function initSidebarGroupColors(){
+            var panel=document.getElementById('themeSwitcherPanel');
+            var box=document.getElementById('mcSidebarGroupColors');
+            if(panel) panel.classList.add('mc-theme-expanded');
+            if(!box) return;
+            var colors=loadSidebarGroupColors();
+            box.querySelectorAll('input[data-sidebar-color]').forEach(function(input){
+                input.addEventListener('input',function(){
+                    var group=input.getAttribute('data-sidebar-color');
+                    colors[group]=input.value;
+                    applySidebarGroupColors(colors,true);
+                });
+            });
+            var reset=document.getElementById('resetSidebarGroupColors');
+            if(reset) reset.addEventListener('click',function(){
+                colors=Object.assign({}, SIDEBAR_GROUP_COLOR_DEFAULTS);
+                applySidebarGroupColors(colors,true);
+            });
+            applySidebarGroupColors(colors,false);
+        }
+        window.MCSidebarGroupColors={load:loadSidebarGroupColors,apply:applySidebarGroupColors,reset:function(){applySidebarGroupColors(SIDEBAR_GROUP_COLOR_DEFAULTS,true);}};
+        if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',initSidebarGroupColors,{once:true});
+        else initSidebarGroupColors();
+    })();
+    </script>
+    <script>
+    (function() {
         var themes = {
             dark:  { label: 'Dark',  icon: 'fa-moon',  bodyClass: '',           btnColor: '#94A3B8',  btnBg: 'rgba(255,255,255,0.06)',        btnBorder: '1px solid rgba(255,255,255,0.12)' },
             light: { label: 'Light', icon: 'fa-sun',   bodyClass: 'light-theme', btnColor: '#64748b',  btnBg: '#f1f5f9',                      btnBorder: '1px solid #e2e8f0' },
@@ -8625,6 +8700,21 @@ window.resetAuditFilter = function() {
         }
     })();
     </script>
+    <style id="mc-theme-sidebar-group-colors-style">
+        .mc-theme-divider{height:1px;margin:5px 4px 7px;background:rgba(148,163,184,.18);}
+        .mc-sidebar-group-color-title{display:flex;align-items:center;gap:7px;padding:7px 8px 5px;color:#64748b;font-size:9.5px;font-weight:800;letter-spacing:.65px;text-transform:uppercase;}
+        .mc-sidebar-group-color-title i{font-size:10px;color:#1D6C5D;}
+        .mc-sidebar-group-colors{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;padding:0 3px;}
+        .mc-sidebar-group-colors label{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 7px;border-radius:6px;color:#64748b;font-size:10px;line-height:1.15;cursor:pointer;}
+        .mc-sidebar-group-colors label:hover{background:rgba(29,108,93,.07);}
+        .mc-sidebar-group-colors input[type="color"]{width:28px;height:20px;padding:1px;border:1px solid #cbd5e1;border-radius:5px;background:transparent;cursor:pointer;flex:0 0 28px;}
+        .mc-sidebar-group-reset{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin:6px 0 2px;padding:6px 7px;border:1px solid #d7d8cf;border-radius:7px;background:#f8fafc;color:#64748b;font-size:10px;font-weight:700;cursor:pointer;}
+        .mc-sidebar-group-reset:hover{background:#eef6f3;color:#1D6C5D;border-color:#b9d8ce;}
+        #themeSwitcherPanel.mc-theme-expanded{min-width:290px!important;}
+        body:not(.apv-theme) #themeSwitcherPanel .mc-sidebar-group-color-title{color:#94a3b8;}
+        body:not(.apv-theme) #themeSwitcherPanel .mc-sidebar-group-colors label{color:#cbd5e1;}
+        body:not(.apv-theme) #themeSwitcherPanel .mc-sidebar-group-reset{background:#0f172a;color:#cbd5e1;border-color:rgba(255,255,255,.14);}
+    </style>
     <style id="sidebar-grouped-menu-style">
         .sidebar-nav-grouped{padding:8px 8px 14px;}
         .sidebar-menu-group{margin:4px 0 8px;border:1px solid rgba(148,163,184,.10);border-radius:10px;overflow:hidden;background:rgba(15,23,42,.10);}
