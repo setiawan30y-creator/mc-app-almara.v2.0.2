@@ -521,7 +521,7 @@
                     </button>
                     <div class="sidebar-group-items" data-sidebar-group-items="bi">
                     <a href="#" class="nav-item" data-target="laporan-ekuitas-view" data-sidebar-group="bi"><i class="fa-solid fa-money-bill-trend-up"></i> Ekuitas</a>
-                    <a href="#" class="nav-item" data-target="laporan-lku-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> LKU</a>
+                    <a href="#" class="nav-item" data-target="laporan-lku-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> LKBU</a>
                     <a href="#" class="nav-item" data-target="laporan-granular-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> Granular</a>
                     <a href="#" class="nav-item" data-target="laporan-sipesat-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> Sipesat</a>
                     <a href="#" class="nav-item" data-target="laporan-goaml-view" data-sidebar-group="bi"><i class="fa-solid fa-file-invoice"></i> GoAML</a>
@@ -4711,6 +4711,35 @@
 
                 <!-- LAPORAN BI PLACEHOLDERS -->
                 <section id="laporan-lku-view" class="view-section hidden">
+    <style>
+        #laporan-lku-view .lkbu-tabs{display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid rgba(148,163,184,.35);margin-bottom:18px}
+        #laporan-lku-view .lkbu-tab{appearance:none;border:0;border-bottom:3px solid transparent;background:transparent;color:inherit;padding:13px 16px;cursor:pointer;font-weight:700;font-size:.92rem;text-align:left}
+        #laporan-lku-view .lkbu-tab:hover{background:rgba(59,130,246,.08)}
+        #laporan-lku-view .lkbu-tab.active{border-bottom-color:#10b981;color:#10b981;background:rgba(16,185,129,.08)}
+        #laporan-lku-view .lkbu-code{font-size:.72rem;opacity:.7;margin-left:5px;font-weight:600}
+        #laporan-lku-view .lkbu-panel{display:none}
+        #laporan-lku-view .lkbu-panel.active{display:block}
+        #laporan-lku-view .lkbu-empty{min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;border:1px dashed rgba(148,163,184,.4);border-radius:12px;padding:30px}
+        @media(max-width:900px){#laporan-lku-view .lkbu-tab{flex:1 1 45%;font-size:.82rem}}
+        @media(max-width:600px){#laporan-lku-view .lkbu-tab{flex:1 1 100%}}
+    </style>
+
+    <div class="panel" style="margin-bottom:18px;">
+        <div style="margin-bottom:10px;">
+            <h2 style="margin:0;">LKBU — Laporan Keuangan & Bisnis Umum</h2>
+            <p class="text-muted mt-2" style="margin-bottom:0;">Pusat pelaporan LKBU. Pilih tab B0001–B0006 untuk membuka masing-masing kelompok laporan.</p>
+        </div>
+        <div class="lkbu-tabs" role="tablist" aria-label="LKBU">
+            <button type="button" class="lkbu-tab active" data-lkbu-tab="b0001">Kegiatan Usaha Bulanan <span class="lkbu-code">B0001</span></button>
+            <button type="button" class="lkbu-tab" data-lkbu-tab="b0002">Keuangan Neraca <span class="lkbu-code">B0002</span></button>
+            <button type="button" class="lkbu-tab" data-lkbu-tab="b0003">Keuangan Laba/Rugi <span class="lkbu-code">B0003</span></button>
+            <button type="button" class="lkbu-tab" data-lkbu-tab="b0004">Perubahan Ekuitas <span class="lkbu-code">B0004</span></button>
+            <button type="button" class="lkbu-tab" data-lkbu-tab="b0005">Kurs <span class="lkbu-code">B0005</span></button>
+            <button type="button" class="lkbu-tab" data-lkbu-tab="b0006">Money Remittance <span class="lkbu-code">B0006</span></button>
+        </div>
+    </div>
+
+    <div id="lkbu-panel-b0001" class="lkbu-panel active">
                     <div class="panel header-panel flex-between">
                         <div>
                             <h2>Laporan LKU (Bank Indonesia)</h2>
@@ -4832,6 +4861,67 @@
                         </div>
                     </div>
                 </section>
+    </div>
+
+    <div id="lkbu-panel-b0002" class="lkbu-panel">
+        <div class="panel header-panel">
+            <h2>Keuangan Neraca <span class="lkbu-code">B0002</span></h2>
+            <p class="text-muted mt-2">Tab B0002 untuk penyusunan dan pemeriksaan laporan keuangan neraca.</p>
+            <div class="lkbu-empty text-muted">Modul B0002 siap dikembangkan pada tahap berikutnya.</div>
+        </div>
+    </div>
+
+    <div id="lkbu-panel-b0003" class="lkbu-panel">
+        <div class="panel header-panel">
+            <h2>Keuangan Laba/Rugi <span class="lkbu-code">B0003</span></h2>
+            <p class="text-muted mt-2">Tab B0003 untuk laporan pendapatan, beban, dan laba/rugi.</p>
+            <div class="lkbu-empty text-muted">Modul B0003 siap dikembangkan pada tahap berikutnya.</div>
+        </div>
+    </div>
+
+    <div id="lkbu-panel-b0004" class="lkbu-panel">
+        <div class="panel header-panel">
+            <h2>Perubahan Ekuitas <span class="lkbu-code">B0004</span></h2>
+            <p class="text-muted mt-2">Tab B0004 untuk perubahan modal dan ekuitas.</p>
+            <div class="lkbu-empty text-muted">Modul B0004 siap dikembangkan pada tahap berikutnya.</div>
+        </div>
+    </div>
+
+    <div id="lkbu-panel-b0005" class="lkbu-panel">
+        <div class="panel header-panel">
+            <h2>Kurs <span class="lkbu-code">B0005</span></h2>
+            <p class="text-muted mt-2">Tab B0005 untuk data kurs yang digunakan dalam pelaporan LKBU.</p>
+            <div class="lkbu-empty text-muted">Modul B0005 siap dikembangkan pada tahap berikutnya.</div>
+        </div>
+    </div>
+
+    <div id="lkbu-panel-b0006" class="lkbu-panel">
+        <div class="panel header-panel">
+            <h2>Money Remittance <span class="lkbu-code">B0006</span></h2>
+            <p class="text-muted mt-2">Tab B0006 untuk pelaporan kegiatan money remittance.</p>
+            <div class="lkbu-empty text-muted">Modul B0006 siap dikembangkan pada tahap berikutnya.</div>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        function activateLkbuTab(code){
+            document.querySelectorAll('#laporan-lku-view .lkbu-tab').forEach(function(btn){
+                var active=btn.getAttribute('data-lkbu-tab')===code;
+                btn.classList.toggle('active',active);
+                btn.setAttribute('aria-selected',active?'true':'false');
+            });
+            document.querySelectorAll('#laporan-lku-view .lkbu-panel').forEach(function(panel){
+                panel.classList.toggle('active',panel.id==='lkbu-panel-'+code);
+            });
+        }
+        document.querySelectorAll('#laporan-lku-view .lkbu-tab').forEach(function(btn){
+            btn.addEventListener('click',function(){activateLkbuTab(btn.getAttribute('data-lkbu-tab'));});
+        });
+        window.activateLkbuTab=activateLkbuTab;
+    })();
+    </script>
+</section>
                 <section id="laporan-posisi-valuta-view" class="view-section hidden">
                     <div class="panel header-panel flex-between">
                         <div>
