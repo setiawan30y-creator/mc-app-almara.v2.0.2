@@ -8570,7 +8570,7 @@ window.resetAuditFilter = function() {
             Object.keys(colors).forEach(function(group){
                 root.style.setProperty('--mc-sidebar-group-'+group+'-color', colors[group]);
                 document.querySelectorAll('.sidebar-menu-group[data-sidebar-group-section="'+group+'"] .sidebar-group-toggle')
-                    .forEach(function(el){ el.style.color=colors[group]; });
+                    .forEach(function(el){ el.style.setProperty('color', colors[group], 'important'); });
             });
             document.querySelectorAll('#mcSidebarGroupColors input[data-sidebar-color]').forEach(function(input){
                 var group=input.getAttribute('data-sidebar-color');
