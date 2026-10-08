@@ -14,6 +14,7 @@ use App\Http\Controllers\OcrController;
 use App\Http\Controllers\LetterNumberController;
 use App\Http\Controllers\WhatsAppGatewayController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\GoamlComplianceController;
 use App\Http\Middleware\DevelopmentBypassAuth;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +46,14 @@ Route::middleware($apiAuthMiddleware)->group(function () {
     Route::delete('/transactions', [TransactionController::class, 'destroy'])->middleware('role:owner,superadmin,admin,supervisor');
     Route::delete('/transactions/clear-all', [TransactionController::class, 'clearAll'])->middleware('role:owner,superadmin,admin,supervisor');
     Route::get('/audit', [TransactionController::class, 'audit']);
+
+    // GOAML / Compliance Engine
+    Route::get('/goaml/rules', [GoamlComplianceController::class, 'rules']);
+    Route::post('/goaml/rules', [GoamlComplianceController::class, 'storeRule'])->middleware('role:owner,superadmin,admin,supervisor');
+    Route::put('/goaml/rules/{rule}', [GoamlComplianceController::class, 'updateRule'])->middleware('role:owner,superadmin,admin,supervisor');
+    Route::get('/goaml/alerts', [GoamlComplianceController::class, 'alerts']);
+    Route::post('/goaml/evaluate', [GoamlComplianceController::class, 'evaluate']);
+    Route::post('/goaml/alerts/{alert}/review', [GoamlComplianceController::class, 'review'])->middleware('role:owner,superadmin,admin,supervisor');
     Route::delete('/audit', [TransactionController::class, 'destroyAudit'])->middleware('role:owner,superadmin,admin,supervisor');
 
     Route::get('/customers', [CustomerController::class, 'index']);
