@@ -4860,7 +4860,6 @@
                             </table>
                         </div>
                     </div>
-                </section>
     </div>
 
     <div id="lkbu-panel-b0002" class="lkbu-panel">
