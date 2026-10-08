@@ -6,6 +6,7 @@ use App\Models\Transaction;
 use App\Models\TransactionAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TransactionController extends Controller
@@ -15,6 +16,7 @@ class TransactionController extends Controller
         $transactions = Transaction::orderBy('timestamp', 'desc')
             ->orderBy('itemId', 'desc')
             ->get();
+
         return response()->json($transactions);
     }
 
@@ -40,7 +42,7 @@ class TransactionController extends Controller
 
         $input = $request->all();
         $invoiceId = $validated['id'] ?? $validated['itemId'];
-        $itemId = $validated['itemId'] ?? ($invoiceId.'-'.Str::lower(Str::random(6)));
+        $itemId = $validated['itemId'] ?? ($invoiceId . '-' . Str::lower(Str::random(6)));
 
         $data = [
             'id' => $invoiceId,
@@ -56,7 +58,7 @@ class TransactionController extends Controller
             'paymentMethod' => $validated['paymentMethod'] ?? 'TUNAI',
             'isOldMoney' => (bool) ($validated['isOldMoney'] ?? false),
             'keterangan' => $validated['keterangan'] ?? '',
-            'raw_json' => json_encode($input)
+            'raw_json' => json_encode($input),
         ];
 
         try {
@@ -65,7 +67,7 @@ class TransactionController extends Controller
                 $data
             );
 
-            // RWT (TransactionAudit) is independent and only gets inserted on initial creation, never updated/changed.
+            // RWT independen: hanya dibuat saat invoice belum memiliki audit.
             if (!TransactionAudit::where('id', $invoiceId)->exists()) {
                 TransactionAudit::updateOrCreate(
                     ['itemId' => $itemId],
@@ -74,22 +76,37 @@ class TransactionController extends Controller
             }
 
             return response()->json([
-                'status' => 'success', 
-                'message' => 'Transaksi Disimpan ke Database (Laravel)'
+                'status' => 'success',
+                'message' => 'Transaksi Disimpan ke Database (Laravel)',
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error', 
-                'message' => 'Gagal: ' . $e->getMessage()
+                'status' => 'error',
+                'message' => 'Gagal: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     public function bulkStore(Request $request)
     {
+        // WAJIB didefinisikan sebelum dipakai.
         $transactions = $request->input('transactions', []);
+
         if (!is_array($transactions)) {
-            return response()->json(['status' => 'error', 'message' => 'Format data tidak valid'], 400);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Format data transaksi tidak valid',
+            ], 400);
+        }
+
+        if (count($transactions) === 0) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tidak ada transaksi untuk diproses',
+                'success_count' => 0,
+                'failed_count' => 0,
+                'errors' => [],
+            ]);
         }
 
         $successCount = 0;
@@ -97,54 +114,78 @@ class TransactionController extends Controller
         $errors = [];
 
         $invoiceIdsToClear = [];
+
         foreach ($transactions as $trx) {
+            if (!is_array($trx)) {
+                continue;
+            }
+
             $invoiceId = $trx['id'] ?? $trx['itemId'] ?? null;
+
             if ($invoiceId) {
                 $invoiceIdsToClear[$invoiceId] = true;
             }
         }
 
         $existingAudits = [];
+
         foreach (array_keys($invoiceIdsToClear) as $invoiceId) {
             if (TransactionAudit::where('id', $invoiceId)->exists()) {
                 $existingAudits[$invoiceId] = true;
             }
         }
 
-        \Illuminate\Support\Facades\DB::beginTransaction();
+        DB::beginTransaction();
+
         try {
             foreach (array_keys($invoiceIdsToClear) as $invoiceId) {
+                // Hapus transaksi operasional lama untuk invoice yang sama.
+                // RWT/audit tidak disentuh.
                 Transaction::where('id', $invoiceId)->delete();
             }
 
             foreach ($transactions as $index => $input) {
-                $invoiceId = $input['id'] ?? $input['itemId'] ?? null;
-                $itemId = $input['itemId'] ?? ($invoiceId . '-' . Str::lower(Str::random(6)));
+                if (!is_array($input)) {
+                    $failedCount++;
+                    $errors[] = 'Baris ' . ($index + 1) . ': format transaksi tidak valid';
+                    continue;
+                }
 
-                $data = [
-                    'id' => $invoiceId,
-                    'timestamp' => Carbon::parse($input['timestamp'] ?? now())->format('Y-m-d H:i:s'),
-                    'tipe' => $input['tipe'] ?? 'JUAL',
-                    'valuta' => $input['valuta'] ?? '',
-                    'nominal' => (float) ($input['nominal'] ?? 0),
-                    'rate' => (float) ($input['rate'] ?? 0),
-                    'total' => (float) ($input['total'] ?? 0),
-                    'id_cif' => $input['customerId'] ?? $input['id_cif'] ?? '',
-                    'customerName' => $input['customerName'] ?? '',
-                    'kasir' => $input['kasir'] ?? '',
-                    'paymentMethod' => $input['paymentMethod'] ?? 'TUNAI',
-                    'isOldMoney' => (bool) ($input['isOldMoney'] ?? false),
-                    'keterangan' => $input['keterangan'] ?? '',
-                    'raw_json' => json_encode($input)
-                ];
+                $invoiceId = $input['id'] ?? $input['itemId'] ?? null;
+
+                if (!$invoiceId) {
+                    $failedCount++;
+                    $errors[] = 'Baris ' . ($index + 1) . ': Invoice ID/itemId kosong';
+                    continue;
+                }
+
+                $itemId = $input['itemId']
+                    ?? ($invoiceId . '-' . Str::lower(Str::random(6)));
 
                 try {
+                    $data = [
+                        'id' => $invoiceId,
+                        'timestamp' => Carbon::parse($input['timestamp'] ?? now())->format('Y-m-d H:i:s'),
+                        'tipe' => $input['tipe'] ?? 'JUAL',
+                        'valuta' => $input['valuta'] ?? '',
+                        'nominal' => (float) ($input['nominal'] ?? 0),
+                        'rate' => (float) ($input['rate'] ?? 0),
+                        'total' => (float) ($input['total'] ?? 0),
+                        'id_cif' => $input['customerId'] ?? $input['id_cif'] ?? '',
+                        'customerName' => $input['customerName'] ?? '',
+                        'kasir' => $input['kasir'] ?? '',
+                        'paymentMethod' => $input['paymentMethod'] ?? 'TUNAI',
+                        'isOldMoney' => (bool) ($input['isOldMoney'] ?? false),
+                        'keterangan' => $input['keterangan'] ?? '',
+                        'raw_json' => json_encode($input),
+                    ];
+
                     Transaction::updateOrCreate(
                         ['itemId' => $itemId],
                         $data
                     );
 
-                    // RWT (TransactionAudit) is independent and only gets inserted on initial creation, never updated/changed.
+                    // RWT tetap independen dan tidak diubah jika invoice sudah pernah diaudit.
                     if (!isset($existingAudits[$invoiceId])) {
                         TransactionAudit::updateOrCreate(
                             ['itemId' => $itemId],
@@ -155,15 +196,17 @@ class TransactionController extends Controller
                     $successCount++;
                 } catch (\Exception $e) {
                     $failedCount++;
-                    $errors[] = "Baris " . ($index + 1) . " (Item ID: $itemId): " . $e->getMessage();
+                    $errors[] = 'Baris ' . ($index + 1) . ' (Item ID: ' . $itemId . '): ' . $e->getMessage();
                 }
             }
-            \Illuminate\Support\Facades\DB::commit();
+
+            DB::commit();
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
+            DB::rollBack();
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal memproses transaksi database: ' . $e->getMessage()
+                'message' => 'Gagal memproses transaksi database: ' . $e->getMessage(),
             ], 500);
         }
 
@@ -172,7 +215,7 @@ class TransactionController extends Controller
             'message' => "Proses import transaksi selesai. Sukses: {$successCount}, Gagal: {$failedCount}",
             'success_count' => $successCount,
             'failed_count' => $failedCount,
-            'errors' => $errors
+            'errors' => $errors,
         ]);
     }
 
@@ -197,15 +240,15 @@ class TransactionController extends Controller
             $deleted = $query->delete();
 
             return response()->json([
-                'status' => 'success', 
+                'status' => 'success',
                 'message' => $deleted > 0
                     ? 'Transaksi Dibatalkan/Dihapus (Laravel)'
-                    : 'Tidak ada transaksi yang cocok untuk dihapus'
+                    : 'Tidak ada transaksi yang cocok untuk dihapus',
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error', 
-                'message' => 'Gagal: ' . $e->getMessage()
+                'status' => 'error',
+                'message' => 'Gagal: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -215,25 +258,34 @@ class TransactionController extends Controller
         $audit = TransactionAudit::orderBy('timestamp', 'desc')
             ->orderBy('itemId', 'desc')
             ->get();
+
         return response()->json($audit);
     }
 
     public function destroyAudit(Request $request)
     {
         $itemId = trim((string) $request->input('itemId', ''));
+
         if ($itemId === '') {
-            return response()->json(['status' => 'error', 'message' => 'ID RWT tidak ditemukan'], 422);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ID RWT tidak ditemukan',
+            ], 422);
         }
 
         try {
             $deleted = TransactionAudit::where('itemId', $itemId)->delete();
+
             return response()->json([
                 'status' => 'success',
                 'message' => $deleted ? 'Baris RWT berhasil dihapus' : 'Data RWT sudah tidak ditemukan',
                 'deleted_count' => $deleted,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Gagal menghapus RWT: ' . $e->getMessage()], 500);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus RWT: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -246,12 +298,12 @@ class TransactionController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Semua riwayat transaksi telah dikosongkan. Audit transaksi tetap tersimpan.'
+                'message' => 'Semua riwayat transaksi telah dikosongkan. Audit transaksi tetap tersimpan.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal membersihkan transaksi: ' . $e->getMessage()
+                'message' => 'Gagal membersihkan transaksi: ' . $e->getMessage(),
             ], 500);
         }
     }
