@@ -25,13 +25,22 @@ class GoamlComplianceService
                 continue;
             }
 
+            $end = Carbon::parse($transaction->timestamp);
+
+            if ($rule->effective_from && $end->toDateString() < $rule->effective_from->toDateString()) {
+                continue;
+            }
+
+            if ($rule->effective_until && $end->toDateString() > $rule->effective_until->toDateString()) {
+                continue;
+            }
+
             $customerId = trim((string) $transaction->id_cif);
 
             if ($customerId === '') {
                 continue;
             }
 
-            $end = Carbon::parse($transaction->timestamp);
             $days = max(1, (int) ($rule->period_days ?: 1));
             $start = $end->copy()->subDays($days);
 
@@ -71,8 +80,10 @@ class GoamlComplianceService
             if ($existing) {
                 $this->syncAlertTransactions($existing, $matched);
                 $existing->update([
+                    'result_type' => $rule->result_type,
                     'total_amount_idr' => $totalIdr,
                     'transaction_count' => $count,
+                    'invoice_summary' => $matched->pluck('id')->filter()->implode(', '),
                     'snapshot' => $this->snapshot($rule, $matched, $start, $end),
                 ]);
                 $alerts->push($existing->fresh());
@@ -84,6 +95,7 @@ class GoamlComplianceService
                     'rule_id' => $rule->id,
                     'alert_no' => $this->nextAlertNo(),
                     'rule_type' => $rule->rule_type,
+                    'result_type' => $rule->result_type,
                     'classification' => $rule->classification,
                     'severity' => $rule->severity,
                     'status' => 'OPEN',
@@ -91,6 +103,7 @@ class GoamlComplianceService
                     'customer_name' => $transaction->customerName ?: $matched->first()?->customerName,
                     'total_amount_idr' => $totalIdr,
                     'transaction_count' => $count,
+                    'invoice_summary' => $matched->pluck('id')->filter()->implode(', '),
                     'period_start' => $start,
                     'period_end' => $periodEnd,
                     'reason' => $this->reason($rule, $count, $totalIdr, $start, $end),
@@ -147,11 +160,15 @@ class GoamlComplianceService
     protected function reason(GoamlRule $rule, int $count, float $totalIdr, Carbon $start, Carbon $end): string
     {
         $amount = number_format($totalIdr, 0, ',', '.');
+        $regulation = $rule->regulation_no
+            ? ' Dasar: ' . $rule->regulation_no
+            : '';
 
         return $rule->name . '. Terdeteksi ' . $count
             . ' transaksi dengan total Rp' . $amount
             . ' pada periode ' . $start->format('d/m/Y H:i')
-            . ' s.d. ' . $end->format('d/m/Y H:i') . '.';
+            . ' s.d. ' . $end->format('d/m/Y H:i') . '.'
+            . $regulation;
     }
 
     protected function snapshot(GoamlRule $rule, Collection $transactions, Carbon $start, Carbon $end): array
@@ -161,10 +178,15 @@ class GoamlComplianceService
             'rule_code' => $rule->code,
             'rule_version' => $rule->version,
             'rule_type' => $rule->rule_type,
+            'regulation_source' => $rule->regulation_source,
+            'regulation_no' => $rule->regulation_no,
+            'regulation_article' => $rule->regulation_article,
+            'result_type' => $rule->result_type,
             'classification' => $rule->classification,
             'period_start' => $start->toDateTimeString(),
             'period_end' => $end->toDateTimeString(),
             'transaction_count' => $transactions->count(),
+            'invoice_ids' => $transactions->pluck('id')->filter()->values()->all(),
             'transaction_item_ids' => $transactions->pluck('itemId')->values()->all(),
         ];
     }
