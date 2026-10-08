@@ -1578,118 +1578,69 @@ function printOldMoneyReceiptRaw(trxId) {
     const trx = trxs.find(t => t.id === trxId);
     if (!trx) return alert('Transaksi tidak ditemukan!');
 
-    const profile = getProfile();
-    const dt = new Date(trx.date);
-    const dateStr = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
-
-    // Get Admin Name
-    let adminName = 'Admin';
-    try {
-        const u = JSON.parse(localStorage.getItem('mc_currentUser'));
-        if(u && u.fullName) adminName = u.fullName;
-        else if (u && u.username) adminName = u.username;
-    } catch(e){}
-
-    // Format Phone
-    let maskedPhone = '-';
-    if(trx.supplierPhone && trx.supplierPhone !== '-') {
-        const p = trx.supplierPhone;
-        if(p.length > 3) {
-            maskedPhone = p.substring(0, p.length - 3) + '***';
-        } else {
-            maskedPhone = '***';
-        }
+    // Koin/Uang Lama menggunakan TEMPLATE NOTA TRANSAKSI UTAMA.
+    // Data lama dipetakan ke format cart + summary POS agar layout,
+    // ukuran kertas 10x14 cm, header, customer, kasir, total dan footer
+    // konsisten dengan nota transaksi utama.
+    if (typeof printReceipt !== 'function') {
+        return alert('Template nota transaksi utama belum tersedia. Silakan refresh halaman.');
     }
 
-    let itemsHtml = '';
-    const itemsArray = trx.items || [{
-        itemDesc: trx.itemDesc,
-        qty: trx.qty,
-        denom: trx.denom,
-        valasAmt: trx.valasAmt,
-        kurs: trx.kurs,
-        totalRp: trx.totalRp
-    }];
+    const itemsArray = Array.isArray(trx.items) && trx.items.length
+        ? trx.items
+        : [{
+            itemCode: trx.itemCode || '',
+            itemDesc: trx.itemDesc || '',
+            qty: trx.qty || 0,
+            denom: trx.denom || 1,
+            valasAmt: trx.valasAmt || 0,
+            kurs: trx.kurs || 0,
+            totalRp: trx.totalRp || 0
+        }];
 
-    itemsArray.forEach(it => {
-        let kursText = '';
-        if (it.kurs > 0) {
-            kursText = ` @Rp ${formatRp(it.kurs)}`;
-        }
-        let valasText = '';
-        if (it.valasAmt > 0) {
-            valasText = `, Valas: ${it.valasAmt}`;
-        }
-        itemsHtml += `
-        <div class="row" style="font-size: 11px;">
-            <span style="max-width:180px; word-wrap: break-word;">${it.itemCode ? it.itemCode+' ' : ''}${it.itemDesc} (x${it.qty}${valasText}${kursText})</span>
-            <span style="font-weight: bold;">Rp ${formatRp(it.totalRp)}</span>
-        </div>`;
+    const printCart = itemsArray.map((item, index) => {
+        const qty = parseFloat(item.qty) || 0;
+        const denom = parseFloat(item.denom) || 1;
+        const valasAmt = parseFloat(item.valasAmt) || (denom * qty);
+        const rate = parseFloat(item.kurs) || 0;
+        const totalIdr = parseFloat(item.totalRp) || 0;
+
+        return {
+            id: item.itemId || `OLD-MONEY-${trx.id}-${index + 1}`,
+            type: String(trx.type || 'JUAL').toUpperCase() === 'BELI' ? 'BELI' : 'JUAL',
+            curCode: item.itemCode || 'KOIN',
+            amount: valasAmt,
+            rate,
+            totalIdr
+        };
     });
 
-    const printWindow = window.open('', '_blank', 'width=350,height=600');
-    const addressToShow = (profile.address && profile.address.toLowerCase() !== 'pusat valuta asing terpercaya') ? profile.address : '';
+    const isBuy = String(trx.type || '').toUpperCase() === 'BELI';
+    const total = Math.abs(parseFloat(trx.totalRp) || printCart.reduce(
+        (sum, item) => sum + (parseFloat(item.totalIdr) || 0), 0
+    ));
 
-    const htmlCetak = `
-    <html>
-    <head>
-        <title>Struk Transaksi - ${trx.id}</title>
-        <style>
-            @page { size: 9cm 14cm; margin: 0; }
-            html, body { margin: 0; padding: 0; min-height: 100%; }
-            body { font-family: 'Courier New', Courier, monospace; width: 9cm; margin: 0; padding: 0.4cm 0.4cm 0.5cm; box-sizing: border-box; font-size: 10px; color: #000; }
-            .text-center { text-align: center; }
-            .font-bold { font-weight: bold; }
-            .header-mc { font-size: 13px; margin-bottom: 5px; }
-            .divider { border-top: 1px dashed #000; margin: 4px 0; }
-            .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-        </style>
-    </head>
-    <body onload="window.print(); window.close();">
-        <div class="text-center font-bold header-mc">${profile.name}</div>
-        ${profile.biLicense ? `<div class="text-center" style="font-size: 9px; font-weight: bold; margin-bottom: 5px;">Izin BI: ${profile.biLicense}</div>` : ''}
-        ${addressToShow ? `<div class="text-center" style="font-size: 9px;">${addressToShow}</div>` : ''}
-        <div class="text-center" style="font-size: 9px;">Telp/WA: ${profile.phone || '-'}</div>
-        <div class="divider"></div>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px; font-size: 10px;">
-            <tr><td style="width: 60px; padding: 2px 0;">No Inv</td><td style="padding: 2px 0;">: ${trx.id}</td></tr>
-            <tr><td style="padding: 2px 0;">Tanggal</td><td style="padding: 2px 0;">: ${dateStr}</td></tr>
-            <tr><td style="padding: 2px 0;">Pihak</td><td style="padding: 2px 0;">: ${trx.supplier}</td></tr>
-            <tr><td style="padding: 2px 0;">No Tlp</td><td style="padding: 2px 0;">: ${maskedPhone}</td></tr>
-        </table>
-        
-        <div class="divider"></div>
-        <div style="margin-bottom: 6px; font-weight: bold; font-size: 11px;">Rincian Transaksi (${trx.qty} pcs):</div>
-        ${itemsHtml}
-        
-        <div class="divider"></div>
-        <div class="row font-bold" style="font-size: 12px;">
-            <span>TOTAL:</span>
-            <span>Rp ${new Intl.NumberFormat('id-ID').format(trx.totalRp)}</span>
-        </div>
-        
-        <div class="divider"></div>
-        <div class="text-center" style="font-size: 8.5px; margin-bottom: 5px;">
-            <p>Terima kasih atas kunjungan Anda.</p>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; font-size: 9px; text-align: center; margin-top: 5px;">
-            <div style="width: 45%;">
-                <p style="margin-bottom: 25px;">Petugas,</p>
-                <p style="font-weight: bold; text-decoration: underline;">${adminName}</p>
-            </div>
-            <div style="width: 45%;">
-                <p style="margin-bottom: 25px;">Penerima,</p>
-                <p style="font-weight: bold; text-decoration: underline;">${trx.supplier}</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    `;
+    const summary = {
+        receiptId: trx.id,
+        paymentMethod: 'CASH',
+        grandTotal: isBuy ? -total : total,
+        payCash: total,
+        payTransfer: 0,
+        customerId: trx.customerId || null,
+        receiverId: trx.customerId || null,
+        receiverManualName: trx.supplier || 'Nasabah Walk-In',
+        timestamp: trx.date || Date.now(),
+        kasir: (() => {
+            try {
+                const u = JSON.parse(localStorage.getItem('mc_currentUser'));
+                return u && (u.fullName || u.username) ? (u.fullName || u.username) : 'Admin';
+            } catch (e) {
+                return 'Admin';
+            }
+        })()
+    };
 
-    printWindow.document.write(htmlCetak);
-    printWindow.document.close();
+    printReceipt(printCart, summary);
 }
 
 window.sendOldMoneyReceiptWhatsApp = async function(trxId) {
