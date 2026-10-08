@@ -328,6 +328,96 @@
     .sidebar .nav-item[data-sidebar-group="master"][data-target="currency-view"] > i:first-child{color:#06b6d4!important}
     .sidebar .nav-item[data-sidebar-group="bi"][data-target="laporan-goaml-view"] > i:first-child{color:#ef4444!important;background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.30)}
     .sidebar .nav-item[data-sidebar-group="bi"][data-target="laporan-lku-view"] > i:first-child{color:#10b981!important;background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.30)}
+    /* ALMARA — Sidebar brand/header: clean, balanced and non-overlapping */
+    .almara-sidebar-header{
+        min-height:92px;
+        height:auto;
+        padding:10px 14px;
+        gap:8px;
+        box-sizing:border-box;
+        background:linear-gradient(180deg,rgba(4,120,87,.16),rgba(4,120,87,.04));
+    }
+    .almara-sidebar-brand{
+        flex:1 1 auto;
+        min-width:0;
+        max-width:calc(100% - 42px);
+        gap:9px!important;
+        align-items:center!important;
+    }
+    .almara-sidebar-logo-wrap{
+        width:38px;
+        min-width:38px;
+        height:52px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        flex-shrink:0;
+    }
+    .almara-sidebar-logo-wrap img{
+        width:38px!important;
+        height:46px!important;
+        object-fit:contain;
+        display:block;
+    }
+    .almara-sidebar-brand-text{
+        min-width:0;
+        overflow:hidden;
+        line-height:1;
+    }
+    .almara-sidebar-brand-text h2{
+        margin:0!important;
+        font-size:.86rem!important;
+        line-height:1.08!important;
+        letter-spacing:.25px!important;
+        font-weight:800!important;
+        color:#f8fafc;
+        white-space:normal;
+    }
+    .almara-sidebar-subtitle{
+        display:block;
+        margin-top:5px!important;
+        font-size:.57rem!important;
+        line-height:1.15!important;
+        letter-spacing:.65px!important;
+        color:#a7f3d0!important;
+        font-weight:700;
+        white-space:nowrap;
+    }
+    .almara-sidebar-version{
+        display:inline-block;
+        margin-top:4px!important;
+        padding:2px 6px;
+        border-radius:999px;
+        font-size:.52rem!important;
+        line-height:1.05!important;
+        letter-spacing:.35px;
+        color:#d1fae5!important;
+        background:rgba(16,185,129,.16);
+        border:1px solid rgba(167,243,208,.20);
+    }
+    .almara-sidebar-header .collapse-sidebar{
+        flex:0 0 34px;
+        margin-left:auto;
+    }
+    .sidebar-collapsed .almara-sidebar-header{
+        min-height:64px;
+        height:64px;
+        padding:10px 12px;
+    }
+    .sidebar-collapsed .almara-sidebar-logo-wrap{
+        width:38px;
+        min-width:38px;
+        height:40px;
+    }
+    .sidebar-collapsed .almara-sidebar-logo-wrap img{
+        width:34px!important;
+        height:38px!important;
+    }
+    @media (max-width:900px){
+        .almara-sidebar-header{min-height:86px;padding:9px 12px}
+        .almara-sidebar-brand-text h2{font-size:.82rem!important}
+        .almara-sidebar-subtitle{font-size:.54rem!important}
+    }
 </style>
 </head>
 
@@ -443,13 +533,15 @@
         </script>
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between;">
-                <div class="sidebar-brand" style="display: flex; align-items: center; gap: 10px;">
-                    <img src="{{ asset('img/logo-almara.png') }}" alt="Logo" style="height: 35px; object-fit: contain;">
-                    <div class="sidebar-brand-text" style="display: flex; flex-direction: column;">
-                        <h2 style="margin: 0; font-size: 1.1rem; letter-spacing: 0.5px;">ALMARA PUTRA VALASINDO</h2>
-                        <span style="font-size: 0.65rem; color: #94A3B8; letter-spacing: 1px; text-transform: uppercase; margin-top:2px;">Authorized Money Changer</span>
-                        <span style="font-size: 0.6rem; color: #10B981; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px;">Versi 2.0.0</span>
+            <div class="sidebar-header almara-sidebar-header">
+                <div class="sidebar-brand almara-sidebar-brand">
+                    <div class="almara-sidebar-logo-wrap">
+                        <img src="{{ asset('img/logo-almara.png') }}" alt="Logo Almara Putra Valasindo">
+                    </div>
+                    <div class="sidebar-brand-text almara-sidebar-brand-text">
+                        <h2>ALMARA PUTRA<br>VALASINDO</h2>
+                        <span class="almara-sidebar-subtitle">Authorized Money Changer</span>
+                        <span class="almara-sidebar-version">Versi 2.0.0</span>
                     </div>
                 </div>
                 <button class="collapse-sidebar" id="collapseSidebar" title="Ciutkan sidebar"><i class="fa-solid fa-angles-left"></i></button>
