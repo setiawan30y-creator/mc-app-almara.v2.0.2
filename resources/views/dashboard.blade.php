@@ -304,6 +304,31 @@
     <!-- Global MC-Almara Theme Engine -->
     <script src="{{ asset('js/mc-theme-engine.js?v=20261006-1') }}"></script>
     <link rel="stylesheet" href="{{ asset('css/business-ui.css?v=' . time()) }}">
+    <style id="almara-sidebar-color-icons">
+    /* ALMARA — Sidebar icon colors */
+    .sidebar .nav-item > i:first-child{
+        width:34px;height:34px;min-width:34px;border-radius:10px;
+        display:inline-flex;align-items:center;justify-content:center;
+        margin-right:10px;font-size:15px;
+        background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.04));
+        border:1px solid rgba(255,255,255,.10);
+        box-shadow:0 3px 10px rgba(0,0,0,.16);
+        transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
+    }
+    .sidebar .nav-item:hover > i:first-child{transform:translateY(-1px) scale(1.05);filter:brightness(1.12);box-shadow:0 5px 14px rgba(0,0,0,.22)}
+    .sidebar .nav-item[data-sidebar-group="transaksi"] > i:first-child{color:#22c55e!important;background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.28)}
+    .sidebar .nav-item[data-sidebar-group="nasabah"] > i:first-child{color:#38bdf8!important;background:rgba(56,189,248,.13);border-color:rgba(56,189,248,.28)}
+    .sidebar .nav-item[data-sidebar-group="master"] > i:first-child{color:#a78bfa!important;background:rgba(167,139,250,.13);border-color:rgba(167,139,250,.28)}
+    .sidebar .nav-item[data-sidebar-group="keuangan"] > i:first-child{color:#fbbf24!important;background:rgba(251,191,36,.13);border-color:rgba(251,191,36,.28)}
+    .sidebar .nav-item[data-sidebar-group="laporan"] > i:first-child{color:#60a5fa!important;background:rgba(96,165,250,.13);border-color:rgba(96,165,250,.28)}
+    .sidebar .nav-item[data-sidebar-group="bi"] > i:first-child{color:#f472b6!important;background:rgba(244,114,182,.13);border-color:rgba(244,114,182,.28)}
+    .sidebar .nav-item[data-sidebar-group="tools"] > i:first-child{color:#c084fc!important;background:rgba(192,132,252,.13);border-color:rgba(192,132,252,.28)}
+    .sidebar .nav-item[data-sidebar-group="administrasi"] > i:first-child{color:#fb7185!important;background:rgba(251,113,133,.13);border-color:rgba(251,113,133,.28)}
+    .sidebar .nav-item[data-sidebar-group="pengaturan"] > i:first-child{color:#f97316!important;background:rgba(249,115,22,.13);border-color:rgba(249,115,22,.28)}
+    .sidebar .nav-item[data-sidebar-group="master"][data-target="currency-view"] > i:first-child{color:#06b6d4!important}
+    .sidebar .nav-item[data-sidebar-group="bi"][data-target="laporan-goaml-view"] > i:first-child{color:#ef4444!important;background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.30)}
+    .sidebar .nav-item[data-sidebar-group="bi"][data-target="laporan-lku-view"] > i:first-child{color:#10b981!important;background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.30)}
+</style>
 </head>
 
 <body>
