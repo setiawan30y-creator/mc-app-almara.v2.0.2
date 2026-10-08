@@ -4933,19 +4933,41 @@
     <script>
     (function(){
         function activateLkbuTab(code){
-            document.querySelectorAll('#laporan-lku-view .lkbu-tab').forEach(function(btn){
-                var active=btn.getAttribute('data-lkbu-tab')===code;
-                btn.classList.toggle('active',active);
-                btn.setAttribute('aria-selected',active?'true':'false');
+            var root = document.getElementById('laporan-lku-view');
+            if (!root) return;
+            root.querySelectorAll('.lkbu-tab').forEach(function(btn){
+                var active = btn.getAttribute('data-lkbu-tab') === code;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
             });
-            document.querySelectorAll('#laporan-lku-view .lkbu-panel').forEach(function(panel){
-                panel.classList.toggle('active',panel.id==='lkbu-panel-'+code);
+            root.querySelectorAll('.lkbu-panel').forEach(function(panel){
+                panel.classList.toggle('active', panel.id === 'lkbu-panel-' + code);
             });
         }
-        document.querySelectorAll('#laporan-lku-view .lkbu-tab').forEach(function(btn){
-            btn.addEventListener('click',function(){activateLkbuTab(btn.getAttribute('data-lkbu-tab'));});
-        });
-        window.activateLkbuTab=activateLkbuTab;
+
+        window.activateLkbuTab = activateLkbuTab;
+
+        // Event delegation: tetap bekerja walaupun dashboard/section dirender ulang.
+        document.addEventListener('click', function(e){
+            var btn = e.target.closest ? e.target.closest('#laporan-lku-view .lkbu-tab') : null;
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            activateLkbuTab(btn.getAttribute('data-lkbu-tab'));
+        }, true);
+
+        // Set state awal setelah DOM tersedia.
+        function initLkbuTabs(){
+            var root = document.getElementById('laporan-lku-view');
+            if (!root) return;
+            var active = root.querySelector('.lkbu-tab.active');
+            activateLkbuTab(active ? active.getAttribute('data-lkbu-tab') : 'b0001');
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLkbuTabs);
+        } else {
+            initLkbuTabs();
+        }
     })();
     </script>
 </section>
