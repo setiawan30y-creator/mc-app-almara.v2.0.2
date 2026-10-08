@@ -43,6 +43,7 @@
             <div class="field"><label>Total Nominal IDR</label><input id="total_amount_idr" type="number" min="0" placeholder="0"></div>
             <div class="field"><label>Operator Nominal</label><select id="amount_operator"><option>></option><option>>=</option><option>=</option><option><</option><option><=</option></select></div>
             <div class="field"><label>Metode Pembayaran</label><input id="payment_method" placeholder="CASH / TRANSFER / kosong = semua"></div>
+            <div class="field"><label>Jenis Transaksi</label><select id="transaction_type"><option value="">Semua JUAL/BELI</option><option value="JUAL">JUAL</option><option value="BELI">BELI</option></select></div>
             <div class="field"><label>Hasil Jika Terpenuhi</label><select id="result_type">
                 <option value="LTKT">Kandidat LTKT</option>
                 <option value="LTKM">Kandidat LTKM</option>
@@ -59,6 +60,7 @@
             <div class="field wide"><label>Catatan Internal</label><textarea id="internal_note" placeholder="Catatan interpretasi internal / sumber / cara pemeriksaan"></textarea></div>
             <div class="field actions"><button class="btn primary" onclick="saveRule()">Simpan Rule</button><button class="btn muted" onclick="resetForm()">Batal / Rule Baru</button></div>
         </div>
+        <p class="note">Untuk monitoring LTKM, JUAL dan BELI dapat dipisahkan. Jika <b>Jenis Transaksi</b> dipilih, agregasi hanya menghitung transaksi jenis tersebut; JUAL dan BELI tidak digabung. Rule LTKM Rp500 juta adalah <b>monitoring internal</b>, bukan threshold otomatis LTKM.</p>
         <p class="note">Rule hanya menghasilkan temuan/kandidat internal. Sistem tidak mengirim laporan ke GoAML. Keputusan akhir tetap oleh Compliance.</p>
     </div>
 
@@ -90,11 +92,12 @@ const api=(p,o={})=>fetch('/api'+p,{credentials:'same-origin',cache:'no-store',h
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const el=id=>document.getElementById(id);
 function show(type,text){el('msg').innerHTML='<div class="alert '+(type==='ok'?'ok':'err')+'">'+esc(text)+'</div>';setTimeout(()=>el('msg').innerHTML='',4000)}
-function resetForm(){el('rule_id').value='';el('formTitle').textContent='Tambah Rule';['name','code','regulation_source','regulation_no','regulation_article','effective_from','effective_until','min_transactions','period_days','total_amount_idr','payment_method','internal_note'].forEach(id=>el(id).value='');el('rule_type').value='REGULATORY';el('target').value='CUSTOMER';el('amount_operator').value='>';el('result_type').value='COMPLIANCE_REVIEW';el('severity').value='WARNING';el('action').value='REVIEW';el('priority').value='100')}
+function resetForm(){el('rule_id').value='';el('formTitle').textContent='Tambah Rule';['name','code','regulation_source','regulation_no','regulation_article','effective_from','effective_until','min_transactions','period_days','total_amount_idr','payment_method','internal_note'].forEach(id=>el(id).value='');el('transaction_type').value='';el('rule_type').value='REGULATORY';el('target').value='CUSTOMER';el('amount_operator').value='>';el('result_type').value='COMPLIANCE_REVIEW';el('severity').value='WARNING';el('action').value='REVIEW';el('priority').value='100')}
 function editRule(id){
  api('/goaml/rules').then(rows=>{const r=rows.find(x=>Number(x.id)===Number(id));if(!r)return;
   el('rule_id').value=r.id;el('formTitle').textContent='Edit Rule v'+r.version;
   ['name','code','regulation_source','regulation_no','regulation_article','effective_from','effective_until','min_transactions','period_days','total_amount_idr','payment_method','internal_note'].forEach(k=>el(k).value=r[k]??'');
+  el('transaction_type').value=(r.conditions&&r.conditions.transaction_type)||'';
   el('rule_type').value=r.rule_type||'REGULATORY';el('target').value=r.target||'CUSTOMER';el('amount_operator').value=r.amount_operator||'>';el('result_type').value=r.result_type||'COMPLIANCE_REVIEW';el('severity').value=r.severity||'WARNING';el('action').value=r.action||'REVIEW';el('priority').value=r.priority||100;window.scrollTo({top:0,behavior:'smooth'});
  }).catch(e=>show('err',e.message))
 }
@@ -102,7 +105,7 @@ async function loadRules(){
  const rows=await api('/goaml/rules');
  el('rules').innerHTML='<table><thead><tr><th>Rule / Regulasi</th><th>Kriteria</th><th>Hasil</th><th>Severity</th><th>Status</th><th>Versi</th><th>Aksi</th></tr></thead><tbody>'+
  rows.map(r=>'<tr><td><b>'+esc(r.name)+'</b><br><span class="note">'+esc(r.code)+' · '+esc(r.rule_type)+'</span><br><span class="note">'+esc(r.regulation_source||'')+' '+esc(r.regulation_no||'')+(r.regulation_article?' · '+esc(r.regulation_article):'')+'</span></td>'+
- '<td>'+esc(r.min_transactions??'—')+' transaksi / '+esc(r.period_days??'—')+' hari<br>'+esc(r.amount_operator||'')+' Rp '+Number(r.total_amount_idr||0).toLocaleString('id-ID')+(r.payment_method?' · '+esc(r.payment_method):'')+'</td>'+
+ '<td>'+esc(r.min_transactions??'—')+' transaksi / '+esc(r.period_days??'—')+' hari<br>'+esc(r.amount_operator||'')+' Rp '+Number(r.total_amount_idr||0).toLocaleString('id-ID')+(r.payment_method?' · '+esc(r.payment_method):'')+((r.conditions&&r.conditions.transaction_type)?' · '+esc(r.conditions.transaction_type):'')+'</td>'+
  '<td><span class="pill blue">'+esc(r.result_type||'COMPLIANCE_REVIEW')+'</span></td><td>'+esc(r.severity)+'</td><td>'+(r.is_active?'<span class="pill green">AKTIF</span>':'<span class="pill gray">NONAKTIF</span>')+'</td><td>'+esc(r.version)+'</td>'+
  '<td><button class="smallbtn secondary" onclick="editRule('+Number(r.id)+')">Edit</button></td></tr>').join('')+'</tbody></table>';
 }
@@ -134,7 +137,7 @@ async function reviewAlert(id){
 async function saveRule(){
  try{
   const id=el('rule_id').value;
-  const body={name:el('name').value,code:el('code').value,rule_type:el('rule_type').value,regulation_source:el('regulation_source').value||null,regulation_no:el('regulation_no').value||null,regulation_article:el('regulation_article').value||null,effective_from:el('effective_from').value||null,effective_until:el('effective_until').value||null,target:el('target').value,classification:el('rule_type').value==='INTERNAL_MONITORING'?'INTERNAL_WARNING':null,severity:el('severity').value,action:el('action').value,result_type:el('result_type').value,min_transactions:el('min_transactions').value?Number(el('min_transactions').value):null,period_days:el('period_days').value?Number(el('period_days').value):null,total_amount_idr:el('total_amount_idr').value?Number(el('total_amount_idr').value):null,amount_operator:el('amount_operator').value,payment_method:el('payment_method').value||null,internal_note:el('internal_note').value||null,priority:Number(el('priority').value||100),is_active:true};
+  const body={name:el('name').value,code:el('code').value,rule_type:el('rule_type').value,regulation_source:el('regulation_source').value||null,regulation_no:el('regulation_no').value||null,regulation_article:el('regulation_article').value||null,effective_from:el('effective_from').value||null,effective_until:el('effective_until').value||null,target:el('target').value,classification:el('rule_type').value==='INTERNAL_MONITORING'?'INTERNAL_WARNING':null,severity:el('severity').value,action:el('action').value,result_type:el('result_type').value,min_transactions:el('min_transactions').value?Number(el('min_transactions').value):null,period_days:el('period_days').value?Number(el('period_days').value):null,total_amount_idr:el('total_amount_idr').value?Number(el('total_amount_idr').value):null,amount_operator:el('amount_operator').value,payment_method:el('payment_method').value||null,internal_note:el('internal_note').value||null,priority:Number(el('priority').value||100),is_active:true,conditions:{logic:'AND',aggregation:'CUSTOMER',amount_basis:'IDR_TOTAL',transaction_type:el('transaction_type').value||null}};
   await api(id?'/goaml/rules/'+id:'/goaml/rules',{method:id?'PUT':'POST',body:JSON.stringify(body)});show('ok',id?'Rule diperbarui dan versinya dinaikkan':'Rule berhasil disimpan');resetForm();loadRules();
  }catch(e){show('err',e.message)}
 }
