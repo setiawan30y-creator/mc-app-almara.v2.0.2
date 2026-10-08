@@ -1612,7 +1612,10 @@ function printOldMoneyReceiptRaw(trxId) {
             curCode: item.itemCode || 'KOIN',
             amount: valasAmt,
             rate,
-            totalIdr
+            totalIdr,
+            denom,
+            qty,
+            oldMoneyDesc: item.itemDesc || item.itemCode || 'KOIN'
         };
     });
 
