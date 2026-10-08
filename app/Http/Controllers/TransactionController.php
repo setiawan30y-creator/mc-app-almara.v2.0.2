@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Services\GoamlComplianceService;
 
 class TransactionController extends Controller
 {
@@ -20,7 +21,7 @@ class TransactionController extends Controller
         return response()->json($transactions);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, GoamlComplianceService $goaml)
     {
         $validated = $request->validate([
             'id' => ['nullable', 'string', 'max:50', 'required_without:itemId'],
@@ -62,10 +63,13 @@ class TransactionController extends Controller
         ];
 
         try {
-            Transaction::updateOrCreate(
+            $transaction = Transaction::updateOrCreate(
                 ['itemId' => $itemId],
                 $data
             );
+
+            // Jalankan compliance engine setelah transaksi tersimpan.
+            $goaml->evaluateTransaction($transaction);
 
             // RWT independen: hanya dibuat saat invoice belum memiliki audit.
             if (!TransactionAudit::where('id', $invoiceId)->exists()) {
@@ -87,7 +91,7 @@ class TransactionController extends Controller
         }
     }
 
-    public function bulkStore(Request $request)
+    public function bulkStore(Request $request, GoamlComplianceService $goaml)
     {
         // WAJIB didefinisikan sebelum dipakai.
         $transactions = $request->input('transactions', []);
@@ -180,10 +184,13 @@ class TransactionController extends Controller
                         'raw_json' => json_encode($input),
                     ];
 
-                    Transaction::updateOrCreate(
+                    $transaction = Transaction::updateOrCreate(
                         ['itemId' => $itemId],
                         $data
                     );
+
+                    // Jalankan compliance engine untuk setiap transaksi yang berhasil disimpan.
+                    $goaml->evaluateTransaction($transaction);
 
                     // RWT tetap independen dan tidak diubah jika invoice sudah pernah diaudit.
                     if (!isset($existingAudits[$invoiceId])) {
