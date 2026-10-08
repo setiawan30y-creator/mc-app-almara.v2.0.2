@@ -1537,6 +1537,7 @@ async function processOldMoneyCheckout() {
         counterpartType: 'CUSTOMER',
         customerId: customerId !== '-' ? customerId : null,
         cashBalanceAfter: cash,
+        category: normalizeOldMoneyCategory(window.oldMoneyCart[0]?.category || window.oldMoneyActiveFormCategory || 'KOIN'),
         items: [...window.oldMoneyCart]
     };
     if (window.oldMoneyEditingTrxId) {
