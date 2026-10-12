@@ -8451,6 +8451,7 @@
     @foreach ($frontendModules as $frontendModule)
         <script src="{{ asset('js/modules/' . $frontendModule) }}?v={{ time() }}"></script>
     @endforeach
+    <script src="{{ asset('js/modules/20-currency-master-ui.js') }}?v={{ time() }}"></script>
     <script>
     window.toggleSettingsCard = function(button) {
         var card = button && button.closest('.settings-tab-content');
