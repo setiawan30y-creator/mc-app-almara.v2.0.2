@@ -261,7 +261,7 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
         const parents=currencies.filter(x=>/^[A-Z]{3}$/.test(String(x.code||'').trim().toUpperCase()));
         parentEl.innerHTML=parents.map(x=>'<option value="'+esc(x.code)+'">'+esc(x.code+' — '+(x.name||x.label||x.code))+'</option>').join('');
         const inferred=String(c?.variant_type||'').toLowerCase();
-        const inferredType=['kc','st'].includes(inferred)?inferred:((/\\(KC\\)$/i.test(c?.code||''))?'kc':((/\\(ST\\)$/i.test(c?.code||''))?'st':'normal'));
+        const inferredType=['kc','st'].includes(inferred)?inferred:((/\(KC\)$/i.test(c?.code||''))?'kc':((/\(ST\)$/i.test(c?.code||''))?'st':'normal'));
         typeEl.value=inferredType;
         parentEl.value=c?.variant_of||String(c?.code||'').substring(0,3)||parents[0]?.code||'';
         const codeInput=modal.querySelector('#modalCurCode'), nameInput=modal.querySelector('#modalCurName');
