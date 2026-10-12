@@ -644,8 +644,8 @@ function loadPosForm() {
                 const codeUpper = String(c.code || '').trim().toUpperCase();
                 const variantType = String(c.variant_type || (/\(KC\)$/i.test(codeUpper) ? 'kc' : (/\(ST\)$/i.test(codeUpper) ? 'st' : ''))).toLowerCase();
                 const variantLabel = String(c.variant_label || (variantType === 'kc' ? 'kc' : (variantType === 'st' ? 'st' : ''))).trim();
-                const baseCode = String(c.base_code || c.variant_of || c.code || '').trim().toUpperCase().substring(0, 3);
-                const displayCode = variantLabel ? baseCode + ' (' + variantLabel + ')' : c.code;
+                const variantBaseCode = String(c.base_code || c.variant_of || c.code || '').trim().toUpperCase().substring(0, 3);
+                const displayCode = variantLabel ? variantBaseCode + ' (' + variantLabel + ')' : c.code;
                 const stockVal = parseFloat(c.stock) || 0;
                 html += `<option value="${c.code}">${mc.flag || ''} ${displayCode}${mc.country ? ' - ' + mc.country : ''} (Stok: ${stockVal})</option>`;
             });
