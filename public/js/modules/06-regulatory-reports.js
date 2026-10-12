@@ -119,8 +119,15 @@ function getLkuEffectiveDate(endStr) {
     return endDate;
 }
 
+function getReportBaseCurrencyCode(value) {
+    const raw = String(value || '').toUpperCase().trim();
+    const matches = raw.match(/[A-Z]{3}/g) || [];
+    // Handles ISO codes with optional labels, e.g. "USD (500)", "HKD (KC)", or "US USD".
+    return matches.length ? matches[matches.length - 1] : raw.substring(0, 3);
+}
+
 function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
-    const code = String(currency?.code || '').substring(0, 3).toUpperCase();
+    const code = getReportBaseCurrencyCode(currency?.code);
     const effectiveDate = getLkuEffectiveDate(endStr);
     if(!code || !effectiveDate) return 0;
 
@@ -130,7 +137,7 @@ function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
 
     const currencyTransactions = transactions
         .map(t => {
-            const trxCode = String(t?.valuta || t?.curCode || t?.currency || t?.code || '').toUpperCase();
+            const trxCode = getReportBaseCurrencyCode(t?.valuta || t?.curCode || t?.currency || t?.code);
             if(trxCode !== code) return null;
             const rawDate = t?.timestamp || t?.date || t?.createdAt || t?.created_at;
             const trxDate = parseLkuTransactionDate(rawDate);
@@ -550,10 +557,7 @@ async function loadLaporanLku() {
 }
 
 function normalizeFullCurrencyCode(value) {
-    const raw = String(value || '').toUpperCase().trim();
-    const tokens = raw.match(/[A-Z0-9]+/g) || [];
-    if(tokens.length > 1 && tokens[0].length <= 2) return tokens.slice(1).join('');
-    return tokens.join('');
+    return getReportBaseCurrencyCode(value);
 }
 
 function getPosisiValutaMonthRange(period) {
