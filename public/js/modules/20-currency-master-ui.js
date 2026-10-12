@@ -254,7 +254,7 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
             panel.id='cmVariantControls';
             panel.className='almara-cm-field';
             panel.style.cssText='grid-column:1/-1;padding:12px;border:1px solid #94a3b8;border-radius:8px;background:rgba(148,163,184,.08)';
-            panel.innerHTML='<label for="cmVariantLabel">Denom / Keterangan Varian (opsional)</label><input id="cmVariantLabel" type="text" maxlength="6" placeholder="Contoh: 500, kc, st"><small>Kosongkan untuk valuta biasa. Contoh: SAR + 500 menjadi SAR (500), HKD + kc menjadi HKD (kc). Saat edit, kode identitas valuta tetap agar riwayat transaksi tidak rusak.</small>';
+            panel.innerHTML='<label for="cmVariantLabel">Denom / Keterangan Varian (opsional)</label><input id="cmVariantLabel" type="text" maxlength="3" placeholder="Contoh: 500, kc, st"><small>Kosongkan untuk valuta biasa. Contoh: SAR + 500 menjadi SAR (500), HKD + kc menjadi HKD (kc). Saat edit, kode identitas valuta tetap agar riwayat transaksi tidak rusak.</small>';
             grid.insertBefore(panel,grid.firstChild);
         }
         const labelEl=panel.querySelector('#cmVariantLabel');
@@ -350,6 +350,10 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
         const name=String(document.getElementById('modalCurName')?.value||'').trim();
         const baseBuy=num(document.getElementById('modalCurBuy')?.value);
         const baseSell=num(document.getElementById('modalCurSell')?.value);
+        if(variantLabel.length>3){
+            alert("Keterangan varian maksimal 3 karakter agar kode identitas tetap sesuai batas sistem.");
+            return;
+        }
         if(!code||!name||baseBuy<=0||baseSell<=0){
             alert('Kode, Nama Valuta, Base Rate Beli, dan Base Rate Jual wajib diisi.');
             return;
