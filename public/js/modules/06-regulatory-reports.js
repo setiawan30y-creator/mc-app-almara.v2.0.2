@@ -427,7 +427,7 @@ async function loadLaporanLku() {
         });
         
         let lkuData = {};
-        const ensureLkuRow = (rawCode, stock = 0) => {
+        const ensureLkuRow = (rawCode, stock = 0, includeCurrencyOpening = true) => {
             const codeMatches = String(rawCode || '').toUpperCase().match(/[A-Z]{3}/g);
             const baseCode = codeMatches ? codeMatches[codeMatches.length - 1] : String(rawCode || '').substring(0, 3).toUpperCase().trim();
             if(!baseCode) return '';
@@ -452,7 +452,9 @@ async function loadLaporanLku() {
             }
             const stockValue = cleanLkuNumber(stock);
             lkuData[baseCode].currentStock += stockValue;
-            const currency = (currenciesByBaseCode[baseCode] || []).find(c => String(c.code || '').toUpperCase().trim() === String(rawCode || '').toUpperCase().trim());
+            const currency = includeCurrencyOpening
+                ? (currenciesByBaseCode[baseCode] || []).find(c => String(c.code || '').toUpperCase().trim() === String(rawCode || '').toUpperCase().trim())
+                : null;
             if(currency) {
                 const openingStock = calculateLkuOpeningStock(currency, trxs, endStr);
                 const openingRate = calculateLkuOpeningAverageRate(currency, trxs, endStr);
@@ -479,7 +481,7 @@ async function loadLaporanLku() {
             if (!t || !trxValuta || !trxTimestamp) return;
             
             // Standardize code: find the 3-letter currency code (e.g. "USD" from "US USD")
-            let code = ensureLkuRow(trxValuta, 0);
+            let code = ensureLkuRow(trxValuta, 0, false);
             if(!code || !lkuData[code]) return;
             
             // Robust Strict DD/MM/YYYY Parsing
