@@ -642,7 +642,7 @@ function loadPosForm() {
                 const baseCode = String(c.code || '').trim().toUpperCase().substring(0, 3);
                 const mc = masterCurrencies.find(m => m && m.code === c.code) || masterCurrencies.find(m => m && m.code === baseCode) || { flag: '', country: '' };
                 const codeUpper = String(c.code || '').trim().toUpperCase();
-                const variantType = String(c.variant_type || (/\\(KC\\)$/i.test(codeUpper) ? 'kc' : (/\\(ST\\)$/i.test(codeUpper) ? 'st' : ''))).toLowerCase();
+                const variantType = String(c.variant_type || (/\(KC\)$/i.test(codeUpper) ? 'kc' : (/\(ST\)$/i.test(codeUpper) ? 'st' : ''))).toLowerCase();
                 const variantLabel = c.variant_label || (variantType === 'kc' ? 'Pecahan kecil' : (variantType === 'st' ? 'Pecahan satu' : ''));
                 const stockVal = parseFloat(c.stock) || 0;
                 html += `<option value="${c.code}">${mc.flag || ''} ${c.code}${variantLabel ? ' — ' + variantLabel : ''} ${mc.country ? '- ' + mc.country : ''} (Stok: ${stockVal})</option>`;
