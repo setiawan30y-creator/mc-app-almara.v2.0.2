@@ -750,8 +750,45 @@ window.loadLaporanPosisiValuta = async function() {
     const masterCurrencies = typeof getMasterCurrencies === 'function' ? getMasterCurrencies() : [];
     const currencyMap = {};
     currencies.forEach(c => {
+        if(!c || !c.code) return;
         const code = normalizeFullCurrencyCode(c.code);
-        if(code) currencyMap[code] = c;
+        if(!code) return;
+
+        if(!currencyMap[code]) {
+            currencyMap[code] = {
+                ...c,
+                code,
+                stock: 0,
+                __hasExplicitInitialStock: false,
+                __explicitInitialStockTotal: 0
+            };
+        }
+
+        const aggregate = currencyMap[code];
+        aggregate.stock += cleanLkuNumber(c.stock);
+        const explicitInitialStock = c.initialStock ?? c.startingStock;
+        if(explicitInitialStock !== undefined && explicitInitialStock !== null) {
+            aggregate.__hasExplicitInitialStock = true;
+            aggregate.__explicitInitialStockTotal += cleanLkuNumber(explicitInitialStock);
+        }
+
+        // Keep the actual ISO parent as the source of reference rates and currency metadata.
+        if(String(c.code).trim().toUpperCase() === code) {
+            const stock = aggregate.stock;
+            const hasInitial = aggregate.__hasExplicitInitialStock;
+            const initialTotal = aggregate.__explicitInitialStockTotal;
+            Object.assign(aggregate, c, { code, stock });
+            aggregate.__hasExplicitInitialStock = hasInitial;
+            aggregate.__explicitInitialStockTotal = initialTotal;
+        }
+    });
+    Object.values(currencyMap).forEach(c => {
+        if(c.__hasExplicitInitialStock) {
+            c.initialStock = c.__explicitInitialStockTotal;
+            c.startingStock = c.__explicitInitialStockTotal;
+        }
+        delete c.__hasExplicitInitialStock;
+        delete c.__explicitInitialStockTotal;
     });
 
     const codes = Array.from(new Set([
