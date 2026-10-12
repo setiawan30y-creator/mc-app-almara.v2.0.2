@@ -618,6 +618,21 @@ function normalizeFullCurrencyCode(value) {
     return getReportBaseCurrencyCode(value);
 }
 
+function matchesCurrencyIdentity(currencyCode, transactionCode) {
+    const identityCode = String(currencyCode || '').toUpperCase().trim();
+    const rawTransactionCode = String(transactionCode || '').toUpperCase().trim();
+    if(!identityCode || !rawTransactionCode) return false;
+    if(identityCode === rawTransactionCode) return true;
+
+    // Never mix distinct variants (e.g. USD (KC) with USD (ST) or plain USD).
+    const identityIsVariant = identityCode.includes('(');
+    const transactionIsVariant = rawTransactionCode.includes('(');
+    if(identityIsVariant || transactionIsVariant) return false;
+
+    // Allow legacy aliases such as "US USD" to match the plain ISO currency only.
+    return getReportBaseCurrencyCode(identityCode) === getReportBaseCurrencyCode(rawTransactionCode);
+}
+
 function getPosisiValutaMonthRange(period) {
     if(!period) return null;
     const [year, month] = period.split('-').map(Number);
@@ -1409,7 +1424,7 @@ window.loadLabaRugi = function() {
         let sumJualPeriod = 0, sumBeliPeriod = 0;
 
         allTrxs.forEach(t => {
-            if(t.valuta !== c.code) return;
+            if(!matchesCurrencyIdentity(c.code, t.valuta)) return;
             let tDate = t.timestamp.split('T')[0];
             let nominal = parseFloat(t.nominal) || 0;
             
@@ -1438,7 +1453,7 @@ window.loadLabaRugi = function() {
         if(t.tipe === 'JUAL') d['01'] += t.total;
         else if(t.tipe === 'BELI') d['04'] += t.total;
 
-        const curData = currencies.find(c => c.code === t.valuta);
+        const curData = currencies.find(c => String(c.code || '').toUpperCase().trim() === String(t.valuta || '').toUpperCase().trim()) || currencies.find(c => !String(c.code || '').includes('(') && !String(t.valuta || '').includes('(') && getReportBaseCurrencyCode(c.code) === getReportBaseCurrencyCode(t.valuta));
         if(curData) {
             const midRate = (curData.buy + curData.sell) / 2;
             if(t.tipe === 'JUAL') margin += (t.rate - midRate) * t.nominal;
@@ -2047,7 +2062,7 @@ window.exportLabaRugiExcel = async function() {
         let sumJualPeriod = 0, sumBeliPeriod = 0;
 
         allTrxs.forEach(t => {
-            if(t.valuta !== c.code) return;
+            if(!matchesCurrencyIdentity(c.code, t.valuta)) return;
             let tDate = t.timestamp.split('T')[0];
             let nominal = parseFloat(t.nominal) || 0;
             
@@ -2078,7 +2093,7 @@ window.exportLabaRugiExcel = async function() {
         if(t.tipe === 'JUAL') penjualanUka += t.total;
         else if(t.tipe === 'BELI') pembelianUka += t.total;
 
-        const curData = currencies.find(c => c.code === t.valuta);
+        const curData = currencies.find(c => String(c.code || '').toUpperCase().trim() === String(t.valuta || '').toUpperCase().trim()) || currencies.find(c => !String(c.code || '').includes('(') && !String(t.valuta || '').includes('(') && getReportBaseCurrencyCode(c.code) === getReportBaseCurrencyCode(t.valuta));
         if(curData) {
             const midRate = (curData.buy + curData.sell) / 2;
             if(t.tipe === 'JUAL') margin += (t.rate - midRate) * t.nominal;
