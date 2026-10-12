@@ -269,7 +269,7 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
             const kind=typeEl.value, parent=parents.find(x=>x.code===parentEl.value);
             parentWrap.style.display=kind==='normal'?'none':'block';
             if(kind==='normal'){
-                if(!isEdit){codeInput.disabled=false;nameInput.disabled=false;}
+                if(!isEdit){codeInput.disabled=false;nameInput.disabled=false;window.__almaraVariantDraft=null;}
                 return;
             }
             if(!parent){alert('Pilih valuta induk yang sudah terdaftar terlebih dahulu.');return;}
