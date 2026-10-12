@@ -2755,7 +2755,11 @@ window.renderPosValasListModern = function() {
 
     let html = '';
     filtered.forEach(c => {
-        const mc = masterCurrencies.find(m => m && m.code === c.code) || { flag: '', country: '' };
+        const baseCode = String(c.code || '').trim().toUpperCase().substring(0, 3);
+        const mc = masterCurrencies.find(m => m && m.code === c.code) || masterCurrencies.find(m => m && m.code === baseCode) || { flag: '', country: '' };
+        const codeUpper = String(c.code || '').trim().toUpperCase();
+        const variantType = String(c.variant_type || (/\(KC\)$/i.test(codeUpper) ? 'kc' : (/\(ST\)$/i.test(codeUpper) ? 'st' : ''))).toLowerCase();
+        const variantLabel = c.variant_label || (variantType === 'kc' ? 'Pecahan kecil' : (variantType === 'st' ? 'Pecahan satu' : ''));
         const buyRate = parseFloat(c.buy) || 0;
         const sellRate = parseFloat(c.sell) || 0;
         const stockVal = parseFloat(c.stock) || 0;
@@ -2767,7 +2771,7 @@ window.renderPosValasListModern = function() {
                     <span style="font-size: 1.6rem; line-height: 1;">${mc.flag || '🏳️'}</span>
                     <div>
                         <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary);">${c.code}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${mc.country || '-'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${variantLabel || mc.country || '-'}</div>
                     </div>
                 </div>
                 <div style="text-align: right;">
