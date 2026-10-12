@@ -108,8 +108,10 @@ function loadCurrencyTable() {
         const flagUrl = countryCode ? `https://flagcdn.com/w80/${countryCode}.png` : '';
         const tr = document.createElement('tr');
         const isAlert = (c.stock || 0) <= (c.alert || 0);
-        const variantType = String(c.variant_type || (/\(KC\)$/i.test(currencyCode) ? 'kc' : (/\(ST\)$/i.test(currencyCode) ? 'st' : ''))).toLowerCase();
-        const codeNote = variantType === 'kc' ? `Varian ${baseCurrencyCode} — Pecahan kecil` : (variantType === 'st' ? `Varian ${baseCurrencyCode} — Pecahan satu` : (currencyCode.length > 3 && mc.code === baseCurrencyCode ? `Varian ${baseCurrencyCode}` : (mc.country || 'Unknown')));
+        const variantType = String(c.variant_type || (/(\\(KC\\))$/i.test(currencyCode) ? 'kc' : (/(\\(ST\\))$/i.test(currencyCode) ? 'st' : ''))).toLowerCase();
+        const variantLabel = String(c.variant_label || (variantType === 'kc' ? 'kc' : (variantType === 'st' ? 'st' : ''))).trim();
+        const displayCurrencyCode = variantLabel ? baseCurrencyCode + ' (' + variantLabel + ')' : (c.code || currencyCode);
+        const codeNote = variantLabel ? 'Varian ' + baseCurrencyCode + ' — ' + variantLabel : (currencyCode.length > 3 && mc.code === baseCurrencyCode ? 'Varian ' + baseCurrencyCode : (mc.country || 'Unknown'));
         
         const trendIcon = c.trend === 'up' 
             ? `<span style="color: #10B981; font-size: 1.2rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; width: 100%;">▲</span>` 
@@ -125,7 +127,7 @@ function loadCurrencyTable() {
                         <span class="stock-flag-fallback">${(mc.countryCode || currencyCode).slice(0, 2).toUpperCase()}</span>
                     </span>
                     <div>
-                        <strong class="currency-table-code">${c.code || ''}</strong><br>
+                        <strong class="currency-table-code">${displayCurrencyCode}</strong><br>
                         <small class="currency-table-country">${codeNote}</small>
                     </div>
                 </div>
