@@ -269,7 +269,12 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
             const kind=typeEl.value, parent=parents.find(x=>x.code===parentEl.value);
             parentWrap.style.display=kind==='normal'?'none':'block';
             if(kind==='normal'){
-                if(!isEdit){codeInput.disabled=false;nameInput.disabled=false;window.__almaraVariantDraft=null;}
+                if(!isEdit){
+                    const wasVariant=['kc','st'].includes(window.__almaraVariantDraft?.variant_type);
+                    codeInput.disabled=false;nameInput.disabled=false;
+                    if(wasVariant){codeInput.value='';nameInput.value='';}
+                    window.__almaraVariantDraft=null;
+                }
                 return;
             }
             if(!parent){alert('Pilih valuta induk yang sudah terdaftar terlebih dahulu.');return;}
