@@ -121,8 +121,11 @@ function getLkuEffectiveDate(endStr) {
 
 function getReportBaseCurrencyCode(value) {
     const raw = String(value || '').toUpperCase().trim();
+    // Variant labels belong to a code that starts with ISO, e.g. "USD (KC)" or "SAR (500)".
+    const leadingIso = raw.match(/^([A-Z]{3})(?=\s|$|\()/);
+    if(leadingIso) return leadingIso[1];
+    // Legacy values such as "US USD" place the ISO code at the end.
     const matches = raw.match(/[A-Z]{3}/g) || [];
-    // Handles ISO codes with optional labels, e.g. "USD (500)", "HKD (KC)", or "US USD".
     return matches.length ? matches[matches.length - 1] : raw.substring(0, 3);
 }
 
