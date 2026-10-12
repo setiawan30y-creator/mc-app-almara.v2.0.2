@@ -108,7 +108,7 @@ function loadCurrencyTable() {
         const flagUrl = countryCode ? `https://flagcdn.com/w80/${countryCode}.png` : '';
         const tr = document.createElement('tr');
         const isAlert = (c.stock || 0) <= (c.alert || 0);
-        const variantType = String(c.variant_type || (/(\\(KC\\))$/i.test(currencyCode) ? 'kc' : (/(\\(ST\\))$/i.test(currencyCode) ? 'st' : ''))).toLowerCase();
+        const variantType = String(c.variant_type || (currencyCode.endsWith('(KC)') ? 'kc' : (currencyCode.endsWith('(ST)') ? 'st' : ''))).toLowerCase();
         const variantLabel = String(c.variant_label || (variantType === 'kc' ? 'kc' : (variantType === 'st' ? 'st' : ''))).trim();
         const displayCurrencyCode = variantLabel ? baseCurrencyCode + ' (' + variantLabel + ')' : (c.code || currencyCode);
         const codeNote = variantLabel ? 'Varian ' + baseCurrencyCode + ' — ' + variantLabel : (currencyCode.length > 3 && mc.code === baseCurrencyCode ? 'Varian ' + baseCurrencyCode : (mc.country || 'Unknown'));
