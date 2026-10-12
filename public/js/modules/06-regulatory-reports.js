@@ -145,9 +145,11 @@ function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
             const rawCode = String(t?.valuta || t?.curCode || t?.currency || t?.code || '').toUpperCase().trim();
             // Exact identity first; allow normalized base-code matching only for
             // a plain base currency, never for a labeled variant.
-            const isVariant = identityCode !== getReportBaseCurrencyCode(identityCode);
+            const identityIsVariant = identityCode.includes('(');
+            const transactionIsVariant = rawCode.includes('(');
             const matches = rawCode === identityCode ||
-                (!isVariant && getReportBaseCurrencyCode(rawCode) === identityCode);
+                (!identityIsVariant && !transactionIsVariant &&
+                    getReportBaseCurrencyCode(rawCode) === getReportBaseCurrencyCode(identityCode));
             if(!matches) return null;
             const rawDate = t?.timestamp || t?.date || t?.createdAt || t?.created_at;
             const trxDate = parseLkuTransactionDate(rawDate);
@@ -204,9 +206,11 @@ function calculateLkuOpeningStock(currency, transactions, endStr) {
     let stock = cleanLkuNumber(currency?.stock);
     transactions.forEach(t => {
         const rawCode = String(t?.valuta || t?.curCode || t?.currency || t?.code || '').toUpperCase().trim();
-        const isVariant = identityCode !== getReportBaseCurrencyCode(identityCode);
+        const identityIsVariant = identityCode.includes('(');
+        const transactionIsVariant = rawCode.includes('(');
         const matches = rawCode === identityCode ||
-            (!isVariant && getReportBaseCurrencyCode(rawCode) === identityCode);
+            (!identityIsVariant && !transactionIsVariant &&
+                getReportBaseCurrencyCode(rawCode) === getReportBaseCurrencyCode(identityCode));
         if(!matches) return;
         const rawDate = t?.timestamp || t?.date || t?.createdAt || t?.created_at;
         const trxDate = parseLkuTransactionDate(rawDate);
