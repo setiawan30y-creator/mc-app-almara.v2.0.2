@@ -127,9 +127,11 @@ function getReportBaseCurrencyCode(value) {
 }
 
 function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
-    const code = getReportBaseCurrencyCode(currency?.code);
+    // Calculate each variant independently so its stock and locked opening rate
+    // are never mixed with another variant that shares the same ISO parent code.
+    const identityCode = String(currency?.code || '').toUpperCase().trim();
     const effectiveDate = getLkuEffectiveDate(endStr);
-    if(!code || !effectiveDate) return 0;
+    if(!identityCode || !effectiveDate) return 0;
 
     const previousDate = new Date(effectiveDate);
     previousDate.setDate(previousDate.getDate() - 1);
@@ -137,8 +139,13 @@ function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
 
     const currencyTransactions = transactions
         .map(t => {
-            const trxCode = getReportBaseCurrencyCode(t?.valuta || t?.curCode || t?.currency || t?.code);
-            if(trxCode !== code) return null;
+            const rawCode = String(t?.valuta || t?.curCode || t?.currency || t?.code || '').toUpperCase().trim();
+            // Exact identity first; allow normalized base-code matching only for
+            // a plain base currency, never for a labeled variant.
+            const isVariant = identityCode !== getReportBaseCurrencyCode(identityCode);
+            const matches = rawCode === identityCode ||
+                (!isVariant && getReportBaseCurrencyCode(rawCode) === identityCode);
+            if(!matches) return null;
             const rawDate = t?.timestamp || t?.date || t?.createdAt || t?.created_at;
             const trxDate = parseLkuTransactionDate(rawDate);
             if(!trxDate) return null;
@@ -154,8 +161,8 @@ function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
 
     const stockNow = cleanLkuNumber(currency?.stock);
     const netAll = currencyTransactions.reduce((sum, t) => {
-        if(t.type === 'BELI' || t.type.includes('BELI')) return sum + t.nominal;
-        if(t.type === 'JUAL' || t.type.includes('JUAL')) return sum - t.nominal;
+        if(t.type.includes('BELI')) return sum + t.nominal;
+        if(t.type.includes('JUAL')) return sum - t.nominal;
         return sum;
     }, 0);
 
@@ -168,10 +175,10 @@ function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
     currencyTransactions
         .filter(t => t.dateStr <= previousDateStr)
         .forEach(t => {
-            if(t.type === 'BELI' || t.type.includes('BELI')) {
+            if(t.type.includes('BELI')) {
                 qty += t.nominal;
                 totalCost += t.total;
-            } else if(t.type === 'JUAL' || t.type.includes('JUAL')) {
+            } else if(t.type.includes('JUAL')) {
                 const avg = qty > 0 ? totalCost / qty : 0;
                 qty -= t.nominal;
                 totalCost -= t.nominal * avg;
@@ -182,6 +189,31 @@ function calculateLkuOpeningAverageRate(currency, transactions, endStr) {
 
     if(qty > 0) return totalCost / qty;
     return cleanLkuNumber(currency?.initial_rate_locked);
+}
+
+function calculateLkuOpeningStock(currency, transactions, endStr) {
+    const identityCode = String(currency?.code || '').toUpperCase().trim();
+    const effectiveDate = getLkuEffectiveDate(endStr);
+    if(!identityCode || !effectiveDate) return 0;
+    const previousDate = new Date(effectiveDate);
+    previousDate.setDate(previousDate.getDate() - 1);
+    const previousDateStr = formatLkuDate(previousDate);
+    let stock = cleanLkuNumber(currency?.stock);
+    transactions.forEach(t => {
+        const rawCode = String(t?.valuta || t?.curCode || t?.currency || t?.code || '').toUpperCase().trim();
+        const isVariant = identityCode !== getReportBaseCurrencyCode(identityCode);
+        const matches = rawCode === identityCode ||
+            (!isVariant && getReportBaseCurrencyCode(rawCode) === identityCode);
+        if(!matches) return;
+        const rawDate = t?.timestamp || t?.date || t?.createdAt || t?.created_at;
+        const trxDate = parseLkuTransactionDate(rawDate);
+        if(!trxDate || formatLkuDate(trxDate) <= previousDateStr) return;
+        const type = String(t.tipe || t.type || t.transactionType || '').trim().toUpperCase();
+        const nominal = cleanLkuNumber(t.nominal ?? t.amount ?? t.qty ?? t.quantity);
+        if(type.includes('BELI')) stock -= nominal;
+        else if(type.includes('JUAL')) stock += nominal;
+    });
+    return Math.max(stock, 0);
 }
 
 function parseLkuTransactionDate(value) {
@@ -385,10 +417,13 @@ async function loadLaporanLku() {
         const currencies = getCurrencies();
         const endPeriod = endStr.substring(0, 7);
         const prevPeriod = getPreviousMonthPeriod(endPeriod);
-        const currencyByCode = {};
+        const currenciesByBaseCode = {};
         currencies.forEach(c => {
-            const code = String(c?.code || '').substring(0, 3).toUpperCase();
-            if(code) currencyByCode[code] = c;
+            if(!c || !c.code) return;
+            const code = getReportBaseCurrencyCode(c.code);
+            if(!code) return;
+            if(!currenciesByBaseCode[code]) currenciesByBaseCode[code] = [];
+            currenciesByBaseCode[code].push(c);
         });
         
         let lkuData = {};
@@ -396,16 +431,16 @@ async function loadLaporanLku() {
             const codeMatches = String(rawCode || '').toUpperCase().match(/[A-Z]{3}/g);
             const baseCode = codeMatches ? codeMatches[codeMatches.length - 1] : String(rawCode || '').substring(0, 3).toUpperCase().trim();
             if(!baseCode) return '';
-            const openingModalRate = calculateLkuOpeningAverageRate(currencyByCode[baseCode], trxs, endStr);
-            const awalRate = openingModalRate || (findOpeningBiRate(endPeriod, baseCode)?.rate || 0);
             const akhirRate = findBiRate(endPeriod, baseCode, 'akhir');
             if(!lkuData[baseCode]) {
                 lkuData[baseCode] = {
                     valuta: baseCode,
                     currentStock: 0,
-                    kursAwal: parseFloat(awalRate) || 0,
+                    openingStock: 0,
+                    openingCost: 0,
+                    kursAwal: 0,
                     kursAkhir: akhirRate ? parseFloat(akhirRate.rate) || 0 : 0,
-                    hasKursAwal: !!awalRate,
+                    hasKursAwal: false,
                     hasKursAkhir: !!akhirRate,
                     sumJualAfter: 0,
                     sumBeliAfter: 0,
@@ -415,7 +450,21 @@ async function loadLaporanLku() {
                     sumBeliRpPeriod: 0
                 };
             }
-            lkuData[baseCode].currentStock += (parseFloat(stock) || 0);
+            const stockValue = cleanLkuNumber(stock);
+            lkuData[baseCode].currentStock += stockValue;
+            const currency = (currenciesByBaseCode[baseCode] || []).find(c => String(c.code || '').toUpperCase().trim() === String(rawCode || '').toUpperCase().trim());
+            if(currency) {
+                const openingStock = calculateLkuOpeningStock(currency, trxs, endStr);
+                const openingRate = calculateLkuOpeningAverageRate(currency, trxs, endStr);
+                lkuData[baseCode].openingStock += openingStock;
+                lkuData[baseCode].openingCost += openingStock * openingRate;
+            }
+            const weightedOpeningRate = lkuData[baseCode].openingStock > 0
+                ? lkuData[baseCode].openingCost / lkuData[baseCode].openingStock
+                : 0;
+            const fallbackOpeningRate = findOpeningBiRate(endPeriod, baseCode)?.rate || 0;
+            lkuData[baseCode].kursAwal = weightedOpeningRate || parseFloat(fallbackOpeningRate) || 0;
+            lkuData[baseCode].hasKursAwal = !!(weightedOpeningRate || fallbackOpeningRate);
             return baseCode;
         };
 
