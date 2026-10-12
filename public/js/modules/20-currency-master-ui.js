@@ -254,51 +254,25 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
             panel.id='cmVariantControls';
             panel.className='almara-cm-field';
             panel.style.cssText='grid-column:1/-1;padding:12px;border:1px solid #94a3b8;border-radius:8px;background:rgba(148,163,184,.08)';
-            panel.innerHTML='<label>Jenis Valuta</label><select id="cmVariantType"><option value="normal">Valuta normal (USD)</option><option value="kc">Pecahan kecil (USD (kc))</option><option value="st">Pecahan satu (USD (st))</option></select><div id="cmVariantParentWrap" style="margin-top:8px"><label>Valuta Induk</label><select id="cmVariantParent"></select></div><small>Varian memiliki kurs dan stok sendiri, tetapi tetap terhubung ke valuta induk.</small>';
+            panel.innerHTML='<label for="cmVariantLabel">Denom / Keterangan Varian (opsional)</label><input id="cmVariantLabel" type="text" maxlength="6" placeholder="Contoh: 500, kc, st"><small>Kosongkan untuk valuta biasa. Contoh: SAR + 500 menjadi SAR (500), HKD + kc menjadi HKD (kc). Saat edit, kode identitas valuta tetap agar riwayat transaksi tidak rusak.</small>';
             grid.insertBefore(panel,grid.firstChild);
         }
-        const typeEl=panel.querySelector('#cmVariantType'), parentEl=panel.querySelector('#cmVariantParent'), parentWrap=panel.querySelector('#cmVariantParentWrap');
-        const parents=currencies.filter(x=>/^[A-Z]{3}$/.test(String(x.code||'').trim().toUpperCase()));
-        parentEl.innerHTML=parents.map(x=>'<option value="'+esc(x.code)+'">'+esc(x.code+' — '+(x.name||x.label||x.code))+'</option>').join('');
-        const inferred=String(c?.variant_type||'').toLowerCase();
-        const inferredType=['kc','st'].includes(inferred)?inferred:((/\(KC\)$/i.test(c?.code||''))?'kc':((/\(ST\)$/i.test(c?.code||''))?'st':'normal'));
-        typeEl.value=inferredType;
-        parentEl.value=c?.variant_of||String(c?.code||'').substring(0,3)||parents[0]?.code||'';
-        const codeInput=modal.querySelector('#modalCurCode'), nameInput=modal.querySelector('#modalCurName');
-        const syncVariant=copyRate=>{
-            const kind=typeEl.value, parent=parents.find(x=>x.code===parentEl.value);
-            parentWrap.style.display=kind==='normal'?'none':'block';
-            if(kind==='normal'){
-                if(!isEdit){
-                    const wasVariant=['kc','st'].includes(window.__almaraVariantDraft?.variant_type);
-                    codeInput.disabled=false;nameInput.disabled=false;
-                    if(wasVariant){codeInput.value='';nameInput.value='';}
-                    window.__almaraVariantDraft=null;
-                }
-                return;
-            }
-            if(!parent){alert('Pilih valuta induk yang sudah terdaftar terlebih dahulu.');return;}
-            if(!isEdit){
-                codeInput.value=parent.code+(kind==='kc'?' (KC)':' (ST)');
-                codeInput.disabled=true;
-                nameInput.value=parent.code+(kind==='kc'?' — Pecahan kecil':' — Pecahan satu');
-                nameInput.disabled=true;
-                const set=(id,v)=>{const el=modal.querySelector('#'+id);if(el)el.value=v??'';};
-                set('modalCurNumeric',parent.numeric_code||'');set('modalCurSymbol',parent.symbol||'');set('modalCurDecimals',parent.decimals??2);
-                if(copyRate){set('modalCurBuy',parent.base_buy??parent.buy??'');set('modalCurSell',parent.base_sell??parent.sell??'');set('modalMarginBuy',parent.margin_buy??0);set('modalMarginSell',parent.margin_sell??0);}
-                window.__almaraVariantDraft={variant_of:parent.code,variant_type:kind,variant_label:kind==='kc'?'Pecahan kecil':'Pecahan satu'};
-                if(typeof window.calculateCurrencyHasil==='function')window.calculateCurrencyHasil();
-                renderDenoms();
-            }
-        };
-        typeEl.onchange=()=>syncVariant(true);
-        parentEl.onchange=()=>syncVariant(true);
-        panel.style.display=isEdit?'none':'block';
-        if(!isEdit){codeInput.disabled=false;nameInput.disabled=false;syncVariant(false);}
-        else window.__almaraVariantDraft=null;
+        const labelEl=panel.querySelector('#cmVariantLabel');
+        const codeInput=modal.querySelector('#modalCurCode');
+        if(isEdit){
+            labelEl.value=String(c?.variant_label||'');
+            labelEl.disabled=false;
+            codeInput.disabled=true;
+        } else {
+            labelEl.value='';
+            labelEl.disabled=false;
+            codeInput.disabled=false;
+        }
+        panel.style.display='block';
+        window.__almaraVariantDraft=isEdit?{variant_label:String(c?.variant_label||''),variant_of:c?.variant_of||c?.base_code||String(c?.code||'').substring(0,3)}:null;
     }
 
-    function open(code=null) { const modal=ensureModal();if(!modal)return;const currencies=typeof getCurrencies==='function'?getCurrencies():[];const editCode=String(code||'').trim().toUpperCase();const c=editCode?currencies.find(x=>String(x.code||'').toUpperCase()===editCode):null;const isEdit=!!c;window.__almaraCurrencyMode=isEdit?'edit':'add';fill(c||{code:'',name:'',active:true,denominations:{banknote:[],coin:[]}});ensureVariantControls(modal,currencies,isEdit,c);const input=document.getElementById('modalCurCode');if(input)input.disabled=isEdit||(['kc','st'].includes(window.__almaraVariantDraft?.variant_type));const title=modal.querySelector('.almara-cm-title h2');if(title)title.textContent=isEdit?'Edit Valuta':'Tambah Valuta';const subtitle=modal.querySelector('.almara-cm-title p');if(subtitle)subtitle.textContent=isEdit?'Ubah data valuta dan kelola pecahan.':'Pilih valuta normal atau buat varian pecahan kecil/satu. Kurs dan stok tiap varian tersimpan terpisah.';const denomCard=modal.querySelector('.almara-cm-denom-layout')?.closest('.almara-cm-card');if(denomCard)denomCard.style.display=isEdit?'':'none';const footerSave=modal.querySelector('button[onclick*="almaraSaveCurrencyMaster"]');if(footerSave)footerSave.innerHTML='<i class="fa-solid fa-floppy-disk"></i> '+(isEdit?'Simpan Perubahan':'Simpan Valuta');modal.classList.add('show','almara-currency-master-open'); }
+    function open(code=null) { const modal=ensureModal();if(!modal)return;const currencies=typeof getCurrencies==='function'?getCurrencies():[];const editCode=String(code||'').trim().toUpperCase();const c=editCode?currencies.find(x=>String(x.code||'').toUpperCase()===editCode):null;const isEdit=!!c;window.__almaraCurrencyMode=isEdit?'edit':'add';fill(c||{code:'',name:'',active:true,denominations:{banknote:[],coin:[]}});ensureVariantControls(modal,currencies,isEdit,c);const input=document.getElementById('modalCurCode');if(input)input.disabled=isEdit;const title=modal.querySelector('.almara-cm-title h2');if(title)title.textContent=isEdit?'Edit Valuta':'Tambah Valuta';const subtitle=modal.querySelector('.almara-cm-title p');if(subtitle)subtitle.textContent=isEdit?'Ubah data valuta dan keterangan variannya. Kode identitas tidak berubah agar transaksi lama tetap aman.':'Pilih kode ISO dan isi keterangan varian bila diperlukan. Setiap varian memiliki stok dan kurs sendiri.';const denomCard=modal.querySelector('.almara-cm-denom-layout')?.closest('.almara-cm-card');if(denomCard)denomCard.style.display=isEdit?'':'none';const footerSave=modal.querySelector('button[onclick*="almaraSaveCurrencyMaster"]');if(footerSave)footerSave.innerHTML='<i class="fa-solid fa-floppy-disk"></i> '+(isEdit?'Simpan Perubahan':'Simpan Valuta');modal.classList.add('show','almara-currency-master-open'); }
 
     window.almaraAddDenom=function(type){const v=prompt(type==='coin'?'Masukkan nilai pecahan koin:':'Masukkan nilai pecahan uang kertas:');if(v===null)return;const n=num(String(v).replace(/,/g,''));if(n<=0)return alert('Pecahan harus lebih besar dari 0.');const arr=window.__almaraCurrencyDraft.denominations[type]||(window.__almaraCurrencyDraft.denominations[type]=[]);if(arr.includes(n))return alert('Pecahan tersebut sudah ada.');arr.push(n);arr.sort((a,b)=>b-a);renderDenoms();};
     window.almaraBulkAddDenom=function(type){const id=type==='banknote'?'cmBanknoteBulk':'cmCoinBulk';const input=document.getElementById(id);if(!input||!window.__almaraCurrencyDraft)return;const raw=String(input.value||'').trim();if(!raw)return;const values=raw.split(/[\\s,;|\\/]+/).map(v=>num(String(v).replace(/,/g,''))).filter(v=>v>0);const arr=window.__almaraCurrencyDraft.denominations[type]||(window.__almaraCurrencyDraft.denominations[type]=[]);let added=0;values.forEach(v=>{if(!arr.includes(v)){arr.push(v);added++;}});arr.sort((a,b)=>b-a);input.value='';renderDenoms();if(!added&&values.length)alert('Semua pecahan yang dimasukkan sudah ada.');};
@@ -361,10 +335,12 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
     }
 
     window.almaraSaveCurrencyMaster=async function(){
-        const code=String(document.getElementById('modalCurCode')?.value||'').trim().toUpperCase();
+        const enteredCode=String(document.getElementById('modalCurCode')?.value||'').trim().toUpperCase();
+        const variantLabel=String(document.getElementById('cmVariantLabel')?.value||'').trim();
         const currencies=typeof getCurrencies==='function'?getCurrencies():[];
-        const index=currencies.findIndex(c=>String(c.code||'').trim().toUpperCase()===code);
         const isEditMode=window.__almaraCurrencyMode==='edit';
+        const code=isEditMode?enteredCode:(variantLabel?enteredCode+' ('+variantLabel.toUpperCase()+')':enteredCode);
+        const index=currencies.findIndex(c=>String(c.code||'').trim().toUpperCase()===code);
 
         if(code&&index>=0&&!isEditMode){
             alert('Valuta '+code+' sudah terdaftar di Manajemen Kurs. Gunakan tombol Edit untuk mengubah data atau menambahkan pecahan.');
@@ -387,7 +363,10 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
             code,
             name,
             label:name,
-            ...(window.__almaraVariantDraft && ['kc','st'].includes(window.__almaraVariantDraft.variant_type) && !isEditMode ? window.__almaraVariantDraft : {}),
+            base_code:variantLabel ? (isEditMode ? (old.base_code||old.variant_of||String(old.code||'').substring(0,3)) : enteredCode) : (old.base_code||''),
+            variant_of:variantLabel ? (isEditMode ? (old.variant_of||old.base_code||String(old.code||'').substring(0,3)) : enteredCode) : '',
+            variant_label:variantLabel,
+            variant_type:variantLabel ? 'custom' : '',
             numeric_code:String(document.getElementById('modalCurNumeric')?.value||'').trim(),
             symbol:String(document.getElementById('modalCurSymbol')?.value||'').trim(),
             decimals:Math.max(0,Math.min(6,num(document.getElementById('modalCurDecimals')?.value,2))),
@@ -449,7 +428,7 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
                 try{ loadCurrencyTable(); }catch(refreshError){ console.warn('Refresh tabel valuta gagal:',refreshError); }
             }
 
-            alert('Valuta '+code+' berhasil disimpan.');
+            alert('Valuta '+(variantLabel ? (String(data.base_code||data.variant_of||code).substring(0,3)+' ('+variantLabel+')') : code)+' berhasil disimpan.');
         }catch(error){
             console.error('Master valuta gagal disimpan:',error);
             alert('Valuta gagal disimpan ke database: '+(error?.message||error));
