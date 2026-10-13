@@ -876,39 +876,6 @@
                         </div>
                     </div>
 
-                    <!-- Dashboard Analytics -->
-                    <div class="mc-dashboard-analytics-grid mt-4" id="mcDashboardAnalytics">
-                        <div class="panel mc-analytics-card">
-                            <div class="panel-header"><h3><i class="fa-solid fa-map-location-dot"></i> Wilayah Nasabah</h3><span class="mc-analytics-badge" id="dashRegionTotal">0 nasabah</span></div>
-                            <div class="mc-chart-wrap"><canvas id="dashRegionChart"></canvas></div>
-                        </div>
-                        <div class="panel mc-analytics-card">
-                            <div class="panel-header"><h3><i class="fa-solid fa-money-bill-transfer"></i> Transaksi Mata Uang</h3><span class="mc-analytics-badge" id="dashCurrencyTotal">Rp 0</span></div>
-                            <div class="mc-chart-wrap"><canvas id="dashCurrencyChart"></canvas></div>
-                        </div>
-                        <div class="panel mc-analytics-card">
-                            <div class="panel-header"><h3><i class="fa-solid fa-right-left"></i> Beli vs Jual</h3><span class="mc-analytics-badge" id="dashBuySellTotal">0 transaksi</span></div>
-                            <div class="mc-chart-wrap mc-chart-wrap-short"><canvas id="dashBuySellChart"></canvas></div>
-                        </div>
-                        <div class="panel mc-analytics-card mc-analytics-wide">
-                            <div class="panel-header"><h3><i class="fa-solid fa-chart-area"></i> Trend Nilai Transaksi</h3><span class="mc-analytics-badge" id="dashTrendTotal">Rp 0</span></div>
-                            <div class="mc-chart-wrap"><canvas id="dashTrendChart"></canvas></div>
-                        </div>
-                        <div class="panel mc-analytics-card">
-                            <div class="panel-header"><h3><i class="fa-solid fa-users"></i> Nasabah Aktif</h3><span class="mc-analytics-badge" id="dashCustomerTotal">0 aktif</span></div>
-                            <div class="mc-chart-wrap mc-chart-wrap-short"><canvas id="dashCustomerChart"></canvas></div>
-                        </div>
-                        <div class="panel mc-analytics-card">
-                            <div class="panel-header"><h3><i class="fa-solid fa-shield-halved"></i> Ringkasan Compliance</h3><span class="mc-analytics-badge">GoAML</span></div>
-                            <div class="mc-compliance-mini">
-                                <div><span>Transaksi diperiksa</span><strong id="dashComplianceTrx">0</strong></div>
-                                <div><span>Nasabah aktif</span><strong id="dashComplianceCustomer">0</strong></div>
-                                <div><span>Wilayah terdata</span><strong id="dashComplianceRegion">0</strong></div>
-                            </div>
-                            <small class="text-muted">Ringkasan analitik dashboard. Detail alert tetap di menu BI & Regulasi â†’ GoAML.</small>
-                        </div>
-                    </div>
-
                     <div class="dashboard-content dashboard-market-layout mt-4">
                         <!-- Chart -->
                         <div class="panel chart-panel">
@@ -943,6 +910,39 @@
                             <div class="stock-list" id="dashboardStockList">
                                 <!-- Stock items injected by JS -->
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Analytics -->
+                    <div class="mc-dashboard-analytics-grid mt-4" id="mcDashboardAnalytics">
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-map-location-dot"></i> Wilayah Nasabah</h3><span class="mc-analytics-badge" id="dashRegionTotal">0 nasabah</span></div>
+                            <div class="mc-chart-wrap"><canvas id="dashRegionChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-money-bill-transfer"></i> Transaksi Mata Uang</h3><span class="mc-analytics-badge" id="dashCurrencyTotal">Rp 0</span></div>
+                            <div class="mc-chart-wrap"><canvas id="dashCurrencyChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-right-left"></i> Beli vs Jual</h3><span class="mc-analytics-badge" id="dashBuySellTotal">0 transaksi</span></div>
+                            <div class="mc-chart-wrap mc-chart-wrap-short"><canvas id="dashBuySellChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card mc-analytics-wide">
+                            <div class="panel-header"><h3><i class="fa-solid fa-chart-area"></i> Trend Nilai Transaksi</h3><span class="mc-analytics-badge" id="dashTrendTotal">Rp 0</span></div>
+                            <div class="mc-chart-wrap"><canvas id="dashTrendChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-users"></i> Nasabah Aktif</h3><span class="mc-analytics-badge" id="dashCustomerTotal">0 aktif</span></div>
+                            <div class="mc-chart-wrap mc-chart-wrap-short"><canvas id="dashCustomerChart"></canvas></div>
+                        </div>
+                        <div class="panel mc-analytics-card">
+                            <div class="panel-header"><h3><i class="fa-solid fa-shield-halved"></i> Ringkasan Compliance</h3><span class="mc-analytics-badge">GoAML</span></div>
+                            <div class="mc-compliance-mini">
+                                <div><span>Transaksi diperiksa</span><strong id="dashComplianceTrx">0</strong></div>
+                                <div><span>Nasabah aktif</span><strong id="dashComplianceCustomer">0</strong></div>
+                                <div><span>Wilayah terdata</span><strong id="dashComplianceRegion">0</strong></div>
+                            </div>
+                            <small class="text-muted">Ringkasan analitik dashboard. Detail alert tetap di menu BI & Regulasi â†’ GoAML.</small>
                         </div>
                     </div>
 
