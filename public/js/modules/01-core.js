@@ -362,7 +362,14 @@ const DEFAULT_MASTER_CURRENCIES = [
     { code: 'RUB', country: 'Rusia', countryCode: 'RU', symbol: 'RUB' },
     { code: 'KWD', country: 'Kuwait', countryCode: 'KW', symbol: 'KWD' },
     { code: 'OMR', country: 'Oman', countryCode: 'OM', symbol: 'OMR' },
-    { code: 'JOD', country: 'Yordania', countryCode: 'JO', symbol: 'JOD' }
+    { code: 'JOD', country: 'Yordania', countryCode: 'JO', symbol: 'JOD' },
+    { code: 'USD 20', country: 'Amerika Serikat', countryCode: 'US', symbol: '$' },
+    { code: 'AFN', country: 'Afghanistan', countryCode: 'AF', symbol: 'AFN' },
+    { code: 'ALL', country: 'Albania', countryCode: 'AL', symbol: 'ALL' },
+    { code: 'AMD', country: 'Armenia', countryCode: 'AM', symbol: 'AMD' },
+    { code: 'ARS', country: 'Argentina', countryCode: 'AR', symbol: 'ARS' },
+    { code: 'AED (KC)', country: 'Uni Emirat Arab', countryCode: 'AE', symbol: 'AED' },
+    { code: 'CNY (KC)', country: 'China', countryCode: 'CN', symbol: 'CNY' }
 ];
 
 const DEFAULT_ROLE_PERMISSIONS = {

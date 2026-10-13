@@ -1,10 +1,10 @@
-/* 
+/*
     sync.js - Jembatan antara Frontend (localStorage) dengan Backend MySQL
     Fungsi ini akan otomatis dipanggil saat aplikasi dibuka untuk menyedot data dari MySQL
     dan menyimpannya jika ada perubahan.
 */
 
-function refreshActiveRealtimeViews() {
+function refreshActiveRealtimeViews(options = {}) {
     try {
         const isActive = (id) => {
             const el = document.getElementById(id);
@@ -14,7 +14,7 @@ function refreshActiveRealtimeViews() {
         if (isActive('dashboard-view') && typeof loadDashboard === 'function') loadDashboard();
         if (isActive('reports-view') && typeof loadReportsTable === 'function') loadReportsTable();
         if (isActive('harian-view') && typeof loadLaporanHarian === 'function') loadLaporanHarian();
-        if (isActive('currency-view') && typeof loadCurrencyTable === 'function') loadCurrencyTable();
+        if (!options.excludeCurrency && isActive('currency-view') && typeof loadCurrencyTable === 'function') loadCurrencyTable();
         if (isActive('customers-view') && typeof loadCustomersTable === 'function') loadCustomersTable();
         if (isActive('mutation-view') && typeof loadMutationsTable === 'function') loadMutationsTable();
         if (isActive('expense-view') && typeof loadExpensesTable === 'function') loadExpensesTable();
@@ -115,11 +115,46 @@ async function syncFromMySQL_Currencies(options = {}) {
                         }
                     }
 
+                    delete parsedRaw.raw_json;
+
+                    const localCurrency = localCurrencies.find(c =>
+                        String(c.code || '').trim().toUpperCase() ===
+                        String(dbCurrency.code || '').trim().toUpperCase()
+                    ) || {};
+
+                    const metadataKeys = [
+                        'base_buy',
+                        'base_sell',
+                        'margin_buy',
+                        'margin_sell',
+                        'alert',
+                        'numeric_code',
+                        'symbol',
+                        'decimals',
+                        'active',
+                        'denominations',
+                        'denomination_updated_at',
+                        'inputBy',
+                        'editBy'
+                    ];
+
+                    const mergedMetadata = {};
+                    for (const key of metadataKeys) {
+                        if (
+                            !Object.prototype.hasOwnProperty.call(parsedRaw, key) &&
+                            Object.prototype.hasOwnProperty.call(localCurrency, key)
+                        ) {
+                            mergedMetadata[key] = localCurrency[key];
+                        }
+                    }
+
                     return {
                         ...dbCurrency,
+                        ...localCurrency,
+                        ...mergedMetadata,
                         ...parsedRaw,
-                        code: dbCurrency.code || parsedRaw.code,
-                        label: dbCurrency.label ?? parsedRaw.label ?? '',
+                        code: dbCurrency.code || parsedRaw.code || localCurrency.code,
+                        label: dbCurrency.label ?? parsedRaw.label ?? localCurrency.label ?? '',
                         buy: parseFloat(dbCurrency.buy ?? parsedRaw.buy) || 0,
                         sell: parseFloat(dbCurrency.sell ?? parsedRaw.sell) || 0,
                         stock: parseFloat(dbCurrency.stock ?? parsedRaw.stock) || 0
@@ -213,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadCustomersTable();
         }
     });
-    
+
     // Menarik Universal Datastore (sisa semua modul)
     syncUniversalDatastore();
 });
@@ -331,6 +366,10 @@ async function syncUniversalDatastore(options = {}) {
                     // lokal pengguna, bukan data aplikasi bersama.
                     if (String(key).startsWith('mc_seen_transaction_keys_v1_')) continue;
                     if (key === 'mc_pos_draft_sessions_v1' || key === 'mc_pos_active_draft_id_v1') continue;
+                    if (key === 'mc_currencies') {
+                        console.log('[Sync-Skip] mc_currencies dikelola oleh endpoint api/currencies.');
+                        continue;
+                    }
                     if (key === 'mc_customers') {
                         console.log('[Sync-Skip] mc_customers dikelola oleh tabel mc_customers, bukan Universal Datastore.');
                         continue;
@@ -348,7 +387,7 @@ async function syncUniversalDatastore(options = {}) {
                     if (localRaw) {
                         try {
                             const localParsed = JSON.parse(localRaw);
-                            
+
                             // PROTEKSI KHUSUS PROFIL: Jangan timpa data lokal jika data server kosong/invalid
                             if (key === 'mc_profile') {
                                 if (!value || !value.name || value.name === 'MC-ALMARA' || value.name === '') {
@@ -356,7 +395,7 @@ async function syncUniversalDatastore(options = {}) {
                                     continue;
                                 }
                             }
-                            
+
                             // PROTEKSI LOGIN: Jangan biarkan datastore MySQL memaksa logout user yang sedang aktif
                             // atau menghancurkan daftar mc_users (biarkan app.js menanganinya atau timpa dengan data lokal)
                             if (key === 'mc_currentUser' || key === 'mc_users') {
@@ -366,14 +405,14 @@ async function syncUniversalDatastore(options = {}) {
 
                             if (preferLocalKeys.includes(key)) {
                                 if (JSON.stringify(localParsed) !== JSON.stringify(value)) {
-                                    const isLocalEmpty = 
+                                    const isLocalEmpty =
                                         (Array.isArray(localParsed) && localParsed.length === 0) ||
                                         (key === 'mc_old_money_cash' && parseFloat(localParsed) === 0) ||
                                         (key === 'mc_initial_cash' && parseFloat(localParsed) === 0) ||
                                         (key === 'mc_initial_bank_bca' && parseFloat(localParsed) === 0) ||
                                         (key === 'mc_initial_bank_mandiri' && parseFloat(localParsed) === 0);
-                                    
-                                    const isServerNotEmpty = 
+
+                                    const isServerNotEmpty =
                                         (Array.isArray(value) && value.length > 0) ||
                                         (key === 'mc_old_money_cash' && parseFloat(value) > 0) ||
                                         (key === 'mc_initial_cash' && parseFloat(value) > 0) ||
@@ -442,7 +481,7 @@ async function syncUniversalDatastore(options = {}) {
                         if (localRaw) {
                             try {
                                 const localParsed = JSON.parse(localRaw);
-                                const isLocalEmpty = 
+                                const isLocalEmpty =
                                     localParsed === null ||
                                     (Array.isArray(localParsed) && localParsed.length === 0) ||
                                     (typeof localParsed === 'object' && Object.keys(localParsed).length === 0) ||
@@ -458,9 +497,9 @@ async function syncUniversalDatastore(options = {}) {
                 }
 
                 if (!silent) console.log("SUKSES: Universal Datastore tersinkronisasi!");
-                
+
                 // Panggil render/refresh fungsi yang mungkin membutuhkan data baru (Refresh UI)
-                if (hasChanges && refreshUi) refreshActiveRealtimeViews();
+                if (hasChanges && refreshUi) refreshActiveRealtimeViews({ excludeCurrency: true });
                 else if(typeof window.updateHeaderNotificationBadge === 'function') window.updateHeaderNotificationBadge();
             }
         }
@@ -1338,7 +1377,7 @@ async function syncFromMySQL_Transactions(options = {}) {
         const response = await fetch(`api/transactions?sync_ts=${Date.now()}`, { cache: 'no-store' });
         if (response.ok) {
             const data = await response.json();
-            
+
             // PUSH DATA LAMA LOKAL KE MYSQL
             const localTrx = JSON.parse(localStorage.getItem('mc_transactions')) || [];
             const mysqlTrxKeys = data ? data.map(dbTrx => dbTrx.itemId || dbTrx.id) : [];
@@ -1401,7 +1440,7 @@ async function syncFromMySQL_Transactions(options = {}) {
                             nominal: parseFloat(dbTrx.nominal),
                             rate: parseFloat(dbTrx.rate),
                             total: parseFloat(dbTrx.total),
-                            customerId: dbTrx.id_cif, 
+                            customerId: dbTrx.id_cif,
                             customerName: dbTrx.customerName,
                             kasir: dbTrx.kasir,
                             paymentMethod: dbTrx.paymentMethod || 'TUNAI',
@@ -1467,7 +1506,7 @@ async function syncFromMySQL_Transactions(options = {}) {
                 }
             }
 
-            if (refreshUi && localTrx.length === 0) refreshActiveRealtimeViews();
+            if (refreshUi && localTrx.length === 0) refreshActiveRealtimeViews({ excludeCurrency: true });
         }
     } catch (error) {
         if (!silent) console.error("Gagal menarik Transaksi dari MySQL:", error);
@@ -1590,7 +1629,7 @@ window.deleteFromMySQL_Transaction = deleteFromMySQL_Transaction;
 window.pushTransactionsToMySQL = async function(transactions) {
     const rows = (Array.isArray(transactions) ? transactions : [transactions]).filter(Boolean);
     if (rows.length === 0) return [];
-    
+
     try {
         const response = await fetch('api/transactions/bulk', {
             method: 'POST',
@@ -1607,7 +1646,7 @@ window.pushTransactionsToMySQL = async function(transactions) {
             result = { status: 'error', message: rawResponse || `Respons server tidak valid (${response.status})` };
         }
         console.log("Sinkronisasi Bulk Transaksi MySQL:", result.message);
-        
+
         const okStatus = response.ok && result.status !== 'error';
         return rows.map(() => ({
             ok: okStatus,
@@ -1644,7 +1683,7 @@ window.manualSyncAll = async function() {
         await syncFromMySQL_Customers();
         await syncFromMySQL_Transactions();
         await syncUniversalDatastore();
-        
+
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'success',
@@ -1656,12 +1695,12 @@ window.manualSyncAll = async function() {
         } else {
             alert("Sinkronisasi Berhasil!");
         }
-        
+
         // Refresh tabel nasabah jika sedang dibuka
         if (typeof loadCustomersTable === 'function') loadCustomersTable();
         // Refresh tabel transaksi jika sedang dibuka
         if (typeof renderTrxHistory === 'function') renderTrxHistory();
-        
+
     } catch (error) {
         console.error("Sinkronisasi Manual Gagal:", error);
         if (typeof Swal !== 'undefined') {

@@ -178,7 +178,7 @@
                             <div class="almara-cm-field"><label>Selisih Beli</label><input type="number" id="modalMarginBuy" oninput="calculateCurrencyHasil()"><small>Hasil Beli: <b id="modalHasilBuy">0</b></small></div>
                             <div class="almara-cm-field"><label>Selisih Jual</label><input type="number" id="modalMarginSell" oninput="calculateCurrencyHasil()"><small>Hasil Jual: <b id="modalHasilSell">0</b></small></div>
                         </div></div></div>
-                        <div class="almara-cm-card almara-cm-denom-card" style="margin-top:16px"><div class="almara-cm-card-head"><i class="fa-solid fa-coins"></i> Denominasi (Pecahan Uang) — Kelola melalui Edit</div>
+                        <div class="almara-cm-card almara-cm-denom-card" style="margin-top:16px"><div class="almara-cm-card-head"><i class="fa-solid fa-coins"></i> Denominasi (Pecahan Uang) â€” Kelola melalui Edit</div>
                             <div class="almara-cm-tabs"><button type="button" class="almara-cm-tab active" data-tab="banknote">Uang Kertas (Banknote)</button><button type="button" class="almara-cm-tab" data-tab="coin">Koin (Coin)</button></div>
                             <div class="almara-cm-denom-layout">
                                 <div class="almara-cm-denom-panel">
@@ -243,7 +243,7 @@
         c=c||{}; const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';}; set('modalCurCode',c.code||''); set('modalCurName',c.name||c.label||''); set('modalCurNumeric',c.numeric_code||''); set('modalCurSymbol',c.symbol||''); set('modalCurDecimals',c.decimals??2); set('modalCurBuy',c.base_buy??c.buy??''); set('modalCurSell',c.base_sell??c.sell??''); set('modalCurStock',c.stock??''); set('modalCurAlert',c.alert??''); set('modalMarginBuy',c.margin_buy??''); set('modalMarginSell',c.margin_sell??''); const active=document.getElementById('modalCurActive');if(active)active.checked=c.active!==false; window.__almaraCurrencyDraft={denominations:normalizeDenoms(c)}; renderDenoms(); ['modalCurCode','modalCurName'].forEach(id=>document.getElementById(id)?.addEventListener('input',renderDenoms)); if(typeof window.calculateCurrencyHasil==='function')window.calculateCurrencyHasil();
     }
 
-    window.handleCurrencyCodeInput=function(){const input=document.getElementById('modalCurCode');if(!input||input.disabled)return;const code=String(input.value||'').trim().toUpperCase();if(!code)return;const currencies=typeof getCurrencies==='function'?getCurrencies():[];const exists=currencies.some(c=>String(c.code||'').trim().toUpperCase()===code);if(exists){alert('Valuta '+code+' sudah terdaftar di Manajemen Kurs. Gunakan tombol Edit untuk mengubah data atau menambahkan pecahan.');input.value='';input.focus();}}
+    window.handleCurrencyCodeInput=function(){const input=document.getElementById('modalCurCode');if(!input||input.disabled)return;const code=String(input.value||'').trim();if(!code)return;const currencies=typeof getCurrencies==='function'?getCurrencies():[];const currency=currencies.find(c=>String(c.code||'').trim().toUpperCase()===code.toUpperCase());if(currency){const nameInput=document.getElementById('modalCurName');if(nameInput&&!nameInput.value.trim())nameInput.value=currency.name||currency.label||'';}}
 
 function ensureVariantControls(modal,currencies,isEdit,c) {
         const grid=modal.querySelector('.almara-cm-card .almara-cm-card-body .almara-cm-grid');
@@ -339,8 +339,8 @@ function ensureVariantControls(modal,currencies,isEdit,c) {
         const variantLabel=String(document.getElementById('cmVariantLabel')?.value||'').trim();
         const currencies=typeof getCurrencies==='function'?getCurrencies():[];
         const isEditMode=window.__almaraCurrencyMode==='edit';
-        const code=isEditMode?enteredCode:(variantLabel?enteredCode+' ('+variantLabel.toUpperCase()+')':enteredCode);
-        const index=currencies.findIndex(c=>String(c.code||'').trim().toUpperCase()===code);
+        const code=isEditMode?enteredCode:(variantLabel?enteredCode+' ('+variantLabel+')':enteredCode);
+        const index=currencies.findIndex(c=>String(c.code||'').trim().toUpperCase()===code.toUpperCase());
 
         if(code&&index>=0&&!isEditMode){
             alert('Valuta '+code+' sudah terdaftar di Manajemen Kurs. Gunakan tombol Edit untuk mengubah data atau menambahkan pecahan.');

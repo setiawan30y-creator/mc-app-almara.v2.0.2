@@ -125,19 +125,25 @@
             position: relative;
         }
 
-        /* High Contrast Override */
-        body.high-contrast {
-            background: #000000 !important;
-            --bg-color: #000000;
-            --card-bg: #000000;
-            --border-color: #ffffff;
-            --text-primary: #ffffff;
-            --text-secondary: #ffffff;
-            --buy-color: #22c55e;
-            --sell-color: #ef4444;
-            --gold-accent: #fbbf24;
-            --gold-light: #ffffff;
+
+/* High Contrast Override: LIGHT */
+body.high-contrast,
+
+        body.theme-highcontrast {
+            background: #f1f5f9 !important;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --border-color: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --buy-color: #15803d;
+            --sell-color: #b91c1c;
+            --gold-accent: #a16207;
+            --gold-light: #854d0e;
+            color-scheme: light;
         }
+
+
 
         /* THEMES CONFIGURATION */
         body.theme-slate {
@@ -1448,6 +1454,116 @@
         body.board-tv-mode .footer-widget-box {
             font-size: clamp(0.6rem, 0.78vw, 0.76rem);
         }
+
+
+/* ==================================================
+   ALMARA BOARD - LIGHT HIGH CONTRAST OVERRIDES
+   Hanya aktif saat tema High Contrast dipilih
+   ================================================== */
+
+body.theme-highcontrast,
+body.high-contrast {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    color-scheme: light;
+}
+
+body.theme-highcontrast header,
+body.high-contrast header {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-highcontrast .rate-row-item,
+body.high-contrast .rate-row-item {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+}
+
+body.theme-highcontrast .rates-table-header .col-currency,
+body.theme-highcontrast .rates-table-header .col-trend,
+body.high-contrast .rates-table-header .col-currency,
+body.high-contrast .rates-table-header .col-trend {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-highcontrast .rates-table-header .col-buy,
+body.high-contrast .rates-table-header .col-buy {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+}
+
+body.theme-highcontrast .rates-table-header .col-sell,
+body.high-contrast .rates-table-header .col-sell {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+}
+
+body.theme-highcontrast .col-cell-currency,
+body.high-contrast .col-cell-currency {
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-highcontrast .modal-box,
+body.high-contrast .modal-box {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-highcontrast .modal-box input,
+body.theme-highcontrast .modal-box select,
+body.theme-highcontrast .modal-box textarea,
+body.high-contrast .modal-box input,
+body.high-contrast .modal-box select,
+body.high-contrast .modal-box textarea {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+
+body.theme-highcontrast .footer-widget-box,
+body.high-contrast .footer-widget-box {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.theme-highcontrast .rate-row-item:hover,
+body.high-contrast .rate-row-item:hover {
+    background: #f1f5f9 !important;
+}
+
+body.theme-highcontrast .rates-table-header div,
+body.high-contrast .rates-table-header div {
+    border-color: #cbd5e1 !important;
+}
+
+
+/* Kontras nama perusahaan pada tema terang */
+body.theme-highcontrast .logo-text h1,
+body.high-contrast .logo-text h1 {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+body.theme-highcontrast .logo-text h1 span.gold,
+body.high-contrast .logo-text h1 span.gold {
+    color: #b77900 !important;
+    text-shadow: none !important;
+}
+
+body.theme-highcontrast .logo-text p.subtitle,
+body.high-contrast .logo-text p.subtitle {
+    color: #92400e !important;
+    text-shadow: none !important;
+}
+
     </style>
 </head>
 
@@ -2250,7 +2366,7 @@
                             const code = item.code || parsedRaw.code;
                             const buy = parseFloat(item.buy) || 0;
                             const sell = parseFloat(item.sell) || 0;
-                            const trend = parsedRaw.trend || 'flat';
+                            const trend = item.trend || parsedRaw.trend || 'flat';
                             
                             currentRatesMap[code] = { buy, sell };
                             return { ...item, ...parsedRaw, code, buy, sell, trend };
