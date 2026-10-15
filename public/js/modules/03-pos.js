@@ -643,9 +643,11 @@ function loadPosForm() {
                 const mc = masterCurrencies.find(m => m && m.code === c.code) || masterCurrencies.find(m => m && m.code === baseCode) || { flag: '', country: '' };
                 const codeUpper = String(c.code || '').trim().toUpperCase();
                 const variantType = String(c.variant_type || (/\(KC\)$/i.test(codeUpper) ? 'kc' : (/\(ST\)$/i.test(codeUpper) ? 'st' : ''))).toLowerCase();
-                const variantLabel = c.variant_label || (variantType === 'kc' ? 'Pecahan kecil' : (variantType === 'st' ? 'Pecahan satu' : ''));
+                const variantLabel = String(c.variant_label || (variantType === 'kc' ? 'kc' : (variantType === 'st' ? 'st' : ''))).trim();
+                const variantBaseCode = String(c.base_code || c.variant_of || c.code || '').trim().toUpperCase().substring(0, 3);
+                const displayCode = variantLabel ? variantBaseCode + ' (' + variantLabel + ')' : c.code;
                 const stockVal = parseFloat(c.stock) || 0;
-                html += `<option value="${c.code}">${mc.flag || ''} ${c.code}${variantLabel ? ' — ' + variantLabel : ''} ${mc.country ? '- ' + mc.country : ''} (Stok: ${stockVal})</option>`;
+                html += `<option value="${c.code}">${mc.flag || ''} ${displayCode}${mc.country ? ' - ' + mc.country : ''} (Stok: ${stockVal})</option>`;
             });
         } catch (loopError) {
             console.error("Error saat merender opsi select currencies:", loopError);

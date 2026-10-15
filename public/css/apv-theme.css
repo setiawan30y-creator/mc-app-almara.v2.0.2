@@ -1243,3 +1243,12 @@ body.apv-theme #dashboard-view .stat-icon.text-red {
   background: color-mix(in srgb, var(--accent-red) 12%, var(--panel-bg)) !important;
   color: var(--accent-red) !important;
 }
+
+/* Dashboard: samakan ukuran tiga judul panel */
+body.apv-theme #dashboard-view .dashboard-market-layout .chart-panel-header h3,
+body.apv-theme #dashboard-view .dashboard-market-layout .stock-panel > .panel-header h3,
+body.apv-theme #dashboard-view .panel.mt-4 > .flex-between h3 {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+}

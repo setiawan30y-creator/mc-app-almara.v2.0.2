@@ -98,6 +98,14 @@ function loadCurrencyTable() {
     const masterCurrencies = getMasterCurrencies();
     const tbody = document.getElementById('currenciesTableBody');
     const currentUserRole = getCurrentUser() ? getCurrentUser().role : 'kasir';
+    const profile = typeof getProfile === 'function' ? getProfile() : {};
+    const companyPrefix = String(profile.initial || 'APV').trim().toUpperCase() || 'APV';
+
+    const buyHeader = document.getElementById('currencyAlmaraBuyHeader');
+    const sellHeader = document.getElementById('currencyAlmaraSellHeader');
+    if (buyHeader) buyHeader.textContent = 'Kurs ' + companyPrefix + ' Beli';
+    if (sellHeader) sellHeader.textContent = 'Kurs ' + companyPrefix + ' Jual';
+
     tbody.innerHTML = '';
 
     currencies.forEach(c => {
@@ -108,14 +116,20 @@ function loadCurrencyTable() {
         const flagUrl = countryCode ? `https://flagcdn.com/w80/${countryCode}.png` : '';
         const tr = document.createElement('tr');
         const isAlert = (c.stock || 0) <= (c.alert || 0);
-        const variantType = String(c.variant_type || (/\(KC\)$/i.test(currencyCode) ? 'kc' : (/\(ST\)$/i.test(currencyCode) ? 'st' : ''))).toLowerCase();
-        const codeNote = variantType === 'kc' ? `Varian ${baseCurrencyCode} — Pecahan kecil` : (variantType === 'st' ? `Varian ${baseCurrencyCode} — Pecahan satu` : (currencyCode.length > 3 && mc.code === baseCurrencyCode ? `Varian ${baseCurrencyCode}` : (mc.country || 'Unknown')));
-        
-        const trendIcon = c.trend === 'up' 
-            ? `<span style="color: #10B981; font-size: 1.2rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; width: 100%;">▲</span>` 
-            : (c.trend === 'down' 
-                ? `<span style="color: #ef4444; font-size: 1.2rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; width: 100%;">▼</span>` 
-                : `<span style="color: #64748b; font-size: 1rem; opacity: 0.6; display: inline-flex; align-items: center; justify-content: center; width: 100%;">─</span>`);
+        const variantType = String(c.variant_type || (currencyCode.endsWith('(KC)') ? 'kc' : (currencyCode.endsWith('(ST)') ? 'st' : ''))).toLowerCase();
+        const variantLabel = String(c.variant_label || (variantType === 'kc' ? 'kc' : (variantType === 'st' ? 'st' : ''))).trim();
+        const displayCurrencyCode = variantLabel ? baseCurrencyCode + ' (' + variantLabel + ')' : (c.code || currencyCode);
+        const codeNote = variantLabel ? 'Varian ' + baseCurrencyCode + ' â€” ' + variantLabel : (currencyCode.length > 3 && mc.code === baseCurrencyCode ? 'Varian ' + baseCurrencyCode : (mc.country || 'Unknown'));
+        const baseBuyForAlmara = getCurrencyBaseRate(c, 'buy');
+        const baseSellForAlmara = getCurrencyBaseRate(c, 'sell');
+        const finalBuyForAlmara = baseBuyForAlmara + (parseFloat(c.margin_buy) || 0);
+        const finalSellForAlmara = baseSellForAlmara + (parseFloat(c.margin_sell) || 0);
+
+        const trendIcon = c.trend === 'up'
+            ? `<span style="color: #10B981; font-size: 1.2rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; width: 100%;">&#9650;</span>`
+            : (c.trend === 'down'
+                ? `<span style="color: #ef4444; font-size: 1.2rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; width: 100%;">&#9660;</span>`
+                : `<span style="color: #64748b; font-size: 1rem; opacity: 0.6; display: inline-flex; align-items: center; justify-content: center; width: 100%;">&#8212;</span>`);
 
         tr.innerHTML = `
             <td>
@@ -125,7 +139,7 @@ function loadCurrencyTable() {
                         <span class="stock-flag-fallback">${(mc.countryCode || currencyCode).slice(0, 2).toUpperCase()}</span>
                     </span>
                     <div>
-                        <strong class="currency-table-code">${c.code || ''}</strong><br>
+                        <strong class="currency-table-code">${displayCurrencyCode}</strong><br>
                         <small class="currency-table-country">${codeNote}</small>
                     </div>
                 </div>
@@ -133,8 +147,10 @@ function loadCurrencyTable() {
             <td style="text-align: center; vertical-align: middle;">
                 ${trendIcon}
             </td>
-            <td><strong>${formatRate(c.buy)}</strong></td>
-            <td><strong>${formatRate(c.sell)}</strong></td>
+            <td><strong>${formatRate(baseBuyForAlmara)}</strong></td>
+            <td><strong>${formatRate(baseSellForAlmara)}</strong></td>
+            <td style="color:#059669;"><strong>${formatRate(finalBuyForAlmara)}</strong></td>
+            <td style="color:#2563eb;"><strong>${formatRate(finalSellForAlmara)}</strong></td>
             <td class="${isAlert ? 'text-red' : ''}"><strong>${(c.stock || 0).toLocaleString()}</strong></td>
             <td>${(c.alert || 0).toLocaleString()}</td>
             <td>
@@ -167,7 +183,7 @@ function loadCurrencyTable() {
 function openCurrencyModal(code = null) {
     document.getElementById('currencyModal').classList.add('show');
     const inputCode = document.getElementById('modalCurCode');
-    
+
     if(code) {
         const c = getCurrencies().find(x => x.code === code);
         inputCode.value = c.code;
@@ -220,7 +236,7 @@ window.calculateCurrencyHasil = function() {
     const finalBuy = baseBuy + mb;
     const elBuy = document.getElementById('modalHasilBuy');
     if (elBuy) elBuy.innerText = finalBuy.toLocaleString('id-ID');
-    
+
     const baseSell = parseFloat(document.getElementById('modalCurSell').value) || 0;
     const ms = parseFloat(document.getElementById('modalMarginSell').value) || 0;
     const finalSell = baseSell + ms;
@@ -250,7 +266,7 @@ function saveCurrency() {
         alert("Kode, Base Rate Beli, dan Jual harus diisi!");
         return;
     }
-    
+
     const buy = baseBuy + mb;
     const sell = baseSell + ms;
 
@@ -277,15 +293,15 @@ function saveCurrency() {
 window.deleteCurrency = function(code) {
     const currencies = getCurrencies();
     const curInfo = currencies.find(c => c.code === code);
-    
+
     let confirmMsg = `Apakah Anda yakin ingin menghapus valuta ${code} dari daftar kurs aktif?`;
     let isWarning = false;
-    
+
     if(curInfo && curInfo.stock > 0) {
         confirmMsg = `PERHATIAN: Valuta ${code} masih memiliki STOK TERSISA (${curInfo.stock.toLocaleString()}).\nSangat disarankan untuk tidak menghapusnya agar neraca tidak selisih.\n\nTetap paksa hapus?`;
         isWarning = true;
     }
-    
+
     // Gunakan SweetAlert (Swal) asinkron untuk menghindari masalah webview memblokir confirm()
     if (typeof Swal !== 'undefined') {
         Swal.fire({
@@ -469,7 +485,7 @@ async function loadReportsTable() {
     const endEl = document.getElementById('reportEndDate');
     const startStr = startEl ? startEl.value : '';
     const endStr = endEl ? endEl.value : '';
-    
+
     // Setup Valuta Dropdown dynamically
     const valutaS = document.getElementById('filterValuta');
     if (valutaS && valutaS.options.length <= 1) {
@@ -480,26 +496,26 @@ async function loadReportsTable() {
             valutaS.innerHTML = html;
         } catch(e) { console.error("Filter valuta setup failed:", e); }
     }
-    
+
     const filterInvoice = document.getElementById('filterInvoice') ? document.getElementById('filterInvoice').value.toLowerCase().trim() : '';
     const filterNama    = document.getElementById('filterNama') ? document.getElementById('filterNama').value.toLowerCase().trim() : '';
     const filterHp      = document.getElementById('filterHp') ? document.getElementById('filterHp').value.toLowerCase().trim() : '';
     const filterValuta  = document.getElementById('filterValuta') ? document.getElementById('filterValuta').value : '';
     const filterTipe    = document.getElementById('filterTipe') ? document.getElementById('filterTipe').value : '';
-    
+
     let filteredTrxs = trxs;
     const allCustomers = getCustomers();
 
     // Optimasi: Buat Map (Indeks) nasabah agar pencarian menjadi O(1) bukannya O(M) berkali-kali
     const custMap = buildCustomerLookup(allCustomers);
-    
+
     if(startStr && endStr) {
         filteredTrxs = filteredTrxs.filter(t => {
             const date = t.timestamp.split('T')[0];
             return date >= startStr && date <= endStr;
         });
     }
-    
+
     if(filterInvoice) {
         filteredTrxs = filteredTrxs.filter(t => t.id.toLowerCase().includes(filterInvoice));
     }
@@ -507,17 +523,17 @@ async function loadReportsTable() {
         filteredTrxs = filteredTrxs.filter(t => {
             const cObj = findReportCustomer(t, custMap);
             if(!cObj) return false;
-            
+
             let matchNama = true;
             let matchHp = true;
-            
+
             if(filterNama) {
                 matchNama = cObj.nama && cObj.nama.toLowerCase().includes(filterNama);
             }
             if(filterHp) {
                 matchHp = cObj.no_hp && cObj.no_hp.toLowerCase().includes(filterHp);
             }
-            
+
             return matchNama && matchHp;
         });
     }
@@ -532,7 +548,7 @@ async function loadReportsTable() {
     const currentUserRole = getCurrentUser() ? getCurrentUser().role : 'kasir';
     const sortedTrxs = sortReportTransactions(filteredTrxs);
     updateReportLedgerSummary(sortedTrxs);
-    
+
     tbody.innerHTML = sortedTrxs.map((t, index) => {
         let waBtn = '';
         const customer = findReportCustomer(t, custMap);
@@ -598,18 +614,18 @@ window.printBulkReceipts = function() {
     const tbody = document.getElementById('reportTableBody');
     const btnElements = tbody.querySelectorAll('button[onclick^="window.reprintReceipt"]');
     if(btnElements.length === 0) return alert("Tidak ada transaksi untuk dicetak pada tampilan tabel saat ini!");
-    
+
     let receiptIds = new Set();
     btnElements.forEach(btn => {
         const match = btn.getAttribute('onclick').match(/'([^']+)'/);
         if(match) receiptIds.add(match[1]);
     });
-    
+
     const uniqueIds = Array.from(receiptIds);
     if(!confirm(`Apakah Anda yakin ingin mencetak masal ${uniqueIds.length} struk invoice?`)) return;
-    
+
     const formatRateNota = (angka) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 4 }).format(angka);
-    
+
     let fullHtml = `<html><head><title>Cetak Masal</title><style>
         @page { size: 10cm 14cm; margin: 0; }
         html, body { margin: 0; padding: 0; min-height: 100%; }
@@ -621,33 +637,33 @@ window.printBulkReceipts = function() {
         small { font-size: 0.8em; color: #000; }
         @media print { .page-break { page-break-after: always; } }
     </style></head><body>`;
-    
+
     const trxs = getTransactions();
     const profile = getProfile();
     const customers = getCustomers();
-    
+
     uniqueIds.forEach((receiptId, idx) => {
         const invoiceTrxs = trxs.filter(t => t.id === receiptId);
         if(invoiceTrxs.length === 0) return;
-        
+
         const firstTrx = invoiceTrxs[0];
         const cust = customers.find(c => c.id_nasabah === firstTrx.customerId) || {};
         const custName = cust.nama || 'Pengunjung Biasa';
         let custPhone = cust.no_hp || '-';
         if(custPhone !== '-') custPhone = custPhone.length > 3 ? custPhone.slice(0, -3) + '***' : '***';
         const custCitizenship = cust.kewarganegaraan || '-';
-        
+
         let recIdToUse = firstTrx.receiverId || firstTrx.customerId;
         const rec = recIdToUse === firstTrx.customerId ? cust : (customers.find(c => c.id_nasabah === recIdToUse) || {});
         const recName = recIdToUse === firstTrx.customerId ? custName : (rec.nama || 'Pengunjung Biasa');
-        
+
         let grandTotal = 0;
         let itemsHtml = '';
-        
+
         const beliTrxs = invoiceTrxs.filter(i => i.tipe === 'BELI');
         const jualTrxs = invoiceTrxs.filter(i => i.tipe === 'JUAL');
         const isMixed = beliTrxs.length > 0 && jualTrxs.length > 0;
-        
+
         if (beliTrxs.length > 0) {
             if (isMixed) itemsHtml += '<div style="font-weight: bold; margin-bottom: 2px; font-size:13px;">BELI</div>';
             itemsHtml += `
@@ -666,11 +682,11 @@ window.printBulkReceipts = function() {
                 `;
             });
         }
-        
+
         if (isMixed) {
             itemsHtml += '<div class="divider" style="border-bottom: 1px dashed #000; margin: 4px 0;"></div>';
         }
-        
+
         if (jualTrxs.length > 0) {
             if (isMixed) itemsHtml += '<div style="font-weight: bold; margin-bottom: 2px; font-size:13px;">JUAL</div>';
             itemsHtml += `
@@ -689,7 +705,7 @@ window.printBulkReceipts = function() {
                 `;
             });
         }
-        
+
         let payCash = grandTotal;
         let payTransfer = 0;
         if(firstTrx.paymentMethod === 'TRANSFER') {
@@ -704,7 +720,7 @@ window.printBulkReceipts = function() {
                 payCash = grandTotal - payTransfer;
             }
         }
-        
+
         let labelInvoice = 'No. Invoice';
         if (beliTrxs.length > 0 && jualTrxs.length === 0) labelInvoice = 'Invoice Pembelian';
         else if (jualTrxs.length > 0 && beliTrxs.length === 0) labelInvoice = 'Invoice Penjualan';
@@ -714,7 +730,7 @@ window.printBulkReceipts = function() {
         const phone = profile.phone || '';
         let contactLine = `<span>Telp/WA: ${phone || '-'}</span> | <span>Tgl: ${dateStr}</span>`;
         const addressToShow = profile.address || '';
-        
+
         fullHtml += `
             <div style="margin-bottom: 2rem;">
             <h2 class="center" style="margin-top: 5px; margin-bottom: 0px; font-size: 15px;">${profile.name || 'MC-ALMARA'}</h2>
@@ -759,14 +775,14 @@ window.printBulkReceipts = function() {
             <div class="center" style="margin-top:10px; font-weight: bold !important;">${profile.footer || ''}</div>
             </div>
         `;
-        
+
         if (idx < uniqueIds.length - 1) {
             fullHtml += `<div class="page-break"></div>`;
         }
     });
-    
+
     fullHtml += `</body></html>`;
-    
+
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     printWindow.document.write(fullHtml);
     printWindow.document.close();
@@ -777,7 +793,7 @@ window.reprintReceipt = function(receiptId) {
     const trxs = getTransactions();
     const invoiceTrxs = trxs.filter(t => t.id === receiptId);
     if(invoiceTrxs.length === 0) return alert("Transaksi tidak ditemukan!");
-    
+
     const cart = invoiceTrxs.map(t => ({
         id: t.itemId,
         type: t.tipe,
@@ -786,13 +802,13 @@ window.reprintReceipt = function(receiptId) {
         rate: parseFloat(t.rate),
         totalIdr: parseFloat(t.total)
     }));
-    
+
     let grandTotal = 0;
     cart.forEach(item => {
         let sign = item.type === 'JUAL' ? 1 : -1;
         grandTotal += (item.totalIdr * sign);
     });
-    
+
     const firstTrx = invoiceTrxs[0];
     const summary = {
         receiptId: receiptId,
@@ -805,7 +821,7 @@ window.reprintReceipt = function(receiptId) {
         timestamp: firstTrx.timestamp,
         kasir: firstTrx.kasir
     };
-    
+
     if(firstTrx.paymentMethod === 'TRANSFER') {
         summary.payCash = 0;
         summary.payTransfer = grandTotal;
@@ -818,7 +834,7 @@ window.reprintReceipt = function(receiptId) {
             summary.payCash = grandTotal - summary.payTransfer;
         }
     }
-    
+
     printInvoice(cart, summary);
 }
 
@@ -846,7 +862,7 @@ window.voidTransaction = function(id) {
         const { store: almaraStore, utils: almaraUtils, auth: almaraAuth } = window.AlmaraApp || {};
         let trxs = getTransactions();
         let trxGroup = trxs.filter(t => t.id === id);
-        
+
         if (trxGroup.length === 0) {
             try {
                 if (typeof getServerTransactionsLikeRwt === 'function') {
@@ -857,18 +873,18 @@ window.voidTransaction = function(id) {
                 console.error("Failed to load audit transactions fallback for void:", e);
             }
         }
-        
+
         if(trxGroup.length === 0) {
             alert("Data transaksi tidak ditemukan!");
             return false;
         }
-        
+
         let currencies = getCurrencies();
         let kasTunai = getCash();
         let bankBCA = getBankBCA();
         let bankMandiri = getBankMandiri();
         let mutations = getMutations();
-        
+
         // Reverse stock logic
         let grandTotal = 0;
         trxGroup.forEach(t => {
@@ -883,11 +899,11 @@ window.voidTransaction = function(id) {
             let sign = t.tipe === 'JUAL' ? 1 : -1;
             grandTotal += (t.total * sign);
         });
-        
+
         // Reverse cashier/bank balances logic
         const paymentMethod = trxGroup[0].paymentMethod || 'CASH';
         const bankTgt = trxGroup[0].bank || 'BCA';
-        
+
         let oldPayCash = 0;
         let oldPayTransfer = 0;
         if (paymentMethod === 'CASH') {
@@ -906,33 +922,33 @@ window.voidTransaction = function(id) {
             oldPayTransfer = oldTransferAmt * oldSign;
             oldPayCash = (Math.abs(grandTotal) - oldTransferAmt) * oldSign;
         }
-        
+
         kasTunai -= oldPayCash;
         if (bankTgt === 'BCA') {
             bankBCA -= oldPayTransfer;
         } else {
             bankMandiri -= oldPayTransfer;
         }
-        
+
         // Apply restitution
         saveCurrencies(currencies);
         saveCash(kasTunai);
         saveBankBCA(bankBCA);
         saveBankMandiri(bankMandiri);
-        
+
         // Filter out the voided ID
         const newTrxs = trxs.filter(t => t.id !== id);
         saveTransactions(newTrxs);
-        
+
         // Filter out associated bank mutation
         const filteredMut = mutations.filter(m => !m.keterangan || (m.keterangan && !m.keterangan.includes(id)));
         saveMutations(filteredMut);
-        
+
         // Delete from MySQL database
         if (typeof window.deleteFromMySQL_Transaction === 'function') {
             await window.deleteFromMySQL_Transaction(id);
         }
-        
+
         alert(`Transaksi ${id} sukses dihapus dan dibatalkan!`);
         if (typeof loadReportsTable === 'function') loadReportsTable();
         if (typeof loadDashboard === 'function') loadDashboard();
@@ -941,12 +957,12 @@ window.voidTransaction = function(id) {
 
 window.editTransaction = async function(id) {
     console.log("editTransaction clicked for ID:", id);
-    
+
     try {
         const { store: almaraStore, utils: almaraUtils, auth: almaraAuth } = window.AlmaraApp || {};
         let trxs = getTransactions();
         let trxGroup = trxs.filter(t => t && t.id === id);
-        
+
         if (trxGroup.length === 0) {
             try {
                 if (typeof getServerTransactionsLikeRwt === 'function') {
@@ -989,10 +1005,10 @@ window.editTransaction = async function(id) {
             return `<option value="${internalId}">${internalId} - ${name}${idn ? ` - ${idn}` : ''} - HP: ${phone} - ${nationality}</option>`;
         }).join('');
         custSelect.innerHTML = '<option value="">-- Pilih Nasabah Wajib --</option>' + customerOptions;
-        
+
         const custId = trxGroup[0].customerId || trxGroup[0].id_cif || '';
         custSelect.value = custId;
-        
+
         if (window.jQuery && typeof $.fn.select2 === 'function') {
             if (!$(custSelect).hasClass("select2-hidden-accessible")) {
                 $(custSelect).select2({
@@ -1006,7 +1022,7 @@ window.editTransaction = async function(id) {
         // Set Payment Method and Bank options
         const pm = trxGroup[0].paymentMethod || 'CASH';
         document.getElementById('editTrxPaymentMethod').value = pm;
-        
+
         const bankTgt = trxGroup[0].bank || 'BCA';
         document.getElementById('editTrxBank').value = bankTgt;
 
@@ -1043,7 +1059,7 @@ window.editTransaction = async function(id) {
         // Load Items in modal table
         const tbody = document.getElementById('editTrxItemsBody');
         tbody.innerHTML = '';
-        
+
         trxGroup.forEach(t => {
             window.addEditTrxRow({
                 tipe: t.tipe,
@@ -1061,7 +1077,7 @@ window.editTransaction = async function(id) {
             modal.style.display = 'flex';
             modal.classList.add('show');
         }
-        
+
     } catch (err) {
         console.error("Error in editTransaction:", err);
         alert("Terjadi kesalahan saat membuka form edit: " + err.message + "\n\nDetail: " + err.stack);
@@ -1087,7 +1103,7 @@ window.toggleEditTrxPaymentMethodFields = function() {
     } else if (paymentMethod === 'SPLIT') {
         if (bankGroup) bankGroup.style.display = 'block';
         if (splitGroup) splitGroup.style.display = 'flex';
-        
+
         // Auto calculate split transfer balance if cash amount changes
         const cashInput = document.getElementById('editTrxCashAmount');
         if (cashInput && !cashInput.hasAttribute('data-listener-added')) {
@@ -1211,7 +1227,7 @@ window.calculateEditTrxGrandTotal = function() {
             totalEl.style.color = '#10b981';
         }
     }
-    
+
     // Update split fields helper if payment method is split
     const pm = document.getElementById('editTrxPaymentMethod').value;
     if (pm === 'SPLIT') {
@@ -1429,7 +1445,7 @@ window.saveEditedTransaction = async function() {
 
     // Update bank mutations
     mutations = mutations.filter(m => !m.keterangan || (m.keterangan && !m.keterangan.includes(receiptId)));
-    
+
     let rawTimestamp = document.getElementById('editTrxTimestamp').value;
     const finalTimestamp = rawTimestamp ? rawTimestamp.replace('T', ' ') + ':00' : new Date().toISOString().replace('T', ' ').substring(0, 19);
 
@@ -1682,11 +1698,11 @@ function filterCustomersTable() {
     saveCustomerTableFilters();
     const search = document.getElementById('searchCustomerInput') ? document.getElementById('searchCustomerInput').value.toLowerCase() : '';
     const typeFilter = document.getElementById('filterCustomerType') ? document.getElementById('filterCustomerType').value : 'ALL';
-    
+
     // New Date Filters
     const startDate = document.getElementById('filterCustomerDateStart') ? document.getElementById('filterCustomerDateStart').value : '';
     const endDate = document.getElementById('filterCustomerDateEnd') ? document.getElementById('filterCustomerDateEnd').value : '';
-    
+
     let customers = getCustomers().map(c => ({
         ...c,
         id_nasabah: c.id_nasabah || c.local_id || c.no_cif || '-',
@@ -1697,49 +1713,49 @@ function filterCustomersTable() {
         tgl_daftar: c.tgl_daftar || '-'
     }));
     const totalCustomers = customers.length;
-    
+
     if(typeFilter !== 'ALL') {
         customers = customers.filter(c => c.kn === typeFilter);
     }
-    
+
     if(startDate || endDate) {
         customers = customers.filter(c => {
             if(!c.tgl_daftar) return false;
             let dObj = null;
             let rawStr = String(c.tgl_daftar).trim();
             if(rawStr === '-' || rawStr === '') return false;
-            
+
             let parts = rawStr.split(/[-/ T]/);
-            
+
             if(rawStr.includes('-') && parts.length >= 3 && parts[0].length === 4) {
                dObj = new Date(rawStr); // ISO/YYYY-MM-DD
             } else if(parts.length >= 3 && parts[0].length <= 2) {
                 // assume DD/MM/YYYY. Set to 12PM noon to avoid timezone shift into previous day
-                dObj = new Date(parts[2].slice(0,4), parseInt(parts[1])-1, parseInt(parts[0]), 12, 0, 0); 
+                dObj = new Date(parts[2].slice(0,4), parseInt(parts[1])-1, parseInt(parts[0]), 12, 0, 0);
             } else {
                 dObj = new Date(rawStr);
             }
-            
+
             // Failsafe: IF date is completely corrupt/unreadable, DO NOT hide the customer permanently!
-            if(isNaN(dObj.getTime())) return true; 
-            
+            if(isNaN(dObj.getTime())) return true;
+
             // Format flawlessly to YYYY-MM-DD using native get methods to ignore timezone complexities
             let yyyy = dObj.getFullYear();
             let mm = String(dObj.getMonth() + 1).padStart(2, '0');
             let dd = String(dObj.getDate()).padStart(2, '0');
             let customerDateStr = `${yyyy}-${mm}-${dd}`;
-            
+
             let passStart = true;
             let passEnd = true;
-            
+
             if(startDate) passStart = customerDateStr >= startDate;
             if(endDate) passEnd = customerDateStr <= endDate;
-            
+
             return passStart && passEnd;
         });
     }
     if(search) {
-        customers = customers.filter(c => 
+        customers = customers.filter(c =>
             String(c.nama || '').toLowerCase().includes(search) ||
             String(c.id_nasabah || '').toLowerCase().includes(search) ||
             String(c.no_hp || '').toLowerCase().includes(search) ||
@@ -1765,7 +1781,7 @@ function filterCustomersTable() {
             : `Tampil: ${fmtCount(customers.length)} dari ${fmtCount(totalCustomers)} nasabah`;
     }
     tbody.innerHTML = '';
-    
+
     const currentUserRole = getCurrentUser() ? getCurrentUser().role : 'kasir';
 
     customers.forEach(c => {
@@ -1829,7 +1845,7 @@ function filterCustomersTable() {
         `;
         tbody.appendChild(tr);
     });
-    
+
     // Reset "Select All" checkbox if exists
     const chkAll = document.getElementById('chkAllCust');
     if(chkAll) chkAll.checked = false;
@@ -1879,7 +1895,7 @@ window.deleteCustomer = async function(id) {
 
 window.resetAllCustomersData = async function() {
     console.log("Tombol Reset Diklik - Memulai Proses Pembersihan...");
-    
+
     if (typeof Swal === 'undefined') {
         alert("Sistem Peringatan (SweetAlert) belum dimuat. Coba refresh halaman.");
         return;
@@ -1983,7 +1999,7 @@ window.handleCustAction = function(btn, mode) {
     }
     const id = tr.getAttribute('data-id');
     console.log(`[CustomerAction] Mode: ${mode}, ID: ${id}`);
-    
+
     if (!id || id === "") {
         console.warn("Action handler warning: data-id is empty for this row.");
     }
@@ -2001,9 +2017,9 @@ window.editFromPreview = function() {
     // Ambil ID yang sedang ditampilkan di preview
     const idEl = document.getElementById('previewCustId');
     const id = idEl ? idEl.textContent.trim() : null;
-    
+
     console.log("[EditFromPreview] ID captured:", id);
-    
+
     if (id && id !== '-' && id !== '') {
         // Tutup preview dulu
         if (typeof window.closeCustomerPreviewModal === 'function') {
@@ -2012,7 +2028,7 @@ window.editFromPreview = function() {
             const previewModal = document.getElementById('customerPreviewModal');
             if (previewModal) previewModal.classList.remove('show');
         }
-        
+
         // Beri jeda sedikit agar transisi modal mulus
         setTimeout(() => {
             window.openCustomerUpdateModal(id);
@@ -2077,14 +2093,14 @@ window.generateStandardCif = function(customerType = null, existingCif = null) {
 
 window.previewCustomer = function(id) {
     const searchId = String(id || '').trim().toLowerCase();
-    const c = getCustomers().find(x => 
+    const c = getCustomers().find(x =>
         (x.id_nasabah && String(x.id_nasabah).trim().toLowerCase() === searchId) ||
         (x.local_id && String(x.local_id).trim().toLowerCase() === searchId) ||
         (x.no_cif && String(x.no_cif).trim().toLowerCase() === searchId) ||
         (x.nama && String(x.nama).trim().toLowerCase() === searchId)
     );
     if(!c) return;
-    
+
     document.getElementById('previewCustId').textContent = c.id_nasabah || '-';
     document.getElementById('previewCustName').textContent = c.nama || '-';
     document.getElementById('previewCustType').textContent = c.kn === '1' ? 'Perorangan' : (c.kn === '2' ? 'Corporate' : '-');
@@ -2239,7 +2255,7 @@ window.startBlastWa = function() {
     const allCustomers = getCustomers();
     const queueBody = document.getElementById('blastWaQueueBody');
     queueBody.innerHTML = '';
-    
+
     let queuedCount = 0;
     checkboxes.forEach(chk => {
         const c = allCustomers.find(xc => String(xc.id_nasabah) === String(chk.value));
@@ -2250,7 +2266,7 @@ window.startBlastWa = function() {
             const finalMsg = window.buildWaMessageForPurpose('broadcast', fallbackMessage, { customerName: c.nama });
             const waNum = normalizeWhatsAppNumber(c.no_hp);
             const encodedMsg = encodeURIComponent(finalMsg).replace(/'/g, '%27');
-            
+
             tr.innerHTML = `
                 <td>${c.nama}</td>
                 <td>${c.no_hp}</td>
@@ -2326,7 +2342,7 @@ let currentUpdateCustPhotoBase64 = null;
 window.previewUpdateCustPhoto = function(input) {
     const preview = document.getElementById('update_previewImg');
     const placeholder = document.getElementById('update_photoPlaceholder');
-    
+
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -2344,10 +2360,10 @@ window.previewUpdateCustPhoto = function(input) {
 window.openCustomerUpdateModal = function(id) {
     console.log("[OpenUpdateModal] Memanggil data untuk ID:", id);
     const customers = typeof getCustomers === 'function' ? getCustomers() : [];
-    
+
     // Pencarian Lapis Tiga: Prioritas id_nasabah, lalu local_id, lalu no_cif, terakhir nama
     const searchId = String(id || '').trim().toLowerCase();
-    const cust = customers.find(x => 
+    const cust = customers.find(x =>
         (x.id_nasabah && String(x.id_nasabah).trim().toLowerCase() === searchId) ||
         (x.local_id && String(x.local_id).trim().toLowerCase() === searchId) ||
         (x.no_cif && String(x.no_cif).trim().toLowerCase() === searchId) ||
@@ -2421,7 +2437,7 @@ window.openCustomerUpdateModal = function(id) {
             elIdType.value = cust.jenis_id || 'KTP';
             $(elIdType).trigger('change');
         }
-        
+
         const elGender = document.getElementById('update_modalCustGender');
         if(elGender) {
             elGender.value = cust.jenis_kelamin || 'Pria';
@@ -2463,7 +2479,7 @@ window.openCustomerUpdateModal = function(id) {
 
         // Flatpickr Re-init
         if (typeof flatpickr !== 'undefined') {
-            flatpickr("#update_modalCustBirthDate", { 
+            flatpickr("#update_modalCustBirthDate", {
                 dateFormat: "Y-m-d",
                 altInput: true,
                 altFormat: "d M Y",
@@ -2472,7 +2488,7 @@ window.openCustomerUpdateModal = function(id) {
         }
     }, 30);
 
-    
+
     console.log("[OpenUpdateModal] Form populated successfully.");
 };
 
@@ -2485,7 +2501,7 @@ window.updateCustomer = async function() {
 
     let customers = getCustomers(); // Ini mengambil dari 'mc_customers'
     const searchId = String(id || '').trim().toLowerCase();
-    const index = customers.findIndex(x => 
+    const index = customers.findIndex(x =>
         (x.id_nasabah && String(x.id_nasabah).trim().toLowerCase() === searchId) ||
         (x.local_id && String(x.local_id).trim().toLowerCase() === searchId) ||
         (x.no_cif && String(x.no_cif).trim().toLowerCase() === searchId) ||
@@ -2562,7 +2578,7 @@ window.updateCustomer = async function() {
         modal.classList.remove('show');
         modal.style.display = 'none';
     }
-    
+
     // Refresh Table
     if (typeof window.renderCustomersTable === 'function') {
         window.renderCustomersTable();
@@ -2575,7 +2591,7 @@ window.isEditingCustomer = false;
 
 window.triggerCustomerEditDirect = function(targetId = null) {
     const id = (targetId && typeof targetId === 'string') ? targetId.trim() : targetId;
-    
+
     if (id && id !== "") {
         // Now redirects to the dedicated Update Modal
         window.openCustomerUpdateModal(id);
@@ -2586,9 +2602,9 @@ window.triggerCustomerEditDirect = function(targetId = null) {
     console.log("[TriggerAdd] Opening New Customer Modal");
     const modal = document.getElementById('customerModal');
     if (modal) modal.classList.add('show');
-    
+
     const titleEl = document.getElementById('modalCustTitle');
-    
+
     // 1. Populate dropdowns from Master Data
     const elJob = document.getElementById('modalCustJob');
     const elCitizen = document.getElementById('modalCustCitizen');
@@ -2604,13 +2620,13 @@ window.triggerCustomerEditDirect = function(targetId = null) {
         'modalCustCif', 'modalCustNpwp', 'modalCustLocalId', 'modalCustVisibleId',
         'modalCustInternalId', 'modalCustRegDate'
     ];
-    
+
     fields.forEach(f => {
         const el = document.getElementById(f);
         if(el) {
             if(el.tagName === 'SELECT') el.selectedIndex = 0;
             else el.value = '';
-            
+
             // Default: Lock fields until entity type is selected (except for special ones)
             const permanentEnabled = [
                 'modalCustId', 'modalCustType', 'modalCustVisibleId', 'modalCustInternalId',
@@ -2625,7 +2641,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
             }
         }
     });
-    
+
     const photoInput = document.getElementById('modalCustPhoto');
     const nikInput = document.getElementById('modalCustNik');
     const otherIdInput = document.getElementById('modalCustIdNo');
@@ -2635,20 +2651,20 @@ window.triggerCustomerEditDirect = function(targetId = null) {
         otherIdInput.disabled = false;
         otherIdInput.placeholder = "Nomor ID lainnya (opsional)";
     }
-    
+
     const typeSelect = document.getElementById('modalCustType');
     if (typeSelect) typeSelect.value = '';
-    
+
     const radiosKn = document.getElementsByName('modalCustTypeGroup');
     for(let r of radiosKn) r.checked = false;
     window.updateCustomerBusinessTypeUI();
-    
+
     const idTypeSelect = document.getElementById('modalCustIdType');
     if (idTypeSelect) {
         idTypeSelect.disabled = true;
         idTypeSelect.innerHTML = '<option value="">Pilih Tipe Entitas Dulu!</option>';
     }
-    
+
     // Reset Photos
     if (photoInput) photoInput.value = '';
     currentCustPhotoBase64 = '';
@@ -2661,7 +2677,7 @@ window.triggerCustomerEditDirect = function(targetId = null) {
     if(window.isEditingCustomer) {
         console.log("[TriggerEdit] MODE: EDIT. Loading Data for ID:", id);
         if (titleEl) titleEl.textContent = "Edit Data Nasabah";
-        
+
         // Immediate fill of ID fields to prevent saveCustomer from failing if lookup takes time
         const idHidden = document.getElementById('modalCustId');
         const idVisible = document.getElementById('modalCustVisibleId');
@@ -2670,26 +2686,26 @@ window.triggerCustomerEditDirect = function(targetId = null) {
 
         const allCust = getCustomers();
         const cleanId = String(id).toLowerCase().trim();
-        
+
         // Enhanced Find: Try multiple match strategies
-        let c = allCust.find(x => 
-            String(x.id_nasabah || '').toLowerCase().trim() === cleanId || 
+        let c = allCust.find(x =>
+            String(x.id_nasabah || '').toLowerCase().trim() === cleanId ||
             String(x.local_id || '').toLowerCase().trim() === cleanId
         );
-        
+
         if(c) {
             console.log("[TriggerEdit] Customer Found!", c);
-            
+
             // Set Entity Type & Unlock
             const rawKn = String(c.kn || '1');
-            const knVal = rawKn.includes('2') ? '2' : '1'; 
+            const knVal = rawKn.includes('2') ? '2' : '1';
             if(typeSelect) typeSelect.value = knVal;
-            
+
             for(let r of radiosKn) {
                 if(r.value === knVal) r.checked = true;
             }
-            
-            if(typeof window.toggleEntitas === 'function') window.toggleEntitas(); 
+
+            if(typeof window.toggleEntitas === 'function') window.toggleEntitas();
 
             // Helper to fill and enable
             const fill = (targetId, val) => {
@@ -2711,29 +2727,29 @@ window.triggerCustomerEditDirect = function(targetId = null) {
             fill('modalCustAddress', c.alamat);
             fill('modalCustPhone', c.no_hp);
             fill('modalCustGender', c.jenis_kelamin);
-            
+
             if(elCitizen && [...elCitizen.options].some(o => o.value === c.warga_negara)) elCitizen.value = c.warga_negara;
             if(elJob && [...elJob.options].some(o => o.value === c.pekerjaan)) elJob.value = c.pekerjaan;
-            
+
             const savedIdType = c.jenis_id || (c.no_ktp && c.no_ktp !== '-' ? 'KTP' : 'KTP');
             if(idTypeSelect) {
                 idTypeSelect.value = savedIdType;
                 idTypeSelect.disabled = false;
                 if(typeof window.toggleCustPassportPlaceholder === 'function') window.toggleCustPassportPlaceholder();
             }
-            
+
             fill('modalCustNik', c.no_ktp !== '-' ? c.no_ktp : '');
             fill('modalCustIdNo', c.selain_ktp !== '-' ? c.selain_ktp : '');
             fill('modalCustBankAcc', c.no_rekening);
             fill('modalCustCif', c.no_cif);
             fill('modalCustNpwp', c.npwp);
             fill('modalCustLocalId', c.local_id);
-            
+
             if (c.tgl_daftar && c.tgl_daftar !== '-') {
                 const regDateEl = document.getElementById('modalCustRegDate');
                 if (regDateEl) regDateEl.value = c.tgl_daftar.split('T')[0];
             }
-            
+
             if(c.foto_id) {
                 currentCustPhotoBase64 = c.foto_id;
                 if(imgPreview) { imgPreview.src = c.foto_id; imgPreview.style.display = 'block'; }
@@ -2748,13 +2764,13 @@ window.triggerCustomerEditDirect = function(targetId = null) {
     } else {
         console.log("[TriggerEdit] MODE: ADD NEW.");
         if (titleEl) titleEl.textContent = "Tambah Nasabah Baru";
-        
+
         const regDateEl = document.getElementById('modalCustRegDate');
         if (regDateEl) regDateEl.value = new Date().toISOString().split('T')[0];
-        
+
         const idPjkEl = document.getElementById('modalCustIdPjk');
         if(idPjkEl) idPjkEl.value = (typeof getProfile === 'function' && getProfile().idpjk) || '';
-        
+
         if (typeof generateCif === 'function') setTimeout(generateCif, 100);
     }
 };
@@ -3015,7 +3031,7 @@ async function saveCustomer() {
     }
     if (idElem) idElem.value = generatedId;
     if (internalIdElem) internalIdElem.value = generatedId;
-    
+
     // Auto generate CIF if empty
     let autoCif = cif;
     if(!autoCif || autoCif.trim() === '' || autoCif === '-') {
@@ -3062,7 +3078,7 @@ async function saveCustomer() {
         tgl_daftar: finalRegDate,
         foto_id: uploadedPhoto
     };
-    
+
     const existingIndex = customers.findIndex(c => String(c.id_nasabah || '').trim() === String(generatedId).trim());
     const currUser = getCurrentUser() ? getCurrentUser().fullName : 'Admin Kasir';
     if(existingIndex === -1) {
@@ -3088,7 +3104,7 @@ async function saveCustomer() {
         if(typeof window.saveToMySQL_Customer === 'function') {
             await window.saveToMySQL_Customer(customerData);
         }
-        
+
         // Clear photo identity after clicking save
         document.getElementById('modalCustPhoto').value = '';
         if(typeof currentCustPhotoBase64 !== 'undefined') {
@@ -3108,7 +3124,7 @@ async function saveCustomer() {
                 detail: { customerId: generatedId, customerName: name }
             }));
         }
-        
+
         alert("Data Nasabah Berhasil Disimpan!");
     } catch (e) {
         alert("Gagal menyimpan data nasabah! Error: " + e.message);
@@ -3129,14 +3145,14 @@ let cameraTargetPlaceholderId = null;
 async function populateCameraDevices() {
     const select = document.getElementById('cameraSourceSelect');
     if (!select) return;
-    
+
     // Clear select
     select.innerHTML = '';
-    
+
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        
+
         if (videoDevices.length === 0) {
             const opt = document.createElement('option');
             opt.value = "";
@@ -3144,10 +3160,10 @@ async function populateCameraDevices() {
             select.appendChild(opt);
             return;
         }
-        
+
         const savedDeviceId = localStorage.getItem('selectedCameraDeviceId');
         let selectedIndex = 0;
-        
+
         videoDevices.forEach((device, index) => {
             const opt = document.createElement('option');
             opt.value = device.deviceId;
@@ -3157,7 +3173,7 @@ async function populateCameraDevices() {
             }
             select.appendChild(opt);
         });
-        
+
         // Pilih kamera yang sesuai
         select.selectedIndex = selectedIndex;
     } catch (e) {
@@ -3169,42 +3185,42 @@ window.openCameraModal = async function(targetPreviewId, targetPlaceholderId) {
     const modal = document.getElementById('cameraModal');
     const video = document.getElementById('cameraVideo');
     const loading = document.getElementById('cameraLoading');
-    
+
     if (!modal || !video) {
         alert("Elemen kamera tidak ditemukan!");
         return;
     }
-    
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("Akses Kamera Ditolak (Browser Security Policy):\n\nKamera hanya dapat diakses melalui koneksi aman (HTTPS) atau dari komputer server lokal (http://localhost atau http://127.0.0.1).\n\nJika Anda membuka aplikasi ini melalui alamat IP (contoh: http://192.168.1.100 atau domain http://almara.test), peramban (browser) secara otomatis memblokir akses hardware.\n\nSOLUSI CEPAT (Untuk Google Chrome / Microsoft Edge):\n1. Buka tab baru di browser dan ketik: chrome://flags/#unsafely-treat-insecure-origin-as-secure\n2. Cari bagian 'Insecure origins treated as secure'\n3. Ubah statusnya menjadi 'Enabled'\n4. Masukkan alamat URL web Anda di kotak teks (contoh: http://192.168.1.100 atau http://almara.test)\n5. Klik tombol 'Relaunch' di pojok kanan bawah.");
         return;
     }
-    
+
     cameraTargetPreviewId = targetPreviewId;
     cameraTargetPlaceholderId = targetPlaceholderId;
-    
+
     // Tampilkan modal
     modal.style.display = 'flex';
     modal.classList.add('show');
     loading.style.display = 'block';
-    
+
     // Request webcam access dengan constraint dasar terlebih dahulu untuk memicu izin browser
     try {
         if (cameraStream) {
             window.closeCameraModal();
         }
-        
+
         // Pemicu dialog izin kamera dari browser (label device hanya muncul jika izin sudah diberikan)
         const initialStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         initialStream.getTracks().forEach(track => track.stop());
-        
+
         // Baca list kamera setelah izin diberikan
         await populateCameraDevices();
-        
+
         // Mulai stream dengan kamera terpilih
         const select = document.getElementById('cameraSourceSelect');
         const activeDeviceId = select ? select.value : null;
-        
+
         await window.startCameraStream(activeDeviceId);
     } catch (err) {
         console.error("Gagal mengakses kamera USB:", err);
@@ -3218,15 +3234,15 @@ window.startCameraStream = async function(deviceId) {
     const video = document.getElementById('cameraVideo');
     const loading = document.getElementById('cameraLoading');
     if (!video) return;
-    
+
     loading.style.display = 'block';
-    
+
     // Stop current stream if any
     if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
         cameraStream = null;
     }
-    
+
     try {
         const constraints = {
             video: {
@@ -3236,7 +3252,7 @@ window.startCameraStream = async function(deviceId) {
             },
             audio: false
         };
-        
+
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         cameraStream = stream;
         video.srcObject = stream;
@@ -3244,7 +3260,7 @@ window.startCameraStream = async function(deviceId) {
             video.play();
             loading.style.display = 'none';
         };
-        
+
         if (deviceId) {
             localStorage.setItem('selectedCameraDeviceId', deviceId);
         }
@@ -3273,16 +3289,16 @@ window.changeCameraSource = async function(deviceId) {
 window.closeCameraModal = function() {
     const modal = document.getElementById('cameraModal');
     const video = document.getElementById('cameraVideo');
-    
+
     if (modal) {
         modal.style.display = 'none';
         modal.classList.remove('show');
     }
-    
+
     if (video) {
         video.srcObject = null;
     }
-    
+
     if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
         cameraStream = null;
@@ -3295,40 +3311,40 @@ window.captureCameraSnapshot = function() {
         alert("Kamera tidak aktif!");
         return;
     }
-    
+
     const canvas = document.createElement('canvas');
     const width = video.videoWidth || 640;
     const height = video.videoHeight || 480;
-    
+
     canvas.width = width;
     canvas.height = height;
-    
+
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, width, height);
-    
+
     const base64Data = canvas.toDataURL('image/jpeg', 0.90);
-    
+
     if (cameraTargetPreviewId) {
         const preview = document.getElementById(cameraTargetPreviewId);
         if (preview) {
             preview.src = base64Data;
             preview.style.display = 'block';
         }
-        
+
         if (cameraTargetPreviewId === 'update_previewImg') {
             currentUpdateCustPhotoBase64 = base64Data;
         } else if (cameraTargetPreviewId === 'modalCustPhotoPreview') {
             currentCustPhotoBase64 = base64Data;
         }
     }
-    
+
     if (cameraTargetPlaceholderId) {
         const placeholder = document.getElementById(cameraTargetPlaceholderId);
         if (placeholder) {
             placeholder.style.display = 'none';
         }
     }
-    
+
     window.closeCameraModal();
 };
 
@@ -3366,30 +3382,30 @@ window.loadKursHariIniTable = function() {
 
         const isLowStock = (c.stock || 0) <= (c.alert || 0);
 
-        const trendIconMini = c.trend === 'up' 
-            ? `<span style="color: #10B981; font-size: 0.95rem; line-height: 1; margin-left: 6px;" title="Tren Naik">▲</span>` 
-            : (c.trend === 'down' 
-                ? `<span style="color: #ef4444; font-size: 0.95rem; line-height: 1; margin-left: 6px;" title="Tren Turun">▼</span>` 
-                : `<span style="color: #64748b; font-size: 0.8rem; opacity: 0.6; line-height: 1; margin-left: 6px;" title="Tren Stabil">─</span>`);
+        const trendIconMini = c.trend === 'up'
+            ? `<span style="color: #10B981; font-size: 0.95rem; line-height: 1; margin-left: 6px;" title="Tren Naik">&#9650;</span>`
+            : (c.trend === 'down'
+                ? `<span style="color: #ef4444; font-size: 0.95rem; line-height: 1; margin-left: 6px;" title="Tren Turun">&#9660;</span>`
+                : `<span style="color: #64748b; font-size: 0.8rem; opacity: 0.6; line-height: 1; margin-left: 6px;" title="Tren Stabil">&#8212;</span>`);
 
         html += `
             <div class="kurs-card" data-code="${currencyCode}" data-country="${countryName.toLowerCase()}" onclick="window.handleKursCardClick(event, '${currencyCode}')" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s ease; cursor: pointer; user-select: none;">
                 <!-- Header: Checkbox, Flag, Code, Country -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" class="kurs-select-checkbox" value="${currencyCode}" style="width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: #38bdf8;" onchange="window.toggleKursSelection('${currencyCode}')">
-                    
+
                     <span style="width: 32px; height: 22px; border-radius: 3px; overflow: hidden; display: inline-flex; border: 1px solid rgba(255,255,255,0.1); justify-content: center; align-items: center; background: #0f172a; flex-shrink: 0;">
                         ${flagUrl ? `<img src="${flagUrl}" alt="${currencyCode}" style="width:100%; height:100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">` : ''}
                         <span style="display:none; font-weight:bold; font-size:0.75rem; color:#fff;">${currencyCode.slice(0, 2)}</span>
                     </span>
-                    
+
                     <strong style="font-size: 1.1rem; color: #f8fafc; letter-spacing: 0.2px; display: inline-flex; align-items: center;">${currencyCode} ${trendIconMini}</strong>
-                    
+
                     <span style="color: #94a3b8; font-size: 0.75rem; font-weight: 500; margin-left: auto; text-align: right; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${countryName}">${countryName}</span>
                 </div>
-                
+
                 <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 0;">
-                
+
                 <!-- Rates Box -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; text-align: center;">
                     <div style="background: rgba(16, 185, 129, 0.05); padding: 4px 2px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.1); display: flex; flex-direction: column; justify-content: center;">
@@ -3401,11 +3417,11 @@ window.loadKursHariIniTable = function() {
                         <div style="font-size: 1.05rem; font-weight: 700; color: #ef4444;">${typeof formatRate === 'function' ? formatRate(c.sell) : c.sell.toLocaleString()}</div>
                     </div>
                 </div>
-                
+
                 <!-- Footer Info: Stock -->
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #cbd5e1;">
                     <span>Stok: <strong style="color:#f8fafc;">${(c.stock || 0).toLocaleString('id-ID')}</strong></span>
-                    ${isLowStock 
+                    ${isLowStock
                         ? `<span style="color: #f87171; font-weight: bold;" title="Stok Minim"><i class="fa-solid fa-triangle-exclamation"></i></span>`
                         : `<span style="color: #34d399; font-weight: bold;" title="Stok Aman"><i class="fa-solid fa-circle-check"></i></span>`}
                 </div>
@@ -3414,7 +3430,7 @@ window.loadKursHariIniTable = function() {
      });
 
      container.innerHTML = html || '<div style="color: #94a3b8; text-align: center; grid-column: 1/-1; padding: 40px; font-size: 1.1rem;"><i class="fa-solid fa-circle-info fa-2x mb-3" style="color:#64748b;"></i><br>Tidak ada valuta aktif saat ini.</div>';
-     
+
      // Run initial conversion calculation
      window.calculateQuickRate();
 
@@ -3427,11 +3443,11 @@ window.loadKursHariIniTable = function() {
 window.filterKursHariIni = function() {
     const query = (document.getElementById('searchKursHariIni')?.value || '').toLowerCase().trim();
     const cards = document.querySelectorAll('#kursHariIniContainer .kurs-card');
-    
+
     cards.forEach(card => {
         const code = (card.getAttribute('data-code') || '').toLowerCase();
         const country = (card.getAttribute('data-country') || '').toLowerCase();
-        
+
         if (code.includes(query) || country.includes(query)) {
             card.style.display = 'flex';
         } else {
@@ -3444,28 +3460,28 @@ window.calculateQuickRate = function() {
     const valutaCode = document.getElementById('calcKursValuta')?.value;
     const type = document.getElementById('calcKursTipe')?.value;
     const amount = parseFloat(document.getElementById('calcKursAmount')?.value) || 0;
-    
+
     const rateLabel = document.getElementById('calcKursRateLabel');
     const totalLabel = document.getElementById('calcKursTotalLabel');
-    
+
     if (!valutaCode) {
         if (rateLabel) rateLabel.innerText = 'Rp 0';
         if (totalLabel) totalLabel.innerText = 'Rp 0';
         return;
     }
-    
+
     const currencies = typeof getCurrencies === 'function' ? getCurrencies() : [];
     const cObj = currencies.find(c => c.code === valutaCode);
-    
+
     if (!cObj) {
         if (rateLabel) rateLabel.innerText = 'Rp 0';
         if (totalLabel) totalLabel.innerText = 'Rp 0';
         return;
     }
-    
+
     const rate = type === 'beli' ? (cObj.buy || 0) : (cObj.sell || 0);
     const total = amount * rate;
-    
+
     if (rateLabel) rateLabel.innerText = `Rp ${rate.toLocaleString('id-ID')}`;
     if (totalLabel) totalLabel.innerText = `Rp ${total.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 };
@@ -3534,12 +3550,12 @@ window.updateKursSelectionUI = function() {
     const sendBtn = document.getElementById('btnSendWaKurs');
     const selectAllBtn = document.getElementById('btnSelectAllKurs');
     const deselectAllBtn = document.getElementById('btnDeselectAllKurs');
-    
+
     if (countEl) countEl.textContent = window.selectedKursCodes.length;
     if (sendBtn) {
         sendBtn.disabled = window.selectedKursCodes.length === 0;
     }
-    
+
     if (selectAllBtn && deselectAllBtn) {
         if (window.selectedKursCodes.length > 0) {
             selectAllBtn.style.display = 'none';
@@ -3549,7 +3565,7 @@ window.updateKursSelectionUI = function() {
             deselectAllBtn.style.display = 'none';
         }
     }
-    
+
     const cards = document.querySelectorAll('#kursHariIniContainer .kurs-card');
     cards.forEach(card => {
         const code = card.getAttribute('data-code');
@@ -3571,14 +3587,14 @@ window.sendSelectedKursViaWa = function() {
         alert("Pilih setidaknya satu mata uang!");
         return;
     }
-    
+
     const phoneInput = document.getElementById('mSendKursWaPhone');
     if (phoneInput) phoneInput.value = '';
     const nameInput = document.getElementById('mSendKursWaName');
     if (nameInput) nameInput.value = '';
-    
+
     window.populateWaFavoritesDropdown();
-    
+
     const modal = document.getElementById('sendKursWaModal');
     if (modal) modal.style.display = 'flex';
 };
@@ -3591,46 +3607,46 @@ window.closeSendKursWaModal = function() {
 window.submitSendKursWa = async function() {
     const activeCurrencies = typeof getCurrencies === 'function' ? getCurrencies() : [];
     const selectedCurrencies = activeCurrencies.filter(c => window.selectedKursCodes.includes(c.code));
-    
+
     if (selectedCurrencies.length === 0) {
         alert("Data valas terpilih tidak ditemukan!");
         return;
     }
-    
+
     const profile = (typeof getProfile === 'function') ? getProfile() : (typeof almaraStore !== 'undefined' && almaraStore.getProfile ? almaraStore.getProfile() : {});
     const companyName = profile.name || 'Money Changer Almara';
-    
+
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
     const dateTimeStr = new Date().toLocaleDateString('id-ID', options);
-    
+
     let text = `*KURS HARI INI - ${companyName.toUpperCase()}*\n`;
     text += `Tanggal: ${dateTimeStr} WIB\n\n`;
     text += `Berikut referensi kurs transaksi terupdate:\n\n`;
-    
+
     const formatRateText = (val) => {
         return typeof formatRate === 'function' ? formatRate(val) : val.toLocaleString('id-ID');
     };
-    
+
     selectedCurrencies.forEach((c, idx) => {
         text += `${idx + 1}. *${c.code}*\n`;
         text += `   - Beli: Rp ${formatRateText(c.buy)}\n`;
         text += `   - Jual: Rp ${formatRateText(c.sell)}\n`;
     });
-    
+
     text += `\n*Catatan:* Kurs dapat berubah sewaktu-waktu. Harap konfirmasi sebelum bertransaksi.\n`;
     text += `Terima kasih.`;
     text = window.buildWaMessageForPurpose('kurs', text, { currencyList: text, date: dateTimeStr, paymentMethod: 'Informasi kurs' });
-    
+
     const phoneInput = document.getElementById('mSendKursWaPhone');
     const phoneVal = phoneInput ? phoneInput.value.trim() : '';
-    
+
     let phone = phoneVal.replace(/[^0-9]/g, '');
     if (phone) {
         if (phone.startsWith('0')) {
             phone = '62' + phone.substring(1);
         }
     }
-    
+
     if (!phone) {
         alert('Nomor WhatsApp tujuan wajib diisi untuk pengiriman via WA Gateway.');
         return;
@@ -3661,17 +3677,17 @@ function saveWaFavorites(data) {
 window.populateWaFavoritesDropdown = function() {
     const select = document.getElementById('mSendKursWaFavorite');
     if (!select) return;
-    
+
     const favorites = getWaFavorites();
-    
+
     let html = '<option value="">-- Pilih Kontak Favorit --</option>';
     favorites.forEach(f => {
         const curList = Array.isArray(f.currencies) && f.currencies.length > 0 ? f.currencies.join(', ') : 'Semua';
         html += `<option value="${f.phone}">${escapeHtml(f.name)} (${curList})</option>`;
     });
-    
+
     select.innerHTML = html;
-    
+
     // Hide delete button initially
     const deleteBtn = document.getElementById('btnDeleteWaFavorite');
     if (deleteBtn) deleteBtn.style.display = 'none';
@@ -3682,15 +3698,15 @@ window.selectWaFavorite = function(phone) {
     if (phoneInput) {
         phoneInput.value = phone || '';
     }
-    
+
     const deleteBtn = document.getElementById('btnDeleteWaFavorite');
     if (deleteBtn) {
         deleteBtn.style.display = phone ? 'inline-block' : 'none';
     }
-    
+
     const nameInput = document.getElementById('mSendKursWaName');
     if (nameInput) nameInput.value = '';
-    
+
     if (phone) {
         const favorites = getWaFavorites();
         const fav = favorites.find(f => f.phone === phone);
@@ -3704,10 +3720,10 @@ window.selectWaFavorite = function(phone) {
 window.saveWaFavorite = function() {
     const phoneInput = document.getElementById('mSendKursWaPhone');
     const nameInput = document.getElementById('mSendKursWaName');
-    
+
     const rawPhone = phoneInput ? phoneInput.value.trim() : '';
     const name = nameInput ? nameInput.value.trim() : '';
-    
+
     if (!rawPhone) {
         alert("Masukkan nomor telepon terlebih dahulu!");
         return;
@@ -3716,31 +3732,31 @@ window.saveWaFavorite = function() {
         alert("Masukkan nama kontak untuk menyimpan!");
         return;
     }
-    
+
     let phone = rawPhone.replace(/[^0-9]/g, '');
     if (phone.startsWith('0')) {
         phone = '62' + phone.substring(1);
     }
-    
+
     const currentCurrencies = [...window.selectedKursCodes];
-    
+
     const favorites = getWaFavorites();
     const existsIdx = favorites.findIndex(f => f.phone === phone);
-    
+
     if (existsIdx !== -1) {
         favorites[existsIdx].name = name;
         favorites[existsIdx].currencies = currentCurrencies;
     } else {
         favorites.push({ name, phone, currencies: currentCurrencies });
     }
-    
+
     saveWaFavorites(favorites);
     window.populateWaFavoritesDropdown();
-    
+
     const select = document.getElementById('mSendKursWaFavorite');
     if (select) select.value = phone;
     window.selectWaFavorite(phone);
-    
+
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'success',
@@ -3756,20 +3772,20 @@ window.saveWaFavorite = function() {
 window.deleteWaFavorite = function() {
     const select = document.getElementById('mSendKursWaFavorite');
     if (!select) return;
-    
+
     const phone = select.value;
     if (!phone) return;
-    
+
     const favorites = getWaFavorites();
     const newFavorites = favorites.filter(f => f.phone !== phone);
     saveWaFavorites(newFavorites);
-    
+
     window.populateWaFavoritesDropdown();
     window.selectWaFavorite('');
-    
+
     const phoneInput = document.getElementById('mSendKursWaPhone');
     if (phoneInput) phoneInput.value = '';
-    
+
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'success',

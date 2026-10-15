@@ -105,4 +105,4 @@ Route::middleware($apiAuthMiddleware)->group(function () {
     Route::post('/letter-numbers/records/{id}/documents', [LetterNumberController::class, 'uploadDocument']);
 });
 
-Route::get('/public/currencies', [App\Http\Controllers\CurrencyController::class, 'index']);
+Route::get('/public/currencies', [App\Http\Controllers\CurrencyController::class, 'publicIndex']);

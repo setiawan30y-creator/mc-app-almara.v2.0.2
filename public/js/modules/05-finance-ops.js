@@ -1,4 +1,4 @@
-// Bank mutations, expenses, equity, closing, settings, master data, rates, uploads, and exports
+﻿// Bank mutations, expenses, equity, closing, settings, master data, rates, uploads, and exports
 
 // ==============================
 // BANK MUTATIONS
@@ -1004,6 +1004,9 @@ window.printClosingHistory = function() {
 function loadSettingsProfile() {
     const p = getProfile();
     document.getElementById('profName').value = p.name || '';
+    if (document.getElementById('profInitial')) {
+        document.getElementById('profInitial').value = String(p.initial || '').toUpperCase();
+    }
     document.getElementById('profAddress').value = p.address || '';
     if(document.getElementById('profBiLicense')) document.getElementById('profBiLicense').value = p.biLicense || '';
     if(document.getElementById('profIdpjk')) document.getElementById('profIdpjk').value = p.idpjk || '';
@@ -1464,6 +1467,7 @@ function recalcInitTotal() {
 window.submitProfile = function() {
     const profileData = {
         name: document.getElementById('profName').value || 'MC-ALMARA',
+        initial: (document.getElementById('profInitial')?.value || '').trim().toUpperCase(),
         address: document.getElementById('profAddress').value || '',
         biLicense: document.getElementById('profBiLicense') ? document.getElementById('profBiLicense').value : '',
         idpjk: document.getElementById('profIdpjk') ? document.getElementById('profIdpjk').value : '',
